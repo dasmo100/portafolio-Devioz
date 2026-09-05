@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Portafolio Devioz</title>
+    <!-- Bootstrap 5 CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="assets/css/style.css">
+</head>
+<body class="no-scroll">
+    <!-- Filtro SVG Gooey (Efecto Viscoso/Pegajoso) -->
+    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" style="position: absolute; width: 0; height: 0; overflow: hidden;" aria-hidden="true">
+      <defs>
+        <filter id="goo" x="-30%" y="-30%" width="160%" height="160%">
+          <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
+          <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" result="goo" />
+          <feBlend in="SourceGraphic" in2="goo" />
+        </filter>
+      </defs>
+    </svg>
+
+    <!-- Navbar flotante de cristal -->
+    <header class="fixed-top d-flex justify-content-center px-3" style="z-index: 100;">
+        <nav class="navbar navbar-expand custom-navbar">
+            <div class="container-fluid d-flex align-items-center gap-2 gap-md-3">
+                <a class="navbar-brand text-white fw-bold m-0 d-inline-flex align-items-center gap-2" href="#">
+                    <img src="assets/img/devioz-img.png" alt="Devioz Logo" class="brand-logo-img">
+                    <span>Devioz</span>
+                </a>
+                <div class="gooey-nav-wrapper d-none" id="nav-categories-wrapper">
+                    <!-- Capa de fondo con filtro Gooey -->
+                    <div class="gooey-layer">
+                        <div class="gooey-pill" id="gooey-pill"></div>
+                        <div class="gooey-bubbles" id="gooey-bubbles"></div>
+                    </div>
+                    <ul class="navbar-nav d-flex flex-row align-items-center gap-1 gap-md-2 m-0 py-1" id="nav-categories-list">
+                        <li class="nav-item">
+                            <a class="nav-category-btn active" href="#todos">
+                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                    <rect x="3" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="3" width="7" height="7"></rect>
+                                    <rect x="14" y="14" width="7" height="7"></rect>
+                                    <rect x="3" y="14" width="7" height="7"></rect>
+                                </svg>
+                                <span>Todos</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-category-btn" href="#diseno-grafico">
+                                <span>🎨</span>
+                                <span>Diseño Gráfico</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-category-btn" href="#spots-publicitarios">
+                                <span>🎬</span>
+                                <span>Spots Publicitarios</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-category-btn" href="#business-intelligence">
+                                <span>📊</span>
+                                <span>Business Intelligence</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-category-btn" href="#desarrollo-web">
+                                <span>🌐</span>
+                                <span>Desarrollo Web</span>
+                            </a>
+                        </li>
+                        <li class="nav-item">
+                            <a class="nav-category-btn" href="#inteligencia-artificial">
+                                <span>🤖</span>
+                                <span>Inteligencia Artificial</span>
+                            </a>
+                        </li>
+                    </ul>
+                </div>
+                <a href="login.html" class="btn btn-sm btn-secondary-glass text-white text-decoration-none ms-auto text-nowrap">Admin Login</a>
+            </div>
+        </nav>
+    </header>
+
+    <!-- Sección Hero centrada -->
+    <main class="hero-content container px-4">
+        <!-- Canvas de Texto con Partículas (React Bits ParticleText) -->
+        <div id="particleTextContainer" class="particle-text-container">
+            <canvas id="particleTextCanvas"></canvas>
+        </div>
+
+        <h1 class="display-3 fw-bold text-white mb-3" style="max-width: 850px; letter-spacing: -0.02em;">
+            Soluciones Digitales a tu Medida
+        </h1>
+        <p class="lead mb-4 col-md-8 col-lg-6 mx-auto" style="color: #94a3b8;">
+            Diseño, desarrollo, IA y más. Paquetes listos para escalar tu negocio con resultados garantizados y soporte Devioz.
+        </p>
+        <div class="d-flex flex-wrap gap-3 justify-content-center">
+            <a href="#proyectos" class="btn btn-main text-decoration-none" id="btn-explorar">Explorar portafolio</a>
+            <a href="#demo" class="btn btn-secondary-glass text-decoration-none">Ver Demo</a>
+        </div>
+    </main>
+
+    <!-- =========================================
+         SECCIÓN PROYECTOS DESTACADOS
+         ========================================= -->
+    <section id="proyectos" class="projects-section container px-4">
+        <!-- Grilla de Tarjetas (Grid Layout) -->
+        <div class="row g-4" id="projects-grid">
+            <!-- Proyecto 1: Desarrollo Web -->
+            <div class="col-lg-4 col-md-6 project-item" data-category="desarrollo-web">
+                <div class="project-card">
+                    <div class="card-img-wrapper">
+                        <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80" alt="Plataforma E-Commerce SaaS" loading="lazy">
+                        <span class="card-category-badge">🌐 Desarrollo Web</span>
+                    </div>
+                    <div class="project-card-body">
+                        <h3 class="project-card-title">Plataforma E-Commerce SaaS</h3>
+                        <p class="project-card-desc">
+                            Sistema integral de comercio electrónico con pasarela de pagos, gestión de stock en tiempo real y panel de analítica avanzada.
+                        </p>
+                        <div class="tech-badges-list">
+                            <span class="tech-badge">PHP</span>
+                            <span class="tech-badge">MySQL</span>
+                            <span class="tech-badge">JavaScript</span>
+                            <span class="tech-badge">Bootstrap 5</span>
+                        </div>
+                        <a href="#demo" class="btn-card-action">
+                            <span>Ver Proyecto</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Proyecto 2: Inteligencia Artificial -->
+            <div class="col-lg-4 col-md-6 project-item" data-category="inteligencia-artificial">
+                <div class="project-card">
+                    <div class="card-img-wrapper">
+                        <img src="https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=800&q=80" alt="Neural Assistant & RAG Copilot" loading="lazy">
+                        <span class="card-category-badge">🤖 Inteligencia Artificial</span>
+                    </div>
+                    <div class="project-card-body">
+                        <h3 class="project-card-title">Neural Assistant &amp; RAG Copilot</h3>
+                        <p class="project-card-desc">
+                            Motor conversacional con embeddings vectoriales para consultas sobre documentación corporativa con respuestas precisas al instante.
+                        </p>
+                        <div class="tech-badges-list">
+                            <span class="tech-badge">Python</span>
+                            <span class="tech-badge">FastAPI</span>
+                            <span class="tech-badge">Gemini API</span>
+                            <span class="tech-badge">Vector DB</span>
+                        </div>
+                        <a href="#demo" class="btn-card-action">
+                            <span>Ver Proyecto</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Proyecto 3: Business Intelligence -->
+            <div class="col-lg-4 col-md-6 project-item" data-category="business-intelligence">
+                <div class="project-card">
+                    <div class="card-img-wrapper">
+                        <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80" alt="Dashboard Ejecutivo BI & KPIs" loading="lazy">
+                        <span class="card-category-badge">📊 Business Intelligence</span>
+                    </div>
+                    <div class="project-card-body">
+                        <h3 class="project-card-title">Dashboard Ejecutivo BI &amp; KPIs</h3>
+                        <p class="project-card-desc">
+                            Tableros de analítica interactiva y pronóstico de ventas con sincronización automatizada de bases de datos relacionales.
+                        </p>
+                        <div class="tech-badges-list">
+                            <span class="tech-badge">Power BI</span>
+                            <span class="tech-badge">PostgreSQL</span>
+                            <span class="tech-badge">Python</span>
+                            <span class="tech-badge">ETL Pipeline</span>
+                        </div>
+                        <a href="#demo" class="btn-card-action">
+                            <span>Ver Proyecto</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Proyecto 4: Spots Publicitarios -->
+            <div class="col-lg-4 col-md-6 project-item" data-category="spots-publicitarios">
+                <div class="project-card">
+                    <div class="card-img-wrapper">
+                        <img src="https://images.unsplash.com/photo-1536240478700-b869070f9279?auto=format&fit=crop&w=800&q=80" alt="Spot Publicitario Cinematográfico" loading="lazy">
+                        <span class="card-category-badge">🎬 Spots Publicitarios</span>
+                    </div>
+                    <div class="project-card-body">
+                        <h3 class="project-card-title">Spot Cinematográfico 4K</h3>
+                        <p class="project-card-desc">
+                            Producción audiovisual publicitaria con modelado 3D, animación de marca y masterización de sonido envolvente para difusión digital.
+                        </p>
+                        <div class="tech-badges-list">
+                            <span class="tech-badge">After Effects</span>
+                            <span class="tech-badge">Premiere Pro</span>
+                            <span class="tech-badge">Blender 3D</span>
+                            <span class="tech-badge">VFX</span>
+                        </div>
+                        <a href="#demo" class="btn-card-action">
+                            <span>Ver Proyecto</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Proyecto 5: Diseño Gráfico -->
+            <div class="col-lg-4 col-md-6 project-item" data-category="diseno-grafico">
+                <div class="project-card">
+                    <div class="card-img-wrapper">
+                        <img src="https://images.unsplash.com/photo-1600132806370-bf17e65e942f?auto=format&fit=crop&w=800&q=80" alt="Branding & Sistema Visual Devioz" loading="lazy">
+                        <span class="card-category-badge">🎨 Diseño Gráfico</span>
+                    </div>
+                    <div class="project-card-body">
+                        <h3 class="project-card-title">Identidad Visual &amp; Branding</h3>
+                        <p class="project-card-desc">
+                            Diseño integral de marca corporativa, guías de estilo, kit de tipografía y papelería digital con altos estándares estéticos.
+                        </p>
+                        <div class="tech-badges-list">
+                            <span class="tech-badge">Figma</span>
+                            <span class="tech-badge">Illustrator</span>
+                            <span class="tech-badge">Photoshop</span>
+                            <span class="tech-badge">Brand Guidelines</span>
+                        </div>
+                        <a href="#demo" class="btn-card-action">
+                            <span>Ver Proyecto</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Proyecto 6: Desarrollo Web -->
+            <div class="col-lg-4 col-md-6 project-item" data-category="desarrollo-web">
+                <div class="project-card">
+                    <div class="card-img-wrapper">
+                        <img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80" alt="Portal Inmobiliario Smart & CRM" loading="lazy">
+                        <span class="card-category-badge">🌐 Desarrollo Web</span>
+                    </div>
+                    <div class="project-card-body">
+                        <h3 class="project-card-title">Portal Inmobiliario Smart &amp; CRM</h3>
+                        <p class="project-card-desc">
+                            Aplicación web interactiva con mapas dinámicos, tours virtuales 3D y administración automatizada de prospectos comerciales.
+                        </p>
+                        <div class="tech-badges-list">
+                            <span class="tech-badge">JavaScript ES6</span>
+                            <span class="tech-badge">PHP</span>
+                            <span class="tech-badge">Leaflet Maps</span>
+                            <span class="tech-badge">MySQL</span>
+                        </div>
+                        <a href="#demo" class="btn-card-action">
+                            <span>Ver Proyecto</span>
+                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- =========================================
+             GALERÍA ACORDEÓN (AccordionGallery)
+             Se muestra al seleccionar categorías específicas
+             ========================================= -->
+        <div class="accordion-gallery" id="accordionGallery" style="display:none;"></div>
+
+    </section>
+
+    <!-- =========================================
+         FOOTER MINIMALISTA
+         ========================================= -->
+    <footer class="custom-footer">
+        <div class="container px-4">
+            <div class="row align-items-center gy-4">
+                <div class="col-md-6 text-center text-md-start">
+                    <a class="navbar-brand text-white fw-bold fs-4 d-inline-block mb-1" href="#">Devioz</a>
+                    <p class="text-secondary small mb-0" style="color: #94a3b8 !important;">
+                        Creando soluciones digitales modernas, experiencias inmersivas y código de alto impacto.
+                    </p>
+                </div>
+                <div class="col-md-6 d-flex justify-content-center justify-content-md-end gap-2">
+                    <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="footer-social-link" title="GitHub">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M9 19c-5 1.5-5-2.5-7-3m14 6v-3.87a3.37 3.37 0 0 0-.94-2.61c3.14-.35 6.44-1.54 6.44-7A5.44 5.44 0 0 0 20 4.77 5.07 5.07 0 0 0 19.91 1S18.73.65 16 2.48a13.38 13.38 0 0 0-7 0C6.27.65 5.09 1 5.09 1A5.07 5.07 0 0 0 5 4.77a5.44 5.44 0 0 0-1.5 3.78c0 5.42 3.3 6.61 6.44 7A3.37 3.37 0 0 0 9 18.13V22"></path>
+                        </svg>
+                    </a>
+                    <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" class="footer-social-link" title="LinkedIn">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M16 8a6 6 0 0 1 6 6v7h-4v-7a2 2 0 0 0-2-2 2 2 0 0 0-2 2v7h-4v-7a6 6 0 0 1 6-6z"></path>
+                            <rect x="2" y="9" width="4" height="12"></rect>
+                            <circle cx="4" cy="4" r="2"></circle>
+                        </svg>
+                    </a>
+                    <a href="https://instagram.com" target="_blank" rel="noopener noreferrer" class="footer-social-link" title="Instagram">
+                        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <rect x="2" y="2" width="20" height="20" rx="5" ry="5"></rect>
+                            <path d="M16 11.37A4 4 0 1 1 12.63 8 4 4 0 0 1 16 11.37z"></path>
+                            <line x1="17.5" y1="6.5" x2="17.51" y2="6.5"></line>
+                        </svg>
+                    </a>
+                </div>
+            </div>
+            <hr class="my-4" style="border-color: rgba(255, 255, 255, 0.08);">
+            <div class="text-center text-secondary small" style="color: #64748b !important;">
+                © 2026 Devioz. Todos los derechos reservados.
+            </div>
+        </div>
+    </footer>
+
+    <!-- Fondo de Scanner WebGL -->
+    <div id="scanner-bg" class="scanner-container"></div>
+
+    <!-- Bootstrap 5 JS Bundle -->
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+    <!-- Custom JS (GooeyNav + AccordionGallery) -->
+    <script src="assets/js/main.js"></script>
+    <!-- ParticleText Component (React Bits Vanilla) -->
+    <script src="assets/js/particles.js"></script>
+    <script type="module">
+        import { initScanner } from './assets/js/scanner.js';
+        document.addEventListener('DOMContentLoaded', () => {
+            initScanner('scanner-bg', {
+                color1: '#004d47',
+                color2: '#00e5d4',
+                color3: '#ffffff',
+                glow: 0.28
+            });
+        });
+    </script>
+</body>
+</html>

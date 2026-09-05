@@ -1,0 +1,2 @@
+-- Script SQL para portafolio_devioz
+-- Pega tu código SQL aquí para crear las tablas 'usuarios', 'categorias' y 'proyectos'

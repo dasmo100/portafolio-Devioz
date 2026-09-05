@@ -1,0 +1,1014 @@
+/* Estilos principales del portafolio */
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    background-color: #06060e !important;
+    color: #ffffff;
+    margin: 0;
+    padding: 0;
+    overflow-x: hidden;
+    position: relative;
+    min-height: 100vh;
+}
+
+/* Bloqueo de desplazamiento para la portada (Hero) */
+body.no-scroll,
+.no-scroll {
+    overflow: hidden !important;
+    height: 100vh !important;
+}
+
+.scanner-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    overflow: hidden;
+    z-index: -1;
+    pointer-events: none;
+}
+
+/* Capa superior para el contenido */
+.hero-content {
+    position: relative;
+    z-index: 10;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    min-height: 100vh;
+    text-align: center;
+    transition: opacity 0.25s ease, visibility 0.25s ease;
+    padding-top: 70px;
+    padding-bottom: 40px;
+}
+
+/* =========================================
+   COMPONENTE PARTICLE TEXT (React Bits)
+   ========================================= */
+.particle-text-container {
+    width: 100%;
+    max-width: 1200px;
+    height: 150px;
+    position: relative;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 0 auto 10px;
+    pointer-events: none;
+    overflow: visible;
+}
+
+#particleTextCanvas {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 100vw;
+    max-width: 1400px;
+    height: 560px;
+    display: block;
+    pointer-events: none;
+    overflow: visible;
+}
+
+/* Asegurar que botones y enlaces del Hero reciban clics sin interferencias */
+.hero-content h1,
+.hero-content p,
+.hero-content .btn,
+.hero-content .d-flex {
+    position: relative;
+    z-index: 20;
+    pointer-events: auto;
+}
+
+@media (max-height: 850px) {
+    .particle-text-container {
+        height: 130px;
+        margin-bottom: 5px;
+    }
+    #particleTextCanvas {
+        height: 500px;
+    }
+}
+
+@media (max-width: 768px) {
+    .particle-text-container {
+        height: 95px;
+        margin-bottom: 5px;
+    }
+    #particleTextCanvas {
+        height: 380px;
+    }
+}
+
+/* Sección de proyectos: ajuste de espaciado limpio con respecto a la navbar fija */
+.projects-section {
+    scroll-margin-top: 90px;
+    padding-top: 105px;
+    padding-bottom: 70px;
+    min-height: calc(100vh - 120px);
+}
+
+@media (max-width: 768px) {
+    .projects-section {
+        padding-top: 95px;
+        padding-bottom: 45px;
+    }
+}
+
+/* =========================================
+   ESTADO INICIAL: barra de categorías oculta
+   Se revela al hacer clic en "Explorar Proyectos"
+   ========================================= */
+#nav-categories-wrapper {
+    opacity: 0;
+    visibility: hidden;
+    pointer-events: none;
+    max-width: 0;
+    overflow: hidden;
+    transition: opacity 0.35s ease, visibility 0.35s ease, max-width 0.45s cubic-bezier(0.25, 1, 0.5, 1), transform 0.35s ease;
+    transform: translateY(-4px) scale(0.97);
+}
+
+#nav-categories-wrapper.nav-categories-visible {
+    opacity: 1;
+    visibility: visible;
+    pointer-events: auto;
+    max-width: 1400px;
+    transform: translateY(0) scale(1);
+    overflow: visible;
+    flex-shrink: 1;
+}
+
+/* Navbar Glassmorphism */
+.custom-navbar {
+    background: rgba(15, 15, 25, 0.7);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
+    margin-top: 18px;
+    padding: 6px 16px;
+    max-width: 98vw;
+    transition: max-width 0.4s cubic-bezier(0.25, 1, 0.5, 1);
+    overflow: visible;
+}
+
+.custom-navbar .navbar-brand {
+    cursor: pointer;
+    user-select: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    flex-shrink: 0;
+}
+
+.brand-logo-img {
+    height: 36px;
+    width: auto;
+    max-width: 140px;
+    object-fit: contain;
+    display: inline-block;
+    vertical-align: middle;
+    filter: drop-shadow(0 0 10px rgba(0, 180, 167, 0.45));
+    transition: transform 0.25s ease, filter 0.25s ease;
+}
+
+.custom-navbar .navbar-brand:hover .brand-logo-img {
+    transform: scale(1.05);
+    filter: drop-shadow(0 0 16px rgba(0, 229, 212, 0.7));
+}
+
+.custom-navbar .navbar-brand:hover {
+    opacity: 0.95;
+    transform: scale(1.02);
+}
+
+.custom-navbar .btn-secondary-glass {
+    flex-shrink: 0;
+    margin-left: auto;
+    position: relative;
+    z-index: 10;
+    padding: 6px 14px;
+    font-size: 0.82rem;
+    white-space: nowrap;
+}
+
+.custom-navbar .navbar-nav {
+    scrollbar-width: none;
+    -ms-overflow-style: none;
+    overflow: visible;
+    flex-shrink: 0;
+}
+
+#nav-categories-list {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 6px;
+    margin: 0;
+    padding: 2px 0;
+    overflow: visible !important;
+}
+
+.custom-navbar .navbar-nav::-webkit-scrollbar {
+    display: none;
+}
+
+/* =========================================
+   ANIMACIÓN GOOEY NAV (React Bits Vanilla)
+   ========================================= */
+.gooey-nav-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 6px;
+    overflow: visible;
+}
+
+/* Capa de efecto viscoso con filtro SVG */
+.gooey-layer {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 1;
+    filter: url('#goo');
+    overflow: visible;
+}
+
+/* Pastilla líquida flotante */
+.gooey-pill {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: #00b4a7;
+    border-radius: 12px;
+    transition: all 0.5s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+    box-shadow: 0 0 18px rgba(0, 180, 167, 0.75), 0 0 8px rgba(0, 229, 212, 0.5);
+    opacity: 0;
+    pointer-events: none;
+    will-change: transform, width, height;
+}
+
+/* Contenedor de burbujas/partículas */
+.gooey-bubbles {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+}
+
+/* Burbujas metaball individuales */
+.gooey-bubble {
+    position: absolute;
+    top: 0;
+    left: 0;
+    background: #00b4a7;
+    border-radius: 50%;
+    pointer-events: none;
+    will-change: transform, opacity;
+    transition: transform 0.55s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.55s ease-out;
+}
+
+/* Botones de categoría sobre el efecto líquido */
+.nav-category-btn {
+    position: relative;
+    z-index: 2;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 13px;
+    border-radius: 12px;
+    font-size: 0.82rem;
+    font-weight: 500;
+    color: #cbd5e1;
+    text-decoration: none;
+    background: transparent !important;
+    border: 1px solid transparent;
+    transition: color 0.25s ease;
+    white-space: nowrap;
+    flex-shrink: 0;
+}
+
+@media (max-width: 1280px) {
+    .nav-category-btn {
+        padding: 5px 10px;
+        font-size: 0.78rem;
+        gap: 5px;
+    }
+}
+
+.nav-category-btn:hover {
+    color: #ffffff;
+    background: transparent !important;
+    border-color: transparent;
+    transform: none;
+}
+
+.nav-category-btn.active {
+    color: #ffffff;
+    font-weight: 600;
+    background: transparent !important;
+    border-color: transparent;
+    box-shadow: none;
+}
+
+
+/* Badge y Botones estilo React Bits */
+.badge-pill {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 20px;
+    padding: 6px 16px;
+    font-size: 0.85rem;
+    color: #e2e8f0;
+    display: inline-block;
+}
+
+.btn-main {
+    background: linear-gradient(135deg, #00b4a7 0%, #007c72 100%);
+    color: #ffffff;
+    font-weight: 600;
+    border-radius: 12px;
+    padding: 10px 24px;
+    border: 1px solid rgba(0, 229, 212, 0.35);
+    box-shadow: 0 4px 16px rgba(0, 180, 167, 0.3);
+    transition: transform 0.2s ease, background 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-main:hover {
+    transform: translateY(-2px);
+    background: linear-gradient(135deg, #00c9b7 0%, #008f84 100%);
+    color: #ffffff;
+    box-shadow: 0 6px 22px rgba(0, 180, 167, 0.55);
+}
+
+.btn-secondary-glass {
+    background: rgba(255, 255, 255, 0.08);
+    color: #ffffff;
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 12px;
+    padding: 10px 24px;
+    transition: background 0.2s ease, transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.btn-secondary-glass:hover {
+    background: rgba(0, 180, 167, 0.12);
+    border-color: rgba(0, 180, 167, 0.4);
+    box-shadow: 0 0 14px rgba(0, 180, 167, 0.25);
+    color: #ffffff;
+    transform: translateY(-2px);
+}
+
+/* =========================================
+   SECCIÓN PROYECTOS DESTACADOS
+   ========================================= */
+.projects-section {
+    position: relative;
+    z-index: 10;
+    padding: 90px 0 110px;
+}
+
+/* Barra de Filtros */
+.filter-bar {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 10px;
+    margin-bottom: 50px;
+}
+
+.filter-pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 8px 18px;
+    border-radius: 50px;
+    font-size: 0.88rem;
+    font-weight: 500;
+    color: #94a3b8;
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    cursor: pointer;
+    transition: all 0.25s ease;
+    user-select: none;
+}
+
+.filter-pill:hover {
+    color: #ffffff;
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.25);
+    transform: translateY(-2px);
+}
+
+.filter-pill.active {
+    color: #ffffff;
+    background: #00bba6;
+    border-color: #00bba6;
+    box-shadow: 0 4px 16px rgba(0, 187, 166, 0.4);
+}
+
+/* Tarjetas de Proyecto Glassmorphism */
+.project-card {
+    position: relative;
+    background: rgba(255, 255, 255, 0.03);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 20px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    height: 100%;
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    transition: transform 0.35s ease-in-out, box-shadow 0.35s ease-in-out, border-color 0.35s ease-in-out;
+}
+
+.project-card:hover {
+    transform: translateY(-5px);
+    border-color: rgba(0, 180, 167, 0.45);
+    box-shadow: 0 16px 36px -6px rgba(0, 0, 0, 0.7), 0 0 25px rgba(0, 180, 167, 0.35), 0 0 12px rgba(0, 229, 212, 0.2);
+}
+
+/* Contenedor de Imagen y Zoom */
+.card-img-wrapper {
+    position: relative;
+    height: 220px;
+    overflow: hidden;
+}
+
+.card-img-wrapper img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.project-card:hover .card-img-wrapper img {
+    transform: scale(1.08);
+}
+
+/* Badge de categoría en la esquina de la imagen */
+.card-category-badge {
+    position: absolute;
+    top: 14px;
+    left: 14px;
+    background: rgba(6, 6, 14, 0.78);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 20px;
+    padding: 5px 12px;
+    font-size: 0.76rem;
+    font-weight: 500;
+    color: #f1f5f9;
+    z-index: 2;
+}
+
+/* Cuerpo de la tarjeta */
+.project-card-body {
+    padding: 24px;
+    display: flex;
+    flex-direction: column;
+    flex-grow: 1;
+}
+
+.project-card-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #ffffff;
+    margin-bottom: 8px;
+    line-height: 1.35;
+}
+
+.project-card-desc {
+    color: #94a3b8;
+    font-size: 0.9rem;
+    line-height: 1.55;
+    margin-bottom: 18px;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+/* Mini Badges de Tecnologías */
+.tech-badges-list {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+    margin-bottom: 22px;
+}
+
+.tech-badge {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 8px;
+    padding: 4px 10px;
+    font-size: 0.75rem;
+    font-weight: 500;
+    color: #cbd5e1;
+    letter-spacing: 0.02em;
+}
+
+/* Botón inferior de acción */
+.btn-card-action {
+    background: rgba(255, 255, 255, 0.06);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    border-radius: 12px;
+    padding: 10px 18px;
+    font-weight: 600;
+    font-size: 0.88rem;
+    text-decoration: none;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    transition: all 0.25s ease;
+    margin-top: auto;
+}
+
+.btn-card-action:hover {
+    background: #ffffff;
+    color: #000000;
+    border-color: #ffffff;
+    box-shadow: 0 6px 18px rgba(255, 255, 255, 0.25);
+    transform: translateY(-2px);
+}
+
+/* =========================================
+   FOOTER MINIMALISTA
+   ========================================= */
+.custom-footer {
+    position: relative;
+    z-index: 10;
+    background: rgba(6, 6, 14, 0.88);
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    border-top: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 50px 0 30px;
+}
+
+.footer-social-link {
+    width: 40px;
+    height: 40px;
+    border-radius: 10px;
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    color: #94a3b8;
+    text-decoration: none;
+    transition: all 0.2s ease;
+}
+
+.footer-social-link:hover {
+    background: rgba(255, 255, 255, 0.15);
+    color: #ffffff;
+    border-color: rgba(255, 255, 255, 0.25);
+    transform: translateY(-2px);
+}
+
+/* =========================================
+   GALERÍA ACORDEÓN (AccordionGallery)
+   Basado en el componente AccordionGallery de React Bits
+   ========================================= */
+.accordion-gallery {
+    display: flex;
+    flex-direction: row;
+    gap: 16px;
+    width: 100%;
+    height: 450px;
+    margin-top: 16px;
+}
+
+.accordion-item {
+    flex: 1;
+    position: relative;
+    border-radius: 20px;
+    overflow: hidden;
+    cursor: pointer;
+    transition: flex 0.5s cubic-bezier(0.25, 1, 0.5, 1);
+    border: 1px solid rgba(255, 255, 255, 0.07);
+}
+
+.accordion-item:hover,
+.accordion-item.active {
+    flex: 3.5;
+}
+
+/* Imagen de fondo */
+.accordion-item img {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    transition: transform 0.5s ease;
+    filter: brightness(0.75);
+}
+
+.accordion-item:hover img,
+.accordion-item.active img {
+    transform: scale(1.06);
+    filter: brightness(0.6);
+}
+
+/* Degradado inferior oscuro para legibilidad del label */
+.accordion-item::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(
+        to bottom,
+        transparent 35%,
+        rgba(0, 0, 0, 0.80) 100%
+    );
+    pointer-events: none;
+    z-index: 1;
+}
+
+/* Etiqueta/Label flotante en la esquina inferior izquierda */
+.accordion-label {
+    position: absolute;
+    bottom: 22px;
+    left: 22px;
+    z-index: 2;
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    opacity: 0;
+    transform: translateY(8px);
+    transition: opacity 0.35s ease 0.1s, transform 0.35s ease 0.1s;
+    pointer-events: none;
+    min-width: 0;
+    max-width: calc(100% - 44px);
+}
+
+.accordion-item:hover .accordion-label,
+.accordion-item.active .accordion-label {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* Número de índice lateral (visible siempre) */
+.accordion-index {
+    position: absolute;
+    top: 18px;
+    left: 18px;
+    z-index: 2;
+    font-size: 0.7rem;
+    font-weight: 700;
+    letter-spacing: 0.12em;
+    color: rgba(255, 255, 255, 0.45);
+    text-transform: uppercase;
+    transition: color 0.3s ease;
+}
+
+.accordion-item:hover .accordion-index,
+.accordion-item.active .accordion-index {
+    color: rgba(255, 255, 255, 0.9);
+}
+
+.accordion-category-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: rgba(82, 39, 255, 0.7);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(82, 39, 255, 0.4);
+    border-radius: 20px;
+    padding: 4px 12px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    color: #ffffff;
+    letter-spacing: 0.04em;
+    width: fit-content;
+}
+
+.accordion-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1.3;
+    margin: 0;
+    text-shadow: 0 2px 8px rgba(0,0,0,0.6);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.accordion-tech-row {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 6px;
+    overflow: hidden;
+}
+
+.accordion-tech-badge {
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.18);
+    border-radius: 6px;
+    padding: 2px 9px;
+    font-size: 0.7rem;
+    font-weight: 500;
+    color: #e2e8f0;
+    white-space: nowrap;
+}
+
+/* =========================================
+   TRANSICIÓN DE VISTAS (Grid ↔ Acordeón)
+   ========================================= */
+#projects-grid {
+    transition: opacity 0.3s ease;
+}
+
+#projects-grid.hidden-view {
+    display: none !important;
+}
+
+#accordionGallery.hidden-view {
+    display: none !important;
+}
+
+/* =========================================
+   PANEL ADMINISTRATIVO & LOGIN (Devioz Admin)
+   ========================================= */
+.admin-login-wrapper {
+    min-height: 100vh;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+    position: relative;
+    z-index: 10;
+}
+
+.glass-card {
+    background: rgba(18, 18, 30, 0.75);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 24px;
+    box-shadow: 0 20px 50px rgba(0, 0, 0, 0.6), 0 0 30px rgba(139, 92, 246, 0.15);
+}
+
+.form-control-glass {
+    background: rgba(255, 255, 255, 0.05) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    color: #ffffff !important;
+    border-radius: 12px;
+    padding: 12px 16px;
+    font-size: 0.95rem;
+    transition: all 0.25s ease;
+}
+
+.form-control-glass:focus {
+    background: rgba(255, 255, 255, 0.08) !important;
+    border-color: rgba(139, 92, 246, 0.6) !important;
+    box-shadow: 0 0 0 3px rgba(139, 92, 246, 0.2) !important;
+    color: #ffffff !important;
+}
+
+.form-control-glass::placeholder {
+    color: #64748b !important;
+}
+
+.form-label-custom {
+    color: #cbd5e1;
+    font-size: 0.88rem;
+    font-weight: 500;
+    margin-bottom: 6px;
+}
+
+/* Navbar Admin */
+.admin-navbar {
+    background: rgba(15, 15, 25, 0.85);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    padding: 16px 0;
+    position: sticky;
+    top: 0;
+    z-index: 100;
+}
+
+/* Tabla oscura Glassmorphism */
+.admin-table-container {
+    background: rgba(18, 18, 30, 0.6);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    overflow: hidden;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.4);
+}
+
+.admin-table {
+    margin-bottom: 0;
+    color: #e2e8f0;
+    vertical-align: middle;
+}
+
+.admin-table thead th {
+    background: rgba(255, 255, 255, 0.04);
+    color: #94a3b8;
+    font-size: 0.82rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    font-weight: 600;
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.admin-table tbody td {
+    padding: 16px 20px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+    background: transparent;
+    color: #f1f5f9;
+}
+
+.admin-table tbody tr:hover td {
+    background: rgba(255, 255, 255, 0.03);
+}
+
+.admin-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.admin-thumb-img {
+    width: 60px;
+    height: 42px;
+    object-fit: cover;
+    border-radius: 8px;
+    border: 1px solid rgba(255, 255, 255, 0.12);
+}
+
+/* Botones de acción */
+.btn-action {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 10px;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    background: rgba(255, 255, 255, 0.05);
+    color: #cbd5e1;
+    transition: all 0.2s ease;
+    text-decoration: none;
+    cursor: pointer;
+}
+
+.btn-action-edit:hover {
+    background: rgba(0, 180, 167, 0.2);
+    border-color: rgba(0, 180, 167, 0.5);
+    color: #5eead4;
+    transform: translateY(-2px);
+}
+
+.btn-action-delete:hover {
+    background: rgba(239, 68, 68, 0.2);
+    border-color: rgba(239, 68, 68, 0.4);
+    color: #fca5a5;
+    transform: translateY(-2px);
+}
+
+/* =========================================
+   LAYOUT SPLIT ADMIN (30% / 70% 100vh) & OPTIONWHEEL 3D
+   ========================================= */
+.admin-split-layout {
+    display: flex;
+    height: 100vh;
+    width: 100vw;
+    overflow: hidden;
+    background-color: #06060e;
+    position: relative;
+}
+
+/* Columna Izquierda: OptionWheel 3D (30%) */
+.admin-wheel-col {
+    width: 30%;
+    min-width: 320px;
+    max-width: 420px;
+    height: 100vh;
+    background: linear-gradient(180deg, #071716 0%, #06060e 50%, #061413 100%);
+    border-right: 1px solid rgba(0, 180, 167, 0.12);
+    display: flex;
+    flex-direction: column;
+    position: relative;
+    user-select: none;
+    z-index: 20;
+}
+
+.option-wheel {
+  --ow-text-color: #a6a6a6;
+  --ow-active-color: #ffffff;
+  --ow-font-size: 1.85rem;
+  --ow-inset: 36px;
+  position: relative;
+  width: 100%;
+  height: 100vh; /* Ajustado al alto de la columna */
+  overflow: hidden;
+  cursor: grab;
+  user-select: none;
+  touch-action: none;
+  outline: none;
+  background: transparent;
+}
+.option-wheel--dragging { cursor: grabbing; }
+.option-wheel__item {
+  position: absolute;
+  top: 50%;
+  left: var(--ow-inset);
+  white-space: nowrap;
+  font-size: var(--ow-font-size);
+  line-height: 1;
+  font-weight: 200;
+  transform-origin: left center;
+  cursor: pointer;
+  will-change: transform, opacity, filter;
+  color: color-mix(in srgb, var(--ow-active-color) calc(var(--ow-p, 0) * 100%), var(--ow-text-color));
+  transition: font-weight 0.2s ease;
+}
+.option-wheel__item--selected { 
+  font-weight: 600; 
+  text-shadow: 0 0 20px rgba(0, 229, 212, 0.35);
+}
+
+/* Columna Derecha: Contenedor Principal (70%) */
+.admin-main-col {
+    width: 70%;
+    flex: 1;
+    height: 100vh;
+    overflow-y: auto;
+    display: flex;
+    flex-direction: column;
+    background: #06060e;
+    position: relative;
+}
+
+/* Encabezado con ParticleText Canvas */
+.admin-particle-header {
+    height: 150px;
+    width: 100%;
+    position: relative;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(10, 10, 22, 0.5);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    overflow: hidden;
+    flex-shrink: 0;
+}
+
+#adminParticleText {
+    width: 100%;
+    height: 150px;
+    display: block;
+    cursor: default;
+}
+
+/* Contenido de gestión de proyectos */
+.admin-content-area {
+    flex: 1;
+    padding: 32px 36px 48px;
+}
+
+@media (max-width: 992px) {
+    .admin-split-layout {
+        flex-direction: column;
+        height: auto;
+        min-height: 100vh;
+        overflow: visible;
+    }
+    .admin-wheel-col {
+        width: 100%;
+        max-width: 100%;
+        height: 280px;
+        min-height: 280px;
+    }
+    .admin-main-col {
+        width: 100%;
+        height: auto;
+        overflow: visible;
+    }
+    .admin-content-area {
+        padding: 24px 18px 40px;
+    }
+}
+
