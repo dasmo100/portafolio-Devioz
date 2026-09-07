@@ -1,6 +1,7 @@
 // =========================================
 // Portafolio Devioz — particles.js
 // Componente ParticleText (React Bits → Vanilla JS & HTML5 Canvas)
+// "Portafolio Devioz" con iniciales 'P' y 'D' en gradiente emblemático Devioz
 // =========================================
 
 (function() {
@@ -23,10 +24,10 @@
 
     // Parámetros de configuración del componente React Bits
     const CONFIG = {
-        text: 'Devioz',
-        density: 4,          // Saltar cada 4 píxeles en el scan de ImageData
+        text: 'Portafolio Devioz',
+        density: 4,          // Saltar cada 4 píxeles en el scan de ImageData (densidad exacta original)
         particleSize: 2.0,   // Radio de partícula (~4px diámetro visible con glow)
-        idleDrift: 0.7,      // Amplitud de flotación orgánica en reposo
+        idleDrift: 0.5,      // Amplitud de flotación orgánica en reposo
         scatter: 165,        // Dispersión inicial armónica (sin recortar bordes)
         duration: 1500,      // Duración de la agrupación en ms
         stagger: 360,        // Retraso escalonado en ms
@@ -40,15 +41,46 @@
 
     // Calcula el tamaño tipográfico armónico y responsivo
     function getResponsiveFontSize(canvasWidth) {
-        const minSize = 60;
-        const maxSize = 165;
-        const vwSize = canvasWidth * 0.135;
+        const minSize = 36;
+        const maxSize = 120;
+        const vwSize = canvasWidth * 0.088;
         return Math.round(Math.max(minSize, Math.min(maxSize, vwSize)));
     }
 
     // Curva de aceleración/desaceleración cubic out
     function easeOutCubic(t) {
         return 1 - Math.pow(1 - t, 3);
+    }
+
+    // Paleta de gradiente cromático continuo y detallado para los emblemas 'P' y 'D' de Devioz
+    // Sin puntos blancos ni saltos de color: transición suave de verde petróleo a cian luminoso
+    const D_GRADIENT_STOPS = [
+        { pos: 0.00, r: 0,   g: 48,  b: 46  },  // Verde petróleo profundo (#00302e) - Tallo izquierdo
+        { pos: 0.18, r: 0,   g: 72,  b: 68  },  // Petróleo medio intenso (#004844)
+        { pos: 0.36, r: 0,   g: 104, b: 96  },  // Esmeralda profundo (#006860)
+        { pos: 0.54, r: 0,   g: 142, b: 130 },  // Cerceta esmeralda viva (#008e82) - Zona central
+        { pos: 0.72, r: 0,   g: 180, b: 165 },  // Turquesa luminosa (#00b4a5)
+        { pos: 0.88, r: 0,   g: 215, b: 198 },  // Cian esmeralda brillante (#00d7c6)
+        { pos: 1.00, r: 0,   g: 238, b: 220 }   // Cian eléctrico tecnológico (#00eedc) - Arco exterior
+    ];
+
+    // Interpola el color a lo largo del gradiente oficial Devioz
+    function getGradientColor(progress) {
+        let c1 = D_GRADIENT_STOPS[0];
+        let c2 = D_GRADIENT_STOPS[D_GRADIENT_STOPS.length - 1];
+        for (let s = 0; s < D_GRADIENT_STOPS.length - 1; s++) {
+            if (progress >= D_GRADIENT_STOPS[s].pos && progress <= D_GRADIENT_STOPS[s + 1].pos) {
+                c1 = D_GRADIENT_STOPS[s];
+                c2 = D_GRADIENT_STOPS[s + 1];
+                break;
+            }
+        }
+        const span = (c2.pos - c1.pos) || 0.01;
+        const localT = (progress - c1.pos) / span;
+        const r = Math.round(c1.r + (c2.r - c1.r) * localT);
+        const g = Math.round(c1.g + (c2.g - c1.g) * localT);
+        const b = Math.round(c1.b + (c2.b - c1.b) * localT);
+        return `rgb(${r}, ${g}, ${b})`;
     }
 
     // Inicializa o recrea el arreglo de partículas leyendo los píxeles del texto
@@ -65,7 +97,7 @@
         const fontSize = getResponsiveFontSize(width);
 
         offCtx.clearRect(0, 0, width, height);
-        // Tipografía elegante ultra-bold
+        // Tipografía elegante ultra-bold idéntica al diseño original
         offCtx.font = `800 ${fontSize}px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
         offCtx.textAlign = 'center';
         offCtx.textBaseline = 'middle';
@@ -80,48 +112,59 @@
         }
 
         // Medir dimensiones del texto para identificar con precisión quirúrgica
-        // la letra 'D' (emblema verde petróleo/esmeralda) y las letras 'evioz' (blanco puro) del logotipo
+        // las letras emblemáticas 'P' y 'D' (verde petróleo a cian) y las demás letras (blanco puro)
         const totalWidth = offCtx.measureText(CONFIG.text).width;
         const textStartX = (width - totalWidth) / 2;
-        const dWidth = offCtx.measureText('D').width;
 
-        // Búsqueda del espacio interletra entre 'D' y 'e'
-        const searchMinX = Math.round(textStartX + dWidth * 0.85);
-        const searchMaxX = Math.round(textStartX + dWidth * 1.30);
-        let minPixelCount = Infinity;
-        let splitX = Math.round(textStartX + dWidth * 1.02);
+        // 1. Identificar límites exactos de la letra 'P' (primera letra de "Portafolio")
+        const pWidth = offCtx.measureText('P').width;
+        const pMinX = textStartX;
+        const pSearchMinX = Math.round(textStartX + pWidth * 0.82);
+        const pSearchMaxX = Math.round(textStartX + pWidth * 1.30);
+        let pMinPixelCount = Infinity;
+        let pSplitX = Math.round(textStartX + pWidth * 1.02);
 
-        for (let col = searchMinX; col <= searchMaxX && col < width; col++) {
+        for (let col = pSearchMinX; col <= pSearchMaxX && col < width; col++) {
             let count = 0;
             for (let row = 0; row < height; row += CONFIG.density) {
-                if (imgData[(row * width + col) * 4 + 3] > 100) {
-                    count++;
-                }
+                if (imgData[(row * width + col) * 4 + 3] > 100) count++;
             }
-            if (count < minPixelCount) {
-                minPixelCount = count;
-                splitX = col;
+            if (count < pMinPixelCount) {
+                pMinPixelCount = count;
+                pSplitX = col;
                 if (count === 0) break;
             }
         }
 
-        const dMinX = textStartX;
-        const dMaxX = splitX;
+        // 2. Identificar límites exactos de la letra 'D' (primera letra de "Devioz")
+        const deviozIndex = CONFIG.text.indexOf('Devioz');
+        const prefix = (deviozIndex !== -1) ? CONFIG.text.substring(0, deviozIndex) : '';
+        const prefixWidth = offCtx.measureText(prefix).width;
+        const dStartX = textStartX + prefixWidth;
+        const dWidth = offCtx.measureText('D').width;
+        const dSearchMinX = Math.round(dStartX + dWidth * 0.82);
+        const dSearchMaxX = Math.round(dStartX + dWidth * 1.30);
+        let dMinPixelCount = Infinity;
+        let dSplitX = Math.round(dStartX + dWidth * 1.02);
+
+        for (let col = dSearchMinX; col <= dSearchMaxX && col < width; col++) {
+            let count = 0;
+            for (let row = 0; row < height; row += CONFIG.density) {
+                if (imgData[(row * width + col) * 4 + 3] > 100) count++;
+            }
+            if (count < dMinPixelCount) {
+                dMinPixelCount = count;
+                dSplitX = col;
+                if (count === 0) break;
+            }
+        }
+
+        const dMinX = dStartX;
+        const dMaxX = dSplitX;
+        const pMaxX = pSplitX;
         const textCenterY = height / 2;
         const dMinY = textCenterY - fontSize * 0.5;
         const dMaxY = textCenterY + fontSize * 0.5;
-
-        // Paleta de gradiente cromático continuo y detallado para el emblema 'D' de Devioz
-        // Sin puntos blancos ni saltos de color: transición suave de verde petróleo a cian luminoso
-        const D_GRADIENT_STOPS = [
-            { pos: 0.00, r: 0,   g: 48,  b: 46  },  // Verde petróleo profundo (#00302e) - Tallo izquierdo
-            { pos: 0.18, r: 0,   g: 72,  b: 68  },  // Petróleo medio intenso (#004844)
-            { pos: 0.36, r: 0,   g: 104, b: 96  },  // Esmeralda profundo (#006860)
-            { pos: 0.54, r: 0,   g: 142, b: 130 },  // Cerceta esmeralda viva (#008e82) - Zona central
-            { pos: 0.72, r: 0,   g: 180, b: 165 },  // Turquesa luminosa (#00b4a5)
-            { pos: 0.88, r: 0,   g: 215, b: 198 },  // Cian esmeralda brillante (#00d7c6)
-            { pos: 1.00, r: 0,   g: 238, b: 220 }   // Cian eléctrico tecnológico (#00eedc) - Arco exterior
-        ];
 
         particles = [];
         const now = performance.now();
@@ -130,7 +173,10 @@
             for (let x = 0; x < width; x += CONFIG.density) {
                 const alpha = imgData[(y * width + x) * 4 + 3];
                 if (alpha > 120) {
-                    const isD = (x < splitX);
+                    const isP = (x >= pMinX && x < pMaxX);
+                    const isD = (x >= dMinX && x < dMaxX);
+                    const isBrand = (isP || isD);
+
                     // Dispersión radial suave (potencia 0.75 para nube orgánica sin cortes rectangulares)
                     const angle = Math.random() * Math.PI * 2;
                     const dist = Math.pow(Math.random(), 0.75) * CONFIG.scatter;
@@ -138,31 +184,20 @@
                     const startY = y + Math.sin(angle) * dist;
 
                     let color;
-                    if (isD) {
-                        // Letra 'D' del logotipo oficial de Devioz:
-                        // Gradiente continuo tridimensional sin puntos blancos que arruinen el color
+                    if (isP) {
+                        // Letra 'P' de Portafolio: mismo gradiente emblemático que la 'D'
+                        const tx = Math.max(0, Math.min(1, (x - pMinX) / Math.max(1, pMaxX - pMinX)));
+                        const ty = Math.max(0, Math.min(1, (y - dMinY) / Math.max(1, dMaxY - dMinY)));
+                        const progress = Math.max(0, Math.min(1, tx * 0.88 + (1 - ty) * 0.12 + (Math.random() - 0.5) * 0.04));
+                        color = getGradientColor(progress);
+                    } else if (isD) {
+                        // Letra 'D' del logotipo oficial de Devioz: gradiente emblemático
                         const tx = Math.max(0, Math.min(1, (x - dMinX) / Math.max(1, dMaxX - dMinX)));
                         const ty = Math.max(0, Math.min(1, (y - dMinY) / Math.max(1, dMaxY - dMinY)));
                         const progress = Math.max(0, Math.min(1, tx * 0.88 + (1 - ty) * 0.12 + (Math.random() - 0.5) * 0.04));
-
-                        let c1 = D_GRADIENT_STOPS[0];
-                        let c2 = D_GRADIENT_STOPS[D_GRADIENT_STOPS.length - 1];
-                        for (let s = 0; s < D_GRADIENT_STOPS.length - 1; s++) {
-                            if (progress >= D_GRADIENT_STOPS[s].pos && progress <= D_GRADIENT_STOPS[s + 1].pos) {
-                                c1 = D_GRADIENT_STOPS[s];
-                                c2 = D_GRADIENT_STOPS[s + 1];
-                                break;
-                            }
-                        }
-                        const span = (c2.pos - c1.pos) || 0.01;
-                        const localT = (progress - c1.pos) / span;
-                        const r = Math.round(c1.r + (c2.r - c1.r) * localT);
-                        const g = Math.round(c1.g + (c2.g - c1.g) * localT);
-                        const b = Math.round(c1.b + (c2.b - c1.b) * localT);
-                        color = `rgb(${r}, ${g}, ${b})`;
+                        color = getGradientColor(progress);
                     } else {
-                        // Letras 'evioz' del logotipo oficial:
-                        // Blanco puro brillante y platino cristalino ('EVIOZ' en devioz-img.png)
+                        // Letras restantes ('ortafolio' y 'evioz'): blanco puro brillante y platino cristalino
                         const randW = Math.random();
                         color = (randW < 0.90) ? '#ffffff' : '#f1f5f9';
                     }
@@ -178,7 +213,7 @@
                         vy: 0,
                         size: CONFIG.particleSize,
                         color: color,
-                        isD: isD,
+                        isBrand: isBrand,
                         spawnTime: now,
                         startTime: now + Math.random() * CONFIG.stagger,
                         duration: CONFIG.duration,
@@ -191,8 +226,8 @@
             }
         }
 
-        // Agrupar: primero las partículas de la 'D', luego las de 'evioz' para optimizar el resplandor por lotes
-        particles.sort((a, b) => (a.isD === b.isD ? 0 : a.isD ? -1 : 1));
+        // Agrupar: primero las partículas de 'P' y 'D', luego las de las demás letras para optimizar el resplandor por lotes
+        particles.sort((a, b) => (a.isBrand === b.isBrand ? 0 : a.isBrand ? -1 : 1));
     }
 
     // Ajusta las dimensiones del canvas según el contenedor físico
@@ -227,15 +262,15 @@
         ctx.clearRect(0, 0, width, height);
 
         const repelRadiusSq = CONFIG.repelRadius * CONFIG.repelRadius;
-        let currentIsD = null;
+        let currentIsBrand = null;
 
         for (let i = 0; i < particles.length; i++) {
             const p = particles[i];
 
-            // Conmutación optimizada por lote: halo verde esmeralda para 'D' y halo blanco para 'evioz'
-            if (p.isD !== currentIsD) {
-                currentIsD = p.isD;
-                if (currentIsD) {
+            // Conmutación optimizada por lote: halo verde esmeralda para 'P' y 'D', y halo blanco para las demás
+            if (p.isBrand !== currentIsBrand) {
+                currentIsBrand = p.isBrand;
+                if (currentIsBrand) {
                     ctx.shadowBlur = CONFIG.shadowBlur;
                     ctx.shadowColor = CONFIG.shadowColor;
                 } else {
