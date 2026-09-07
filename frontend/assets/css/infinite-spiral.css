@@ -1,0 +1,220 @@
+/* =========================================
+   COMPONENTE INFINITE SPIRAL 3D (Vanilla CSS)
+   Portafolio Devioz — Showcase de Proyectos Más Destacados
+   ========================================= */
+
+.spiral-section {
+    position: relative;
+    width: 100%;
+    padding: 70px 0 45px;
+    scroll-margin-top: 90px;
+    overflow: hidden;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    background: radial-gradient(circle at 50% 50%, rgba(0, 229, 212, 0.06) 0%, rgba(94, 234, 212, 0.02) 40%, rgba(6, 6, 14, 0) 75%);
+}
+
+.spiral-header {
+    position: relative;
+    z-index: 10;
+    padding: 0 24px;
+    pointer-events: none;
+}
+
+/* Contenedor principal de la Espiral */
+.infinite-spiral {
+    position: relative;
+    width: 100%;
+    max-width: 1100px;
+    height: 800px;
+    perspective: 1200px;
+    perspective-origin: 50% 50%;
+    overflow: hidden;
+    cursor: grab;
+    user-select: none;
+    -webkit-user-select: none;
+    touch-action: pan-y; /* Permite deslizar la página hacia abajo sin interrupciones */
+    margin: 0 auto;
+}
+
+.infinite-spiral:active,
+.infinite-spiral.is-dragging,
+.infinite-spiral.is-dragging *,
+.infinite-spiral:active * {
+    cursor: grabbing !important;
+}
+
+/* Escenario dinámico en 3D centrado */
+.infinite-spiral__stage {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    transform-style: preserve-3d;
+    transform: translate(-50%, -50%);
+    pointer-events: auto;
+}
+
+/* Tarjeta individual de Proyecto Destacado */
+.infinite-spiral__item {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 160px;
+    height: 160px;
+    transform-style: preserve-3d;
+    transform: translate(-50%, -50%);
+    will-change: transform, opacity, filter;
+    border-radius: 20px;
+    overflow: hidden;
+    background: #08090f;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    box-shadow: 0 18px 45px rgba(0, 0, 0, 0.88), 0 2px 10px rgba(0, 0, 0, 0.6);
+    transition: border-color 0.35s cubic-bezier(0.16, 1, 0.3, 1), 
+                box-shadow 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    cursor: pointer;
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+.infinite-spiral__item:hover {
+    border-color: rgba(0, 229, 212, 0.85);
+    box-shadow: 0 24px 60px rgba(0, 0, 0, 0.95), 0 0 35px rgba(0, 229, 212, 0.4);
+}
+
+/* Badge flotante de Proyecto Destacado (oculto a petición) */
+.infinite-spiral__featured-tag {
+    display: none !important;
+}
+
+/* Imagen del proyecto en colores vivos y nítidos */
+.infinite-spiral__image {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+    pointer-events: none;
+    user-select: none;
+    -webkit-user-drag: none;
+    border-radius: inherit;
+    filter: contrast(1.08) brightness(1.02);
+    transition: transform 0.5s cubic-bezier(0.16, 1, 0.3, 1), filter 0.35s ease;
+    background-color: #0b0c14;
+}
+
+.infinite-spiral__item:hover .infinite-spiral__image {
+    transform: scale(1.08);
+    filter: contrast(1.14) brightness(1.08);
+}
+
+/* Overlay permanente en la base con título y categoría visibles */
+.infinite-spiral__overlay {
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    border-radius: inherit;
+    background: linear-gradient(to top, rgba(6, 6, 14, 0.94) 0%, rgba(6, 6, 14, 0.55) 38%, transparent 70%);
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-end;
+    padding: 14px 12px 12px;
+    opacity: 0.95;
+    transition: opacity 0.3s ease, background 0.3s ease;
+}
+
+.infinite-spiral__item:hover .infinite-spiral__overlay {
+    opacity: 1;
+    background: linear-gradient(to top, rgba(6, 6, 14, 0.98) 0%, rgba(6, 6, 14, 0.72) 48%, transparent 75%);
+}
+
+.infinite-spiral__info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+    transform: translateY(6px);
+    transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.infinite-spiral__item:hover .infinite-spiral__info {
+    transform: translateY(0);
+}
+
+/* Ocultar por completo la categoría en las tarjetas de la espiral */
+.infinite-spiral__badge {
+    display: none !important;
+}
+
+/* Solo título del proyecto visible sobre la imagen */
+.infinite-spiral__title {
+    font-size: 0.88rem;
+    font-weight: 700;
+    color: #ffffff;
+    line-height: 1.25;
+    white-space: normal;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    text-shadow: 0 2px 8px rgba(0, 0, 0, 0.95);
+}
+
+.infinite-spiral__action {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    font-size: 0.70rem;
+    font-weight: 600;
+    color: #ffffff;
+    margin-top: 4px;
+    opacity: 0;
+    transition: opacity 0.25s ease;
+}
+
+.infinite-spiral__item:hover .infinite-spiral__action {
+    opacity: 1;
+    color: #00e5d4;
+}
+
+/* Adaptabilidad para pantallas móviles y tablets */
+@media (max-width: 1200px) {
+    .infinite-spiral {
+        height: 750px;
+    }
+    .infinite-spiral__item {
+        width: 150px;
+        height: 150px;
+        border-radius: 19px;
+    }
+}
+
+@media (max-width: 992px) {
+    .spiral-section {
+        padding: 55px 0 30px;
+    }
+    .infinite-spiral {
+        height: 700px;
+    }
+    .infinite-spiral__item {
+        width: 140px;
+        height: 140px;
+        border-radius: 18px;
+    }
+}
+
+@media (max-width: 576px) {
+    .spiral-section {
+        padding: 40px 0 20px;
+    }
+    .infinite-spiral {
+        height: 600px;
+    }
+    .infinite-spiral__item {
+        width: 130px;
+        height: 130px;
+        border-radius: 16px;
+    }
+}

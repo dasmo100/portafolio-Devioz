@@ -1,5 +1,18 @@
 /* Estilos principales del portafolio */
 
+:root {
+    --linear-ease: linear(
+        0, .068, .19 2.7%, .804 8.1%, 1.037, 1.199 13.2%, 1.245, 1.27 15.8%,
+        1.274, 1.272 17.4%, 1.249 19.1%, .996 28%, .949, .928 33.3%, .926,
+        .933 36.8%, 1.001 45.6%, 1.013, 1.019 50.8%, 1.018 54.4%, 1 63.1%,
+        .995 68%, 1.001 85%, 1
+    );
+    --color-1: #00e5d4;
+    --color-2: #ffffff;
+    --color-3: #2dd4bf;
+    --color-4: #ffffff;
+}
+
 html {
     scroll-behavior: smooth;
 }
@@ -145,63 +158,311 @@ body.no-scroll,
     flex-shrink: 1;
 }
 
-/* Navbar Glassmorphism */
-.custom-navbar {
-    background: rgba(15, 15, 25, 0.7);
-    backdrop-filter: blur(14px);
-    -webkit-backdrop-filter: blur(14px);
-    border: 1px solid rgba(255, 255, 255, 0.1);
-    border-radius: 24px;
-    margin-top: 18px;
-    padding: 6px 16px;
-    max-width: 98vw;
-    transition: max-width 0.4s cubic-bezier(0.25, 1, 0.5, 1);
-    overflow: visible;
-}
-
-.custom-navbar .navbar-brand {
+/* =========================================
+   LOGOTIPO INDEPENDIENTE (Esquina Superior Izquierda)
+   ========================================= */
+.navbar-brand-standalone {
+    position: fixed;
+    top: 18px;
+    left: 32px;
+    z-index: 1050;
+    display: inline-flex;
+    align-items: center;
+    text-decoration: none !important;
     cursor: pointer;
     user-select: none;
-    transition: opacity 0.2s ease, transform 0.2s ease;
-    flex-shrink: 0;
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.3s ease;
 }
 
-.brand-logo-img {
-    height: 36px;
+.navbar-brand-standalone .brand-logo-img {
+    height: 68px;
     width: auto;
-    max-width: 140px;
+    max-width: 250px;
     object-fit: contain;
     display: inline-block;
     vertical-align: middle;
-    filter: drop-shadow(0 0 10px rgba(0, 180, 167, 0.45));
-    transition: transform 0.25s ease, filter 0.25s ease;
+    filter: drop-shadow(0 0 16px rgba(0, 229, 212, 0.45));
+    transition: transform 0.3s cubic-bezier(0.2, 0.8, 0.2, 1), filter 0.3s ease;
 }
 
-.custom-navbar .navbar-brand:hover .brand-logo-img {
-    transform: scale(1.05);
-    filter: drop-shadow(0 0 16px rgba(0, 229, 212, 0.7));
+.navbar-brand-standalone:hover .brand-logo-img {
+    transform: scale(1.06);
+    filter: drop-shadow(0 0 24px rgba(0, 229, 212, 0.85));
 }
 
-.custom-navbar .navbar-brand:hover {
-    opacity: 0.95;
-    transform: scale(1.02);
+@media (max-width: 768px) {
+    .navbar-brand-standalone {
+        top: 14px;
+        left: 18px;
+    }
+    .navbar-brand-standalone .brand-logo-img {
+        height: 46px;
+        max-width: 180px;
+    }
 }
 
-.custom-navbar .btn-secondary-glass {
-    flex-shrink: 0;
-    margin-left: auto;
+/* =========================================
+   BARRA DE NAVEGACIÓN CENTRAL (Flotante & Compactable)
+   ========================================= */
+.header-nav-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    padding-top: 20px;
+    pointer-events: none;
+    transition: padding-top 0.4s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.header-nav-container.header-scrolled {
+    padding-top: 12px;
+}
+
+/* =========================================
+   COMPONENTE GOOEY NAV (React Bits → Vanilla CSS)
+   ========================================= */
+.gooey-nav-container {
     position: relative;
-    z-index: 10;
-    padding: 6px 14px;
-    font-size: 0.82rem;
-    white-space: nowrap;
+    display: inline-flex;
+    align-items: center;
+    border-radius: 999px;
+    background: rgba(10, 15, 29, 0.72);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    backdrop-filter: blur(20px);
+    -webkit-backdrop-filter: blur(20px);
+    box-shadow: 0 10px 30px -5px rgba(0, 0, 0, 0.5), 0 0 15px rgba(0, 229, 212, 0.12);
+    padding: 4px;
+    pointer-events: auto;
+    isolation: isolate;
+    transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
 }
 
-.custom-navbar .navbar-nav {
-    scrollbar-width: none;
-    -ms-overflow-style: none;
-    overflow: visible;
-    flex-shrink: 0;
+.header-nav-container.header-scrolled .gooey-nav-container {
+    background: rgba(10, 15, 28, 0.88);
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.65), 0 0 20px rgba(0, 229, 212, 0.18);
+    transform: translateY(0) scale(0.96);
+}
+
+.gooey-nav-container nav {
+    display: flex;
+    position: relative;
+    transform: translateZ(0.01px);
+}
+
+.gooey-nav-container nav ul {
+    display: flex;
+    gap: 0.5em;
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    position: relative;
+    z-index: 3;
+    color: #fff;
+    text-shadow: 0 1px 1px hsl(205deg 30% 10% / 0.2);
+}
+
+.gooey-nav-container nav ul li {
+    border-radius: 100vw;
+    position: relative;
+    cursor: pointer;
+    transition: background-color 0.3s ease, color 0.3s ease, box-shadow 0.3s ease;
+    box-shadow: 0 0 0.5px 1.5px transparent;
+    color: #cbd5e1;
+    font-weight: 500;
+    font-size: 0.92rem;
+    user-select: none;
+}
+
+.gooey-nav-container nav ul li a {
+    display: inline-block;
+    padding: 0.6em 1.25em;
+    color: inherit;
+    text-decoration: none;
+    border-radius: 100vw;
+    transition: color 0.2s ease;
+}
+
+.gooey-nav-container nav ul li:hover a {
+    color: #fff;
+}
+
+.gooey-nav-container nav ul li:focus-within:has(:focus-visible) {
+    box-shadow: 0 0 0.5px 1.5px #fff;
+}
+
+.gooey-nav-container nav ul li:after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    border-radius: 100vw;
+    background: #fff;
+    opacity: 0;
+    transform: scale(0);
+    transition: all 0.3s ease;
+    z-index: -1;
+}
+
+.gooey-nav-container nav ul li.active {
+    color: #000;
+    text-shadow: none;
+}
+
+.gooey-nav-container nav ul li.active a {
+    opacity: 0;
+}
+
+.gooey-nav-container nav ul li.active:after {
+    opacity: 1;
+    transform: scale(1);
+}
+
+.gooey-nav-container .effect {
+    position: absolute;
+    left: 0;
+    top: 0;
+    width: 0;
+    height: 0;
+    opacity: 1;
+    pointer-events: none;
+    display: grid;
+    place-items: center;
+    z-index: 1;
+}
+
+.gooey-nav-container .effect.text {
+    color: #fff;
+    transition: color 0.3s ease;
+    font-weight: 600;
+    font-size: 0.92rem;
+    user-select: none;
+    z-index: 4;
+}
+
+.gooey-nav-container .effect.text.active {
+    color: #000;
+}
+
+.gooey-nav-container .effect.filter {
+    filter: url('#gooeyNavFilter');
+    -webkit-filter: url('#gooeyNavFilter');
+}
+
+.gooey-nav-container .effect.filter:after {
+    content: "";
+    position: absolute;
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    background: #fff;
+    transform: scale(0);
+    opacity: 0;
+    z-index: -1;
+    border-radius: 100vw;
+}
+
+.gooey-nav-container .effect.active:after {
+    animation: pill 0.3s ease both;
+}
+
+@keyframes pill {
+    to {
+        transform: scale(1);
+        opacity: 1;
+    }
+}
+
+.particle,
+.point {
+    display: block;
+    opacity: 0;
+    width: 20px;
+    height: 20px;
+    border-radius: 100%;
+    transform-origin: center;
+}
+
+.particle {
+    --time: 5s;
+    position: absolute;
+    top: calc(50% - 8px);
+    left: calc(50% - 8px);
+    animation: particle calc(var(--time)) ease 1 -0.35s;
+}
+
+.point {
+    background: var(--color);
+    opacity: 1;
+    animation: point calc(var(--time)) ease 1 -0.35s;
+}
+
+@keyframes particle {
+    0% {
+        transform: rotate(0) translate(calc(var(--start-x)), calc(var(--start-y)));
+        opacity: 1;
+        animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45);
+    }
+    70% {
+        transform: rotate(calc(var(--rotate) * 0.5)) translate(calc(var(--end-x) * 1.2), calc(var(--end-y) * 1.2));
+        opacity: 1;
+        animation-timing-function: ease;
+    }
+    85% {
+        transform: rotate(calc(var(--rotate) * 0.66)) translate(calc(var(--end-x)), calc(var(--end-y)));
+        opacity: 1;
+    }
+    to {
+        transform: rotate(calc(var(--rotate) * 1.2)) translate(calc(var(--end-x) * 0.5), calc(var(--end-y) * 0.5));
+        opacity: 1;
+    }
+}
+
+@keyframes point {
+    0% {
+        transform: scale(0);
+        opacity: 0;
+        animation-timing-function: cubic-bezier(0.55, 0, 1, 0.45);
+    }
+    25% {
+        transform: scale(calc(var(--scale) * 0.25));
+    }
+    38% {
+        opacity: 1;
+    }
+    65% {
+        transform: scale(var(--scale));
+        opacity: 1;
+        animation-timing-function: ease;
+    }
+    85% {
+        transform: scale(var(--scale));
+        opacity: 1;
+    }
+    to {
+        transform: scale(0);
+        opacity: 0;
+    }
+}
+
+@media (max-width: 576px) {
+    .header-nav-container {
+        padding-top: 10px;
+    }
+    .gooey-nav-container {
+        padding: 3px;
+        max-width: 96vw;
+    }
+    .gooey-nav-container nav ul {
+        gap: 0.2em;
+    }
+    .gooey-nav-container nav ul li {
+        font-size: 0.82rem;
+    }
+    .gooey-nav-container nav ul li a {
+        padding: 0.5em 0.85em;
+    }
 }
 
 #nav-categories-list {
@@ -459,19 +720,7 @@ body.no-scroll,
 
 /* Badge de categoría en la esquina de la imagen */
 .card-category-badge {
-    position: absolute;
-    top: 14px;
-    left: 14px;
-    background: rgba(6, 6, 14, 0.78);
-    backdrop-filter: blur(8px);
-    -webkit-backdrop-filter: blur(8px);
-    border: 1px solid rgba(255, 255, 255, 0.18);
-    border-radius: 20px;
-    padding: 5px 12px;
-    font-size: 0.76rem;
-    font-weight: 500;
-    color: #f1f5f9;
-    z-index: 2;
+    display: none !important;
 }
 
 /* Cuerpo de la tarjeta */
@@ -820,6 +1069,7 @@ body.no-scroll,
     margin-bottom: 0;
     color: #e2e8f0;
     vertical-align: middle;
+    width: 100%;
 }
 
 .admin-table thead th {
@@ -831,6 +1081,7 @@ body.no-scroll,
     font-weight: 600;
     padding: 16px 20px;
     border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    white-space: nowrap;
 }
 
 .admin-table tbody td {
@@ -838,6 +1089,16 @@ body.no-scroll,
     border-bottom: 1px solid rgba(255, 255, 255, 0.05);
     background: transparent;
     color: #f1f5f9;
+}
+
+.admin-table th:first-child,
+.admin-table td:first-child {
+    padding-left: 24px;
+}
+
+.admin-table th:last-child,
+.admin-table td:last-child {
+    padding-right: 24px;
 }
 
 .admin-table tbody tr:hover td {
@@ -849,11 +1110,20 @@ body.no-scroll,
 }
 
 .admin-thumb-img {
-    width: 60px;
-    height: 42px;
+    width: 64px;
+    height: 44px;
     object-fit: cover;
     border-radius: 8px;
     border: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+    transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+    display: inline-block;
+}
+
+.admin-thumb-img:hover {
+    transform: scale(1.08);
+    border-color: rgba(0, 229, 212, 0.5);
+    box-shadow: 0 6px 16px rgba(0, 229, 212, 0.25);
 }
 
 /* Botones de acción */
@@ -887,128 +1157,599 @@ body.no-scroll,
 }
 
 /* =========================================
-   LAYOUT SPLIT ADMIN (30% / 70% 100vh) & OPTIONWHEEL 3D
+   LAYOUT UNIFICADO ADMIN (100% Pantalla Completa)
    ========================================= */
-.admin-split-layout {
-    display: flex;
-    height: 100vh;
-    width: 100vw;
-    overflow: hidden;
-    background-color: #06060e;
-    position: relative;
-}
-
-/* Columna Izquierda: OptionWheel 3D (30%) */
-.admin-wheel-col {
-    width: 30%;
-    min-width: 320px;
-    max-width: 420px;
-    height: 100vh;
-    background: linear-gradient(180deg, #071716 0%, #06060e 50%, #061413 100%);
-    border-right: 1px solid rgba(0, 180, 167, 0.12);
+.admin-full-layout {
+    width: 100%;
+    min-height: 100vh;
     display: flex;
     flex-direction: column;
-    position: relative;
-    user-select: none;
-    z-index: 20;
+    background-color: #06060e;
+    overflow-x: hidden;
 }
 
-.option-wheel {
-  --ow-text-color: #a6a6a6;
-  --ow-active-color: #ffffff;
-  --ow-font-size: 1.85rem;
-  --ow-inset: 36px;
-  position: relative;
-  width: 100%;
-  height: 100vh; /* Ajustado al alto de la columna */
-  overflow: hidden;
-  cursor: grab;
-  user-select: none;
-  touch-action: none;
-  outline: none;
-  background: transparent;
-}
-.option-wheel--dragging { cursor: grabbing; }
-.option-wheel__item {
-  position: absolute;
-  top: 50%;
-  left: var(--ow-inset);
-  white-space: nowrap;
-  font-size: var(--ow-font-size);
-  line-height: 1;
-  font-weight: 200;
-  transform-origin: left center;
-  cursor: pointer;
-  will-change: transform, opacity, filter;
-  color: color-mix(in srgb, var(--ow-active-color) calc(var(--ow-p, 0) * 100%), var(--ow-text-color));
-  transition: font-weight 0.2s ease;
-}
-.option-wheel__item--selected { 
-  font-weight: 600; 
-  text-shadow: 0 0 20px rgba(0, 229, 212, 0.35);
-}
-
-/* Columna Derecha: Contenedor Principal (70%) */
+/* Contenedor Principal de Ancho Completo */
 .admin-main-col {
-    width: 70%;
-    flex: 1;
-    height: 100vh;
-    overflow-y: auto;
+    width: 100% !important;
+    max-width: 100% !important;
+    min-height: 100vh;
+    height: auto;
+    overflow-y: visible;
     display: flex;
     flex-direction: column;
     background: #06060e;
     position: relative;
+    overflow-x: hidden;
 }
 
-/* Encabezado con ParticleText Canvas */
+/* Encabezado con ParticleText Canvas Centrado */
 .admin-particle-header {
-    height: 150px;
+    height: 105px;
     width: 100%;
     position: relative;
     display: flex;
     align-items: center;
     justify-content: center;
-    border-bottom: 1px solid rgba(255, 255, 255, 0.06);
-    background: rgba(10, 10, 22, 0.5);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(10, 10, 22, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
     overflow: hidden;
     flex-shrink: 0;
 }
 
+.admin-header-center {
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    max-width: 540px;
+    margin: 0 auto;
+}
+
 #adminParticleText {
     width: 100%;
-    height: 150px;
+    max-width: 500px;
+    height: 85px;
     display: block;
     cursor: default;
 }
 
-/* Contenido de gestión de proyectos */
+/* Contenido de gestión de proyectos a lo ancho de la pantalla */
 .admin-content-area {
     flex: 1;
-    padding: 32px 36px 48px;
+    padding: 32px 40px 48px;
+    width: 100%;
+    max-width: 1600px;
+    margin: 0 auto;
+}
+
+/* =========================================
+   BARRA DE BÚSQUEDA DEL ADMIN (Glassmorphism Oscuro)
+   ========================================= */
+.admin-search-box {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    min-width: 320px;
+}
+
+.admin-search-icon {
+    position: absolute;
+    left: 14px;
+    top: 50%;
+    transform: translateY(-50%);
+    color: #64748b;
+    pointer-events: none;
+    z-index: 2;
+    transition: color 0.2s ease;
+}
+
+.admin-search-box:focus-within .admin-search-icon {
+    color: #00e5d4;
+}
+
+.admin-search-input {
+    background: rgba(18, 18, 32, 0.75) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    color: #ffffff !important;
+    border-radius: 12px !important;
+    padding: 10px 16px 10px 42px !important;
+    font-size: 0.88rem !important;
+    backdrop-filter: blur(10px);
+    transition: all 0.25s ease !important;
+    box-shadow: none !important;
+}
+
+.admin-search-input:focus {
+    background: rgba(22, 22, 40, 0.95) !important;
+    border-color: rgba(0, 229, 212, 0.55) !important;
+    box-shadow: 0 0 16px rgba(0, 229, 212, 0.2) !important;
+    color: #ffffff !important;
+}
+
+.admin-search-input::placeholder {
+    color: #64748b !important;
 }
 
 @media (max-width: 992px) {
-    .admin-split-layout {
-        flex-direction: column;
-        height: auto;
-        min-height: 100vh;
-        overflow: visible;
-    }
-    .admin-wheel-col {
-        width: 100%;
-        max-width: 100%;
-        height: 280px;
-        min-height: 280px;
-    }
-    .admin-main-col {
-        width: 100%;
-        height: auto;
-        overflow: visible;
-    }
     .admin-content-area {
         padding: 24px 18px 40px;
     }
+    .admin-search-box {
+        min-width: 100%;
+    }
 }
 
+/* =========================================
+   COMPONENTE 3D INFINITE SPIRAL & RESALTADO
+   ========================================= */
+@import url('infinite-spiral.css');
+
+/* Resaltado interactivo de tarjeta al navegar desde la Espiral 3D */
+.project-card-highlight {
+    border-color: #00e5d4 !important;
+    box-shadow: 0 0 35px rgba(0, 229, 212, 0.55), 0 20px 45px rgba(0, 0, 0, 0.8) !important;
+    transform: translateY(-8px) scale(1.025) !important;
+    transition: all 0.45s cubic-bezier(0.16, 1, 0.3, 1) !important;
+}
+
+/* ==========================================================================
+   ESTUDIO DE CREACIÓN & EDICIÓN DE PROYECTOS (Admin Modern Editor Studio)
+   ========================================================================== */
+
+/* Contenedor y Paneles Glass */
+.editor-glass-panel {
+    background: rgba(15, 15, 28, 0.75);
+    backdrop-filter: blur(16px);
+    -webkit-backdrop-filter: blur(16px);
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    border-radius: 20px;
+    padding: 24px 28px;
+    box-shadow: 0 12px 35px rgba(0, 0, 0, 0.4);
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+}
+
+.editor-glass-panel:hover {
+    border-color: rgba(255, 255, 255, 0.14);
+}
+
+/* Encabezado e Iconos de Pasos (1, 2, 3) */
+.editor-step-icon {
+    width: 34px;
+    height: 34px;
+    min-width: 34px;
+    border-radius: 10px;
+    background: linear-gradient(135deg, rgba(0, 229, 212, 0.22), rgba(0, 180, 167, 0.08));
+    border: 1px solid rgba(0, 229, 212, 0.45);
+    color: #00e5d4;
+    font-weight: 700;
+    font-size: 0.92rem;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 0 16px rgba(0, 229, 212, 0.2);
+    flex-shrink: 0;
+    line-height: 1;
+}
+
+/* Botón secundario Glass (Volver a la lista, etc.) */
+.btn-secondary-glass {
+    background: rgba(255, 255, 255, 0.05);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #cbd5e1;
+    border-radius: 12px;
+    padding: 8px 18px;
+    font-size: 0.86rem;
+    font-weight: 500;
+    transition: all 0.25s ease;
+}
+
+.btn-secondary-glass:hover {
+    background: rgba(255, 255, 255, 0.1);
+    border-color: rgba(255, 255, 255, 0.25);
+    color: #ffffff;
+    transform: translateY(-1px);
+}
+
+/* Etiquetas y Controles de Formulario */
+.form-label-custom {
+    font-size: 0.84rem;
+    font-weight: 600;
+    color: #cbd5e1;
+    letter-spacing: 0.01em;
+}
+
+.form-control-glass {
+    background: rgba(10, 10, 22, 0.7) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 12px !important;
+    color: #ffffff !important;
+    padding: 10px 16px !important;
+    font-size: 0.88rem !important;
+    transition: all 0.25s ease !important;
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+}
+
+.form-control-glass:focus {
+    background: rgba(14, 14, 30, 0.95) !important;
+    border-color: rgba(0, 229, 212, 0.55) !important;
+    box-shadow: 0 0 16px rgba(0, 229, 212, 0.2) !important;
+    color: #ffffff !important;
+}
+
+.form-control-glass::placeholder {
+    color: #64748b !important;
+}
+
+/* Dropzone de Carga de Imagen */
+.dropzone-area {
+    border: 2px dashed rgba(255, 255, 255, 0.16);
+    border-radius: 16px;
+    padding: 30px 20px;
+    text-align: center;
+    background: rgba(255, 255, 255, 0.015);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    cursor: pointer;
+}
+
+.dropzone-area:hover,
+.dropzone-area.dragover {
+    border-color: #00e5d4;
+    background: rgba(0, 229, 212, 0.05);
+    box-shadow: 0 0 25px rgba(0, 229, 212, 0.12);
+}
+
+.dropzone-icon-box {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 56px;
+    height: 56px;
+    border-radius: 14px;
+    background: rgba(0, 229, 212, 0.08);
+    border: 1px solid rgba(0, 229, 212, 0.25);
+    margin-bottom: 12px;
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.dropzone-area:hover .dropzone-icon-box {
+    transform: translateY(-3px) scale(1.06);
+    box-shadow: 0 0 18px rgba(0, 229, 212, 0.3);
+}
+
+/* Sugerencias Rápidas de Tecnologías (Pills) */
+.quick-tech-wrapper {
+    margin-bottom: 14px;
+}
+
+.quick-tech-btn {
+    background: rgba(255, 255, 255, 0.04);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    color: #cbd5e1;
+    border-radius: 8px;
+    padding: 6px 13px;
+    font-size: 0.78rem;
+    font-weight: 500;
+    transition: all 0.2s cubic-bezier(0.2, 0.8, 0.2, 1);
+    cursor: pointer;
+    user-select: none;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.quick-tech-btn::before {
+    content: '+';
+    font-weight: 700;
+    color: #00e5d4;
+    font-size: 0.84rem;
+    margin-right: 2px;
+    opacity: 0.65;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.quick-tech-btn:hover {
+    background: rgba(0, 229, 212, 0.14);
+    border-color: rgba(0, 229, 212, 0.45);
+    color: #ffffff;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 14px rgba(0, 229, 212, 0.22);
+}
+
+.quick-tech-btn:hover::before {
+    opacity: 1;
+    transform: scale(1.2);
+}
+
+.quick-tech-btn:active {
+    transform: translateY(0);
+}
+
+.quick-tech-btn.is-added {
+    background: rgba(0, 229, 212, 0.16);
+    border-color: rgba(0, 229, 212, 0.55);
+    color: #5eead4;
+}
+
+.quick-tech-btn.is-added::before {
+    content: '✓';
+    color: #00e5d4;
+    opacity: 1;
+}
+
+/* Contenedor de Etiquetas / Tags */
+.tech-tags-input-container {
+    background: rgba(10, 10, 22, 0.75) !important;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    border-radius: 12px !important;
+    padding: 8px 12px !important;
+    min-height: 52px;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    align-items: center;
+    transition: border-color 0.25s ease, box-shadow 0.25s ease;
+    cursor: text;
+}
+
+.tech-tags-input-container:focus-within {
+    border-color: rgba(0, 229, 212, 0.55) !important;
+    box-shadow: 0 0 16px rgba(0, 229, 212, 0.2) !important;
+    background: rgba(14, 14, 30, 0.95) !important;
+}
+
+.tech-tags-input-container input#editorTechInput {
+    background: transparent !important;
+    border: none !important;
+    outline: none !important;
+    color: #ffffff !important;
+    font-size: 0.85rem !important;
+    flex: 1;
+    min-width: 140px;
+    padding: 4px 6px;
+}
+
+.tech-tags-input-container input#editorTechInput::placeholder {
+    color: #64748b;
+}
+
+/* Badge de Tag Activo */
+.active-tag-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    background: linear-gradient(135deg, rgba(0, 229, 212, 0.18), rgba(0, 180, 167, 0.08));
+    border: 1px solid rgba(0, 229, 212, 0.42);
+    color: #5eead4;
+    border-radius: 999px;
+    padding: 4px 12px;
+    font-size: 0.8rem;
+    font-weight: 500;
+    user-select: none;
+    box-shadow: 0 2px 8px rgba(0, 229, 212, 0.12);
+    animation: tagFadeIn 0.22s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+    transition: all 0.2s ease;
+}
+
+.active-tag-badge:hover {
+    border-color: rgba(0, 229, 212, 0.65);
+    box-shadow: 0 2px 12px rgba(0, 229, 212, 0.25);
+}
+
+@keyframes tagFadeIn {
+    0% { opacity: 0; transform: scale(0.85); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+/* Botón para Eliminar Tag */
+.btn-tag-remove {
+    background: rgba(255, 255, 255, 0.12);
+    border: none;
+    color: #cbd5e1;
+    border-radius: 50%;
+    width: 17px;
+    height: 17px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.8rem;
+    line-height: 1;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.btn-tag-remove:hover {
+    background: #ef4444;
+    color: #ffffff;
+    transform: scale(1.18);
+    box-shadow: 0 0 8px rgba(239, 68, 68, 0.6);
+}
+
+/* Simulador en Vivo Sticky & Tarjeta de Previsualización */
+.editor-sidebar-sticky {
+    position: sticky;
+    top: 24px;
+}
+
+.live-card-preview {
+    max-width: 100%;
+    margin: 0 auto;
+    border: 1px solid rgba(255, 255, 255, 0.12) !important;
+    background: rgba(15, 15, 28, 0.85) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5) !important;
+    transition: all 0.3s ease;
+}
+
+/* Checklist de Publicación */
+#editorChecklist li {
+    transition: color 0.2s ease;
+}
+
+#editorChecklist li.completed {
+    color: #e2e8f0 !important;
+}
+
+#editorChecklist li.completed .chk-bullet {
+    color: #00e5d4 !important;
+}
+
+/* =========================================
+   DESENFOQUE DE FONDO EN VISTA DE PROYECTO (MODAL)
+   ========================================= */
+
+/* Fondo oscuro (backdrop) con desenfoque de cristal */
+.modal-backdrop {
+    background-color: rgba(4, 4, 10, 0.72) !important;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+    transition: opacity 0.35s ease, backdrop-filter 0.35s ease, -webkit-backdrop-filter 0.35s ease;
+}
+
+.modal-backdrop.show {
+    opacity: 1 !important;
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+}
+
+/* Modal abierto con desenfoque nativo */
+.modal.show {
+    backdrop-filter: blur(14px);
+    -webkit-backdrop-filter: blur(14px);
+}
+
+/* Transición suave para los elementos del fondo de la página */
+.navbar-brand-standalone,
+.header-nav-container,
+.hero-content,
+.spiral-section,
+.projects-section,
+footer,
+#scanner-bg {
+    transition: filter 0.35s ease, -webkit-filter 0.35s ease, opacity 0.35s ease;
+}
+
+/* Desenfoque profundo y ajuste sutil de contraste al visualizar un proyecto */
+body.modal-open .navbar-brand-standalone,
+body.modal-open .header-nav-container,
+body.modal-open .hero-content,
+body.modal-open .spiral-section,
+body.modal-open .projects-section,
+body.modal-open footer,
+body.modal-open #scanner-bg,
+body.project-modal-active .navbar-brand-standalone,
+body.project-modal-active .header-nav-container,
+body.project-modal-active .hero-content,
+body.project-modal-active .spiral-section,
+body.project-modal-active .projects-section,
+body.project-modal-active footer,
+body.project-modal-active #scanner-bg {
+    filter: blur(12px) brightness(0.85);
+    -webkit-filter: blur(12px) brightness(0.85);
+    pointer-events: none;
+    user-select: none;
+}
+
+/* =========================================
+   BARRA DE PROGRESO DE SCROLL SUPERIOR
+   ========================================= */
+.scroll-progress-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    height: 3px;
+    width: 0%;
+    background: linear-gradient(90deg, #00e5d4 0%, #38bdf8 50%, #818cf8 100%);
+    box-shadow: 0 0 14px rgba(0, 229, 212, 0.8), 0 0 28px rgba(56, 189, 248, 0.4);
+    z-index: 1200;
+    pointer-events: none;
+    transition: width 0.08s linear;
+}
+
+/* =========================================
+   TIPOGRAFÍA DESTACADA DE PORTAFOLIO
+   ========================================= */
+.portfolio-section-title {
+    font-size: clamp(2.3rem, 4.4vw, 3.6rem);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.035em;
+    color: #ffffff;
+    background: linear-gradient(135deg, #ffffff 20%, #f1f5f9 55%, #94a3b8 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    text-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+    margin-bottom: 0.85rem;
+    position: relative;
+    display: inline-block;
+}
+
+.portfolio-section-subtitle {
+    font-size: clamp(1.05rem, 1.8vw, 1.25rem);
+    line-height: 1.65;
+    color: #94a3b8 !important;
+    max-width: 680px;
+    font-weight: 400;
+}
+
+/* Ajuste proporcional para el título principal del Hero */
+.hero-content h1 {
+    font-size: clamp(2.8rem, 5.8vw, 4.5rem) !important;
+    font-weight: 800 !important;
+    letter-spacing: -0.03em !important;
+    line-height: 1.1 !important;
+    background: linear-gradient(135deg, #ffffff 30%, #e2e8f0 70%, #cbd5e1 100%);
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+}
+
+/* =========================================
+   ANIMACIONES DE REVELADO AL BAJAR EN LA PÁGINA (SCROLL REVEAL)
+   ========================================= */
+
+/* Revelado universal para secciones y encabezados */
+.scroll-reveal {
+    opacity: 0;
+    transform: translateY(44px) scale(0.98);
+    filter: blur(5px);
+    transition: opacity 0.85s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.85s cubic-bezier(0.16, 1, 0.3, 1),
+                filter 0.85s ease;
+    will-change: opacity, transform, filter;
+}
+
+.scroll-reveal.is-visible {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+}
+
+/* Animación de entrada para las tarjetas de la Galería de Proyectos */
+.project-item {
+    opacity: 0;
+    transform: translateY(50px) scale(0.95);
+    filter: blur(6px);
+    transition: opacity 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.8s cubic-bezier(0.16, 1, 0.3, 1),
+                filter 0.8s ease;
+    will-change: opacity, transform, filter;
+}
+
+.project-item.revealed {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+    filter: blur(0);
+}
+
+/* Accesibilidad: desactivar si el usuario prefiere movimiento reducido */
+@media (prefers-reduced-motion: reduce) {
+    .scroll-reveal,
+    .project-item {
+        opacity: 1 !important;
+        transform: none !important;
+        filter: none !important;
+        transition: none !important;
+    }
+}

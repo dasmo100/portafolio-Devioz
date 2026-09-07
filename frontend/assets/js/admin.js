@@ -13,7 +13,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const loginAlert = document.getElementById('loginAlert');
 
     if (loginForm) {
-        loginForm.addEventListener('submit', function(e) {
+        loginForm.addEventListener('submit', async function(e) {
             e.preventDefault();
 
             const usernameInput = document.getElementById('username');
@@ -31,140 +31,118 @@ document.addEventListener('DOMContentLoaded', function() {
                 return;
             }
 
+            if (loginAlert) {
+                loginAlert.classList.add('d-none');
+            }
+
             if (submitBtn) {
                 submitBtn.disabled = true;
                 submitBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Ingresando...';
             }
 
-            setTimeout(function() {
-                localStorage.setItem('devioz_admin_auth', 'true');
-                window.location.href = 'admin.html';
-            }, 600);
-        });
-    }
+            try {
+                // Función auxiliar para determinar la URL del endpoint:
+                // Si se ejecuta desde Live Server (puertos 5500, 5501, etc.) o file://, Live Server solo sirve
+                // archivos estáticos y devuelve 405 Method Not Allowed ante peticiones POST a archivos PHP.
+                // En ese caso apuntamos directamente al servidor Apache de XAMPP.
+                const port = window.location.port;
+                const isLiveDev = (port === '5500' || port === '5501' || port === '3000' || port === '5173' || window.location.protocol === 'file:');
+                const host = window.location.hostname || 'localhost';
 
-    // ==========================================================
-    // 2. OPTIONWHEEL (adminCategoryWheel)
-    // ==========================================================
-    const container = document.getElementById('adminCategoryWheel');
-    if (container) {
-        const items = ['Diseño Gráfico', 'Spots Publicitarios', 'Business Intelligence', 'Desarrollo Web', 'IA'];
-        
-        // Configuración física
-        const cfg = {
-            fontSize: 1.85, spacing: 1.6, curve: 1, tilt: 6, blur: 2, fade: 0.25,
-            minOpacity: 0.05, smoothing: 200, rowH: 0
-        };
-        
-        // Estado
-        let pos = 2; // Índice inicial por defecto
-        let target = 2;
-        let selectedIndex = 2;
-        let lastTime = performance.now();
-        let rafId = null;
-        let itemEls = [];
-        
-        // Inicializar DOM
-        const remPx = parseFloat(getComputedStyle(document.documentElement).fontSize) || 16;
-        cfg.rowH = Math.max(cfg.fontSize * cfg.spacing * remPx, 1);
-        
-        items.forEach((label, i) => {
-            const el = document.createElement('div');
-            el.className = 'option-wheel__item';
-            if (i === selectedIndex) el.classList.add('option-wheel__item--selected');
-            el.textContent = label;
-            el.addEventListener('click', () => applyTarget(i, true));
-            container.appendChild(el);
-            itemEls.push(el);
-        });
+                let loginEndpoint = isLiveDev
+                    ? `http://${host}/portafolio-Devioz/backend/api/login.php`
+                    : (window.location.pathname.includes('/admin/') ? '../../backend/api/login.php' : '../backend/api/login.php');
 
-        // Bucle de renderizado matemático (Física)
-        function runFrame(now) {
-            const dt = Math.min((now - lastTime) / 1000, 0.05);
-            lastTime = now;
-            const tau = Math.max(cfg.smoothing, 1) / 1000;
-            const k = 1 - Math.exp(-dt / tau);
-
-            let next = pos + (target - pos) * k;
-            const settled = Math.abs(target - next) < 0.001;
-            if (settled) next = target;
-            pos = next;
-
-            const tiltRad = (cfg.tilt * Math.PI) / 180;
-            const R = tiltRad > 0.0005 ? cfg.rowH / tiltRad : 0;
-
-            itemEls.forEach((el, i) => {
-                const dist = Math.abs(i - next);
-                let x = 0, y = (i - next) * cfg.rowH, rot = 0;
-                
-                if (R > 0) {
-                    const ang = Math.max(-Math.PI / 2, Math.min(Math.PI / 2, (i - next) * tiltRad));
-                    y = R * Math.sin(ang);
-                    x = -R * (1 - Math.cos(ang)) * cfg.curve;
-                    rot = (ang * 180) / Math.PI;
+                let response;
+                try {
+                    response = await fetch(loginEndpoint, {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({ usuario: username, clave: password })
+                    });
+                } catch (fetchErr) {
+                    // Si falló por URL relativa en un servidor estático, reintentar con la URL directa de Apache
+                    if (!isLiveDev) {
+                        const fallbackUrl = `http://localhost/portafolio-Devioz/backend/api/login.php`;
+                        response = await fetch(fallbackUrl, {
+                            method: 'POST',
+                            credentials: 'include',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Accept': 'application/json'
+                            },
+                            body: JSON.stringify({ usuario: username, clave: password })
+                        });
+                    } else {
+                        throw fetchErr;
+                    }
                 }
-                
-                el.style.transform = `translate(${x.toFixed(2)}px, calc(${y.toFixed(2)}px - 50%)) rotate(${rot.toFixed(3)}deg)`;
-                el.style.opacity = Math.max(cfg.minOpacity, 1 - dist * cfg.fade);
-                el.style.filter = cfg.blur > 0 ? `blur(${(dist * cfg.blur).toFixed(2)}px)` : 'none';
-                el.style.setProperty('--ow-p', Math.max(0, 1 - Math.min(dist, 1)).toFixed(4));
-            });
 
-            rafId = settled ? null : requestAnimationFrame(runFrame);
-        }
+                // Si Live Server devolvió 405 (Método no permitido para estáticos), reenviar a Apache
+                if (response && response.status === 405) {
+                    const fallbackUrl = `http://localhost/portafolio-Devioz/backend/api/login.php`;
+                    response = await fetch(fallbackUrl, {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json'
+                        },
+                        body: JSON.stringify({ usuario: username, clave: password })
+                    });
+                }
 
-        function applyTarget(val, snap) {
-            let v = Math.min(Math.max(val, 0), items.length - 1);
-            if (snap) v = Math.round(v);
-            target = v;
-            
-            const idx = Math.round(v);
-            if (idx !== selectedIndex) {
-                itemEls[selectedIndex]?.classList.remove('option-wheel__item--selected');
-                selectedIndex = idx;
-                itemEls[selectedIndex]?.classList.add('option-wheel__item--selected');
-                console.log('Categoría seleccionada:', items[idx]);
-                // Disparar el filtrado de la tabla de proyectos
-                filterProjectsByCategoryName(items[idx]);
+                const data = await response.json();
+
+                if (response.ok && (data.success === true || data.status === 'success')) {
+                    localStorage.setItem('devioz_admin_auth', 'true');
+                    localStorage.setItem('devioz_admin_user', data.usuario || username);
+                    localStorage.setItem('devioz_admin_role', data.rol || 'administrador');
+                    window.location.href = data.redirect || 'admin.html';
+                } else {
+                    if (loginAlert) {
+                        loginAlert.textContent = data.message || 'Credenciales inválidas. Verifica tus datos.';
+                        loginAlert.classList.remove('d-none');
+                    }
+                    if (submitBtn) {
+                        submitBtn.disabled = false;
+                        submitBtn.innerHTML = 'Ingresar al Panel';
+                    }
+                }
+            } catch (err) {
+                console.warn('Aviso: Fallo de conexión con backend/api/login.php:', err);
+
+                // Fallback de desarrollo para admin / admin123
+                if ((username.toLowerCase() === 'admin' || username.toLowerCase() === 'admin@devioz.com') && (password === 'admin123' || password === 'password')) {
+                    localStorage.setItem('devioz_admin_auth', 'true');
+                    localStorage.setItem('devioz_admin_user', 'admin');
+                    localStorage.setItem('devioz_admin_role', 'administrador');
+                    window.location.href = 'admin.html';
+                    return;
+                }
+
+                if (loginAlert) {
+                    loginAlert.innerHTML = 'Error de conexión con el backend PHP.<br><small style="display:block;margin-top:4px;opacity:0.9;">Verifica que Apache esté corriendo en XAMPP o accede a través de <a href="http://localhost/portafolio-Devioz/frontend/login.html" style="color:#5eead4;text-decoration:underline;">http://localhost/portafolio-Devioz/frontend/login.html</a></small>';
+                    loginAlert.classList.remove('d-none');
+                }
+                if (submitBtn) {
+                    submitBtn.disabled = false;
+                    submitBtn.innerHTML = 'Ingresar al Panel';
+                }
             }
-            
-            if (!rafId) {
-                lastTime = performance.now();
-                rafId = requestAnimationFrame(runFrame);
-            }
-        }
-
-        // Eventos de arrastre y Scroll
-        container.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            const step = Math.max(-1, Math.min(1, e.deltaY / cfg.rowH));
-            applyTarget(target + step, false);
-            clearTimeout(container.wheelTimer);
-            container.wheelTimer = setTimeout(() => applyTarget(target, true), 140);
-        }, { passive: false });
-
-        let drag = null;
-        container.addEventListener('pointerdown', (e) => {
-            drag = { y: e.clientY, start: target, id: e.pointerId, moved: false };
-            container.classList.add('option-wheel--dragging');
         });
-        
-        window.addEventListener('pointermove', (e) => {
-            if (!drag) return;
-            const dy = e.clientY - drag.y;
-            if (Math.abs(dy) > 4) drag.moved = true;
-            if (drag.moved) applyTarget(drag.start - dy / cfg.rowH, false);
-        });
-        
-        window.addEventListener('pointerup', () => {
-            if (!drag) return;
-            if (drag.moved) applyTarget(target, true);
-            drag = null;
-            container.classList.remove('option-wheel--dragging');
-        });
-
-        applyTarget(target, true);
     }
+
+    // ==========================================================
+    // 2. COMPATIBILIDAD GLOBAL (El sistema de categorías por ruleta fue removido)
+    // ==========================================================
+    window.setOptionWheelTarget = function() {
+        // No-op: Flujo continuo de proyectos
+    };
 
     // ==========================================================
     // 3. PARTICLETEXT EN EL ADMIN (adminParticleText)
@@ -178,33 +156,29 @@ document.addEventListener('DOMContentLoaded', function() {
             let particles = [];
             let animId = null;
             let width = 0;
-            let height = 150;
+            let height = 0;
             let dpr = 1;
 
             const mouse = { x: -9999, y: -9999, hover: false };
 
             const CONFIG = {
                 text: 'Devioz Admin',
-                density: 3,         // Muestreo nítido de píxeles
-                particleSize: 1.6,  // Tamaño de punto proporcionado a 150px
-                scatter: 70,        // Dispersión dentro de los límites de 150px (sin recortar)
-                duration: 1300,
-                stagger: 300,
-                idleDrift: 0.5,
-                repelRadius: 90,
-                pointerRepel: 30,
+                density: 2,         // Muestreo denso de 2px: letras 100% legibles y definidas
+                particleSize: 1.35, // Tamaño nítido tipo constelación sin pixelado
+                scatter: 40,        // Dispersión contenida para reunión limpia
+                duration: 1100,     // Duración de animación de agrupamiento
+                stagger: 220,       // Retardo orgánico escalonado
+                idleDrift: 0.3,     // Micromovimiento sutil de flotación viva
+                repelRadius: 75,    // Radio de repulsión interactiva del mouse
+                pointerRepel: 24,   // Fuerza de repulsión elástica
                 baseColor: '#ffffff',
                 highlightColor: '#00e5d4',
-                shadowColor: '#00b4a7',
-                shadowBlur: 10
+                accentColor: '#5eead4'
             };
 
             function getFontSize(w) {
-                // clamp(2rem, 5vw, 4rem) emulado en píxeles (32px a 56px)
-                const min = 32;
-                const max = 56;
-                const calc = w * 0.045;
-                return Math.round(Math.max(min, Math.min(max, calc)));
+                // Proporción ideal para 'Devioz Admin' centrado
+                return Math.round(Math.max(26, Math.min(38, w * 0.08)));
             }
 
             function easeOutCubic(t) {
@@ -215,15 +189,15 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (!ctx || width === 0 || height === 0) return;
 
                 const offscreen = document.createElement('canvas');
-                offscreen.width = Math.round(width);
-                offscreen.height = Math.round(height);
+                offscreen.width = width;
+                offscreen.height = height;
                 const offCtx = offscreen.getContext('2d', { willReadFrequently: true });
                 if (!offCtx) return;
 
                 const fontSize = getFontSize(width);
 
                 offCtx.clearRect(0, 0, width, height);
-                offCtx.font = `800 ${fontSize}px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
+                offCtx.font = `900 ${fontSize}px system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif`;
                 offCtx.textAlign = 'center';
                 offCtx.textBaseline = 'middle';
                 offCtx.fillStyle = '#ffffff';
@@ -236,26 +210,48 @@ document.addEventListener('DOMContentLoaded', function() {
                     return;
                 }
 
+                const totalWidth = offCtx.measureText(CONFIG.text).width;
+                const textStartX = (width - totalWidth) / 2;
+                const dWidth = offCtx.measureText('D').width;
+                const deviozWidth = offCtx.measureText('Devioz').width;
+
+                const splitD = textStartX + dWidth * 1.05;
+                const splitDevioz = textStartX + deviozWidth * 1.02;
+
                 particles = [];
                 const now = performance.now();
 
                 for (let y = 0; y < height; y += CONFIG.density) {
                     for (let x = 0; x < width; x += CONFIG.density) {
                         const alpha = imgData[(y * width + x) * 4 + 3];
-                        if (alpha > 120) {
+                        if (alpha > 130) {
                             const angle = Math.random() * Math.PI * 2;
                             const dist = Math.pow(Math.random(), 0.75) * CONFIG.scatter;
                             const startX = x + Math.cos(angle) * dist;
                             const startY = y + Math.sin(angle) * dist;
 
-                            const rand = Math.random();
                             let color;
-                            if (rand < 0.6) {
-                                color = CONFIG.highlightColor;
-                            } else if (rand < 0.8) {
-                                color = '#5eead4';
+                            if (x < splitD) {
+                                // 'D' del logotipo: gradiente continuo verde petróleo a cian luminoso (sin puntos blancos)
+                                const tx = Math.max(0, Math.min(1, (x - textStartX) / Math.max(1, splitD - textStartX)));
+                                const t = Math.max(0, Math.min(1, tx * 0.9 + (Math.random() - 0.5) * 0.04));
+                                // Interpolación de paradas cromáticas: #00302e -> #00766e -> #00b4a5 -> #00eedc
+                                if (t < 0.33) {
+                                    const lt = t / 0.33;
+                                    color = `rgb(0, ${Math.round(48 + 56 * lt)}, ${Math.round(46 + 50 * lt)})`;
+                                } else if (t < 0.67) {
+                                    const lt = (t - 0.33) / 0.34;
+                                    color = `rgb(0, ${Math.round(104 + 76 * lt)}, ${Math.round(96 + 69 * lt)})`;
+                                } else {
+                                    const lt = (t - 0.67) / 0.33;
+                                    color = `rgb(0, ${Math.round(180 + 58 * lt)}, ${Math.round(165 + 55 * lt)})`;
+                                }
+                            } else if (x < splitDevioz) {
+                                // 'evioz' del logotipo: blanco puro brillante
+                                color = Math.random() < 0.9 ? '#ffffff' : '#f1f5f9';
                             } else {
-                                color = CONFIG.baseColor;
+                                // 'Admin': acento cian / esmeralda tecnológico
+                                color = Math.random() < 0.65 ? CONFIG.highlightColor : CONFIG.accentColor;
                             }
 
                             particles.push({
@@ -269,6 +265,7 @@ document.addEventListener('DOMContentLoaded', function() {
                                 vy: 0,
                                 size: CONFIG.particleSize,
                                 color: color,
+                                baseAlpha: 0.9 + Math.random() * 0.1,
                                 spawnTime: now,
                                 startTime: now + Math.random() * CONFIG.stagger,
                                 duration: CONFIG.duration,
@@ -284,10 +281,10 @@ document.addEventListener('DOMContentLoaded', function() {
 
             function resize() {
                 const rect = adminCanvas.getBoundingClientRect();
-                if (rect.width === 0) return;
+                if (!rect.width || !rect.height) return;
 
-                width = rect.width;
-                height = 150;
+                width = Math.round(rect.width);
+                height = Math.round(rect.height);
 
                 dpr = Math.min(window.devicePixelRatio || 1, 2);
                 adminCanvas.width = Math.round(width * dpr);
@@ -303,21 +300,22 @@ document.addEventListener('DOMContentLoaded', function() {
                 animId = requestAnimationFrame(animate);
 
                 ctx.clearRect(0, 0, width, height);
-                ctx.shadowBlur = CONFIG.shadowBlur;
-                ctx.shadowColor = CONFIG.shadowColor;
+                // Resplandor sutil y nítido que no difumina las letras
+                ctx.shadowBlur = 4;
+                ctx.shadowColor = 'rgba(0, 229, 212, 0.45)';
 
                 const repelRadiusSq = CONFIG.repelRadius * CONFIG.repelRadius;
 
                 for (let i = 0; i < particles.length; i++) {
                     const p = particles[i];
-                    let alpha = 1;
+                    let alpha = p.baseAlpha;
 
                     if (!p.isGathered) {
                         if (currentTime < p.startTime) {
                             p.x = p.originX;
                             p.y = p.originY;
                             const timeSinceSpawn = Math.max(0, currentTime - p.spawnTime);
-                            alpha = Math.min(timeSinceSpawn / 200, 1) * 0.85;
+                            alpha = Math.min(timeSinceSpawn / 180, 1) * 0.85;
                         } else {
                             const elapsed = currentTime - p.startTime;
                             const progress = Math.min(elapsed / p.duration, 1);
@@ -407,222 +405,1007 @@ document.addEventListener('DOMContentLoaded', function() {
     const currentCategoryTitle = document.getElementById('currentCategoryTitle');
     const currentCategoryDesc = document.getElementById('currentCategoryDesc');
     const projectCountBadge = document.getElementById('projectCountBadge');
-    const btnShowAllProjects = document.getElementById('btnShowAllProjects');
     const btnLogout = document.getElementById('btnLogout');
     const projectForm = document.getElementById('projectForm');
     const projectModalEl = document.getElementById('projectModal');
     let projectModal = null;
 
-    if (typeof bootstrap !== 'undefined' && projectModalEl) {
-        projectModal = new bootstrap.Modal(projectModalEl);
+    function getAdminModal() {
+        if (!projectModalEl) return null;
+        if (!projectModal && typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+            projectModal = bootstrap.Modal.getInstance(projectModalEl) || new bootstrap.Modal(projectModalEl);
+        }
+        return projectModal;
+    }
+
+    // Toast interactivo para notificaciones de estado en el panel
+    function showAdminToast(message, type = 'success') {
+        let container = document.getElementById('adminToastContainer');
+        if (!container) {
+            container = document.createElement('div');
+            container.id = 'adminToastContainer';
+            container.style.cssText = 'position: fixed; bottom: 25px; right: 25px; z-index: 99999; display: flex; flex-direction: column; gap: 10px; max-width: 380px; pointer-events: none;';
+            document.body.appendChild(container);
+        }
+
+        const toast = document.createElement('div');
+        const isSuccess = type === 'success';
+        const icon = isSuccess ? '✅' : (type === 'warning' ? '⚠️' : '❌');
+        const borderColor = isSuccess ? '#10b981' : (type === 'warning' ? '#f59e0b' : '#ef4444');
+
+        toast.style.cssText = `
+            background: rgba(18, 18, 30, 0.96);
+            border: 1px solid ${borderColor};
+            border-radius: 12px;
+            padding: 12px 18px;
+            color: #fff;
+            font-size: 0.88rem;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.6);
+            backdrop-filter: blur(14px);
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            pointer-events: auto;
+            transform: translateY(20px);
+            opacity: 0;
+            transition: all 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+        `;
+        toast.innerHTML = `
+            <span style="font-size: 1.25rem; line-height: 1;">${icon}</span>
+            <div style="flex: 1; line-height: 1.35; font-weight: 500;">${message}</div>
+        `;
+
+        container.appendChild(toast);
+        requestAnimationFrame(() => {
+            toast.style.transform = 'translateY(0)';
+            toast.style.opacity = '1';
+        });
+
+        setTimeout(() => {
+            toast.style.opacity = '0';
+            toast.style.transform = 'translateY(15px) scale(0.95)';
+            setTimeout(() => toast.remove(), 320);
+        }, 3600);
     }
 
     // Cerrar sesión
     if (btnLogout) {
-        btnLogout.addEventListener('click', function(e) {
+        btnLogout.addEventListener('click', async function(e) {
             e.preventDefault();
+            try {
+                const port = window.location.port;
+                const isLiveDev = (port === '5500' || port === '5501' || port === '3000' || port === '5173' || window.location.protocol === 'file:');
+                const host = window.location.hostname || 'localhost';
+                const logoutEndpoint = isLiveDev
+                    ? `http://${host}/portafolio-Devioz/backend/api/login.php?action=logout`
+                    : (window.location.pathname.includes('/admin/') ? '../../backend/api/login.php?action=logout' : '../backend/api/login.php?action=logout');
+
+                await fetch(logoutEndpoint, { method: 'POST', credentials: 'include' });
+            } catch (ignore) {}
             localStorage.removeItem('devioz_admin_auth');
+            localStorage.removeItem('devioz_admin_user');
+            localStorage.removeItem('devioz_admin_role');
             window.location.href = 'login.html';
         });
     }
 
-    const CATEGORY_SLUGS = {
-        'Diseño Gráfico': 'diseno-grafico',
-        'Spots Publicitarios': 'spots-publicitarios',
-        'Business Intelligence': 'business-intelligence',
-        'Desarrollo Web': 'desarrollo-web',
-        'IA': 'inteligencia-artificial',
-        'Inteligencia Artificial': 'inteligencia-artificial'
-    };
 
-    function filterProjectsByCategoryName(name) {
-        const slug = CATEGORY_SLUGS[name] || '';
-        filterProjectsByCategory({ name: name, id: slug });
+
+    // Estado de proyectos en memoria del panel admin
+    let adminProjectsList = [];
+    let verifiedProjectsEndpoint = null;
+
+    const adminProjectSearch = document.getElementById('adminProjectSearch');
+
+    function getBackendProjectsEndpoint() {
+        if (verifiedProjectsEndpoint) {
+            return verifiedProjectsEndpoint;
+        }
+        const port = window.location.port;
+        const isLiveDev = (port === '5500' || port === '5501' || port === '3000' || port === '5173' || window.location.protocol === 'file:');
+        const host = window.location.hostname || 'localhost';
+
+        if (isLiveDev) {
+            return `http://${host}/portafolio-Devioz/backend/api/proyectos.php`;
+        }
+        return window.location.pathname.includes('/admin/') 
+            ? '../../backend/api/proyectos.php' 
+            : '../backend/api/proyectos.php';
     }
 
-    // Filtra la tabla de proyectos según la categoría activa de la ruleta
-    function filterProjectsByCategory(cat) {
+    // Función para consultar todos los proyectos del backend (flujo continuo sin categorías)
+    async function loadAdminProjects() {
         if (!projectsTableBody) return;
 
-        const rows = projectsTableBody.querySelectorAll('tr[data-category]');
-        let matchCount = 0;
+        const port = window.location.port;
+        const isLiveDev = (port === '5500' || port === '5501' || port === '3000' || port === '5173' || window.location.protocol === 'file:');
+        const host = window.location.hostname || 'localhost';
 
-        rows.forEach(row => {
-            const rowCat = row.getAttribute('data-category');
-            if (!cat || cat.id === 'all' || rowCat === cat.id) {
-                row.style.display = '';
-                matchCount++;
-            } else {
-                row.style.display = 'none';
+        // Lista ordenada de endpoints a intentar según el entorno de ejecución
+        const endpointsToTry = [];
+        if (verifiedProjectsEndpoint) {
+            endpointsToTry.push(verifiedProjectsEndpoint);
+        }
+        if (isLiveDev) {
+            endpointsToTry.push(`http://${host}/portafolio-Devioz/backend/api/proyectos.php`);
+            endpointsToTry.push(`http://localhost/portafolio-Devioz/backend/api/proyectos.php`);
+            endpointsToTry.push(`http://127.0.0.1/portafolio-Devioz/backend/api/proyectos.php`);
+            endpointsToTry.push(`../backend/api/proyectos.php`);
+        } else {
+            endpointsToTry.push(window.location.pathname.includes('/admin/') ? '../../backend/api/proyectos.php' : '../backend/api/proyectos.php');
+            endpointsToTry.push(`http://${host}/portafolio-Devioz/backend/api/proyectos.php`);
+            endpointsToTry.push(`http://localhost/portafolio-Devioz/backend/api/proyectos.php`);
+            endpointsToTry.push(`http://127.0.0.1/portafolio-Devioz/backend/api/proyectos.php`);
+        }
+
+        const uniqueEndpoints = [...new Set(endpointsToTry)];
+        const adminUser = localStorage.getItem('devioz_admin_user') || 'admin';
+
+        let data = null;
+        let lastError = null;
+
+        for (const baseEndpoint of uniqueEndpoints) {
+            try {
+                // Petición continua sin filtrar por categoría: devuelve todos los proyectos registrados
+                const apiUrl = baseEndpoint;
+                const response = await fetch(apiUrl, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: { 
+                        'Accept': 'application/json',
+                        'Authorization': `Bearer devioz_admin_${adminUser}`
+                    }
+                });
+
+                const responseText = await response.text();
+
+                if (responseText.trim().startsWith('<?php')) {
+                    console.warn(`[Devioz Admin] Endpoint ${baseEndpoint} devolvió PHP estático sin procesar. Intentando siguiente...`);
+                    continue;
+                }
+
+                try {
+                    data = JSON.parse(responseText);
+                } catch (jsonErr) {
+                    console.warn(`[Devioz Admin] Respuesta no JSON de ${baseEndpoint}:`, responseText);
+                    continue;
+                }
+
+                if (!response.ok) {
+                    const errMsg = (data && data.error) ? data.error : 'Error en el servidor (' + response.status + ')';
+                    throw new Error(errMsg);
+                }
+
+                verifiedProjectsEndpoint = baseEndpoint;
+                lastError = null;
+                break;
+            } catch (fetchErr) {
+                lastError = fetchErr;
+                console.warn(`[Devioz Admin] Falló conexión con ${baseEndpoint}:`, fetchErr.message);
             }
+        }
+
+        if (lastError || data === null) {
+            console.error('Error al obtener los proyectos del servidor:', lastError);
+            const errDetail = lastError ? (lastError.message || 'Sin respuesta del servidor') : 'Respuesta no válida del servidor';
+            projectsTableBody.innerHTML = `
+                <tr>
+                    <td colspan="4" class="text-center py-4 text-secondary">
+                        <span class="text-danger d-block mb-1 fw-semibold">⚠️ Error al obtener los proyectos del servidor.</span>
+                        <small class="d-block mb-2 text-muted">Asegúrate de que Apache y MySQL estén en ejecución en XAMPP.</small>
+                        <small class="text-secondary d-block mb-3" style="font-size: 0.8rem; color: #f87171 !important;">Detalle: ${errDetail}</small>
+                        <a href="http://localhost/portafolio-Devioz/frontend/admin.html" class="btn btn-sm btn-outline-info">
+                            Abrir mediante Apache Localhost
+                        </a>
+                    </td>
+                </tr>
+            `;
+            return;
+        }
+
+        console.log('[Devioz Admin] Proyectos recibidos (flujo continuo):', data);
+
+        let projects = [];
+        if (Array.isArray(data)) {
+            projects = data;
+        } else if (data && Array.isArray(data.data)) {
+            projects = data.data;
+        } else if (data && Array.isArray(data.proyectos)) {
+            projects = data.proyectos;
+        }
+
+        adminProjectsList = projects;
+        filterAndRenderProjects(adminProjectSearch ? adminProjectSearch.value : '');
+    }
+
+    // Filtra proyectos en tiempo real por término de búsqueda
+    function filterAndRenderProjects(query = '') {
+        const q = (query || '').toLowerCase().trim();
+        if (!q) {
+            renderAdminTable(adminProjectsList, '');
+            return;
+        }
+
+        const filtered = adminProjectsList.filter(p => {
+            const title = (p.titulo || '').toLowerCase();
+            const tech = (p.tecnologias || '').toLowerCase();
+            const desc = (p.descripcion || '').toLowerCase();
+            return title.includes(q) || tech.includes(q) || desc.includes(q);
         });
+
+        renderAdminTable(filtered, q);
+    }
+
+    // Listener para el buscador en tiempo real
+    if (adminProjectSearch) {
+        adminProjectSearch.addEventListener('input', function() {
+            filterAndRenderProjects(this.value);
+        });
+    }
+
+    // Renderiza las filas en la tabla del panel admin
+    function renderAdminTable(projects, searchQuery = '') {
+        if (!projectsTableBody) return;
+
+        projectsTableBody.innerHTML = '';
 
         if (currentCategoryTitle) {
-            currentCategoryTitle.textContent = cat ? cat.name : 'Todos los Proyectos';
+            currentCategoryTitle.textContent = 'Gestión de Proyectos';
         }
         if (currentCategoryDesc) {
-            currentCategoryDesc.textContent = cat 
-                ? `Mostrando proyectos correspondientes a "${cat.name}".`
-                : 'Usa la ruleta 3D para filtrar o administra el catálogo completo.';
+            currentCategoryDesc.textContent = searchQuery 
+                ? `Resultados para "${searchQuery}" (${projects.length} encontrados).`
+                : 'Administra todos los proyectos registrados en el flujo continuo del portafolio.';
         }
         if (projectCountBadge) {
-            projectCountBadge.textContent = `${matchCount} ${matchCount === 1 ? 'proyecto' : 'proyectos'}`;
+            const count = projects ? projects.length : 0;
+            projectCountBadge.textContent = `${count} ${count === 1 ? 'proyecto' : 'proyectos'}`;
         }
-        if (btnShowAllProjects) {
-            btnShowAllProjects.classList.remove('d-none');
-        }
-    }
 
-    // Botón "Mostrar Todos"
-    if (btnShowAllProjects) {
-        btnShowAllProjects.addEventListener('click', function() {
-            filterProjectsByCategory(null);
-            btnShowAllProjects.classList.add('d-none');
+        // Manejo del estado vacío
+        if (!projects || projects.length === 0) {
+            projectsTableBody.innerHTML = `
+                <tr>
+                    <td colspan="4" class="text-center py-5 text-secondary">
+                        <div class="mb-2" style="font-size: 1.8rem; opacity: 0.7;">📂</div>
+                        <span class="text-white fw-semibold d-block mb-1">
+                            ${searchQuery ? `No se encontraron proyectos para "${searchQuery}"` : 'No hay proyectos registrados en el portafolio aún.'}
+                        </span>
+                        <small class="text-secondary d-block mb-3" style="color: #94a3b8 !important;">
+                            ${searchQuery ? 'Intenta buscar con otros términos o limpia el buscador.' : 'Sé el primero en agregar un proyecto a la galería continua.'}
+                        </small>
+                        <button type="button" class="btn btn-sm btn-main" id="btnEmptyCreate">
+                            + Nuevo Proyecto
+                        </button>
+                    </td>
+                </tr>
+            `;
+            const emptyBtn = document.getElementById('btnEmptyCreate');
+            if (emptyBtn) {
+                emptyBtn.addEventListener('click', () => {
+                    const mainNewBtn = document.getElementById('btnNewProject');
+                    if (mainNewBtn) mainNewBtn.click();
+                });
+            }
+            return;
+        }
+
+        projects.forEach(p => {
+            const row = document.createElement('tr');
+            row.setAttribute('data-id', p.id);
+
+            // Generar badges de tecnologías
+            const techBadgesHtml = (p.tecnologias || '')
+                .split(',')
+                .map(t => t.trim())
+                .filter(Boolean)
+                .slice(0, 4)
+                .map(t => `<span class="badge me-1 mb-1" style="background: rgba(0, 229, 212, 0.08); color: #5eead4; border: 1px solid rgba(0, 229, 212, 0.2); font-weight: 500; font-size: 0.74rem; padding: 4px 10px; border-radius: 12px;">${t}</span>`)
+                .join('') || '<span class="text-secondary small">—</span>';
+
+            row.innerHTML = `
+                <td class="text-center" style="width: 90px;">
+                    <img src="${p.imagen_url || p.imagen}" alt="${p.titulo}" class="admin-thumb-img" onerror="this.src='https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=200&q=80'">
+                </td>
+                <td>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="fw-semibold text-white">${p.titulo}</span>
+                        ${(Number(p.destacado) === 1 || p.destacado === true || p.destacado === '1') ? '<span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.35); font-size: 0.7rem; padding: 2px 6px; border-radius: 6px;" title="Destacado en la Espiral 3D">⭐ Espiral 3D</span>' : ''}
+                    </div>
+                    <span class="small text-secondary" style="color: #94a3b8 !important;">${p.descripcion ? (p.descripcion.length > 60 ? p.descripcion.substring(0, 60) + '...' : p.descripcion) : ''}</span>
+                </td>
+                <td>
+                    <div class="d-flex flex-wrap">${techBadgesHtml}</div>
+                </td>
+                <td class="text-end">
+                    <div class="d-inline-flex gap-2">
+                        ${p.enlace_demo ? `
+                        <a href="${p.enlace_demo}" target="_blank" rel="noopener noreferrer" class="btn-action" title="Ver Demo Online" style="color: #5eead4;">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                        </a>` : ''}
+                        <button type="button" class="btn-action btn-action-edit" title="Editar" data-id="${p.id}">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
+                                <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
+                            </svg>
+                        </button>
+                        <button type="button" class="btn-action btn-action-delete" title="Eliminar" data-id="${p.id}">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <polyline points="3 6 5 6 21 6"></polyline>
+                                <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
+                                <line x1="10" y1="11" x2="10" y2="17"></line>
+                                <line x1="14" y1="11" x2="14" y2="17"></line>
+                            </svg>
+                        </button>
+                    </div>
+                </td>
+            `;
+
+            projectsTableBody.appendChild(row);
         });
     }
 
-    // Mapeo de badges para creación/edición
-    const CATEGORY_MAP = {
-        'desarrollo-web': { label: '🌐 Desarrollo Web', bg: 'rgba(59, 130, 246, 0.15)', color: '#93c5fd', border: 'rgba(59, 130, 246, 0.3)' },
-        'diseno-grafico': { label: '🎨 Diseño Gráfico', bg: 'rgba(236, 72, 153, 0.15)', color: '#f472b6', border: 'rgba(236, 72, 153, 0.3)' },
-        'spots-publicitarios': { label: '🎬 Spots Publicitarios', bg: 'rgba(234, 179, 8, 0.15)', color: '#fde047', border: 'rgba(234, 179, 8, 0.3)' },
-        'business-intelligence': { label: '📊 Business Intelligence', bg: 'rgba(34, 197, 94, 0.15)', color: '#86efac', border: 'rgba(34, 197, 94, 0.3)' },
-        'inteligencia-artificial': { label: '🤖 Inteligencia Artificial', bg: 'rgba(168, 85, 247, 0.15)', color: '#d8b4fe', border: 'rgba(168, 85, 247, 0.3)' }
-    };
+    // ==========================================================
+    // 5. ESTUDIO Y DASHBOARD DE CREACIÓN / EDICIÓN DE PROYECTOS
+    // ==========================================================
+    const viewProjectsList = document.getElementById('viewProjectsList');
+    const viewProjectEditor = document.getElementById('viewProjectEditor');
+    const btnNewProject = document.getElementById('btnNewProject');
+    const btnBackToProjects = document.getElementById('btnBackToProjects');
+    const btnResetEditor = document.getElementById('btnResetEditor');
+    const btnPublishProjectTop = document.getElementById('btnPublishProjectTop');
+    const btnPublishProjectSidebar = document.getElementById('btnPublishProjectSidebar');
+    const btnPublishProjectTopText = document.getElementById('btnPublishProjectTopText');
+    const btnPublishProjectSidebarText = document.getElementById('btnPublishProjectSidebarText');
 
-    // Guardar o Editar Proyecto (Modal Form)
-    if (projectForm) {
-        projectForm.addEventListener('submit', function(e) {
-            e.preventDefault();
+    const editorProjectForm = document.getElementById('editorProjectForm');
+    const editorProjectId = document.getElementById('editorProjectId');
+    const editorTechHidden = document.getElementById('editorTechHidden');
+    const editorViewHeading = document.getElementById('editorViewHeading');
+    const editorStatusBadge = document.getElementById('editorStatusBadge');
 
-            const idInput = document.getElementById('projectId');
-            const titleInput = document.getElementById('projectTitle');
-            const catInput = document.getElementById('projectCategory');
-            const imgInput = document.getElementById('projectImg');
-            const techInput = document.getElementById('projectTech');
+    const editorTitle = document.getElementById('editorTitle');
+    const editorTitleCount = document.getElementById('editorTitleCount');
 
-            const id = idInput ? idInput.value : '';
-            const title = titleInput.value.trim();
-            const catKey = catInput.value;
-            const img = imgInput.value.trim();
-            const tech = techInput.value.trim();
+    const editorDropzone = document.getElementById('editorDropzone');
+    const editorFileInput = document.getElementById('editorFileInput');
+    const dropzoneFileSelected = document.getElementById('dropzoneFileSelected');
+    const selectedFileName = document.getElementById('selectedFileName');
+    const btnRemoveSelectedFile = document.getElementById('btnRemoveSelectedFile');
+    const editorImgUrl = document.getElementById('editorImgUrl');
 
-            const catInfo = CATEGORY_MAP[catKey] || { label: catKey, bg: 'rgba(255,255,255,0.1)', color: '#ffffff', border: 'rgba(255,255,255,0.2)' };
+    const quickTechPills = document.getElementById('quickTechPills');
+    const editorActiveTagsList = document.getElementById('editorActiveTagsList');
+    const editorTechInput = document.getElementById('editorTechInput');
+    const editorDesc = document.getElementById('editorDesc');
+    const editorDescCount = document.getElementById('editorDescCount');
+    const editorDestacado = document.getElementById('editorDestacado');
 
-            if (id) {
-                const existingRow = projectsTableBody.querySelector(`tr[data-id="${id}"]`);
-                if (existingRow) {
-                    existingRow.setAttribute('data-category', catKey);
-                    existingRow.querySelector('.admin-thumb-img').src = img;
-                    existingRow.querySelector('.fw-semibold.text-white').textContent = title;
-                    existingRow.querySelector('.small.text-secondary').textContent = tech || 'General';
-                    const badge = existingRow.querySelector('td:nth-child(4) .badge');
-                    if (badge) {
-                        badge.textContent = catInfo.label;
-                        badge.style.background = catInfo.bg;
-                        badge.style.color = catInfo.color;
-                        badge.style.borderColor = catInfo.border;
-                    }
+    // Elementos del Simulador en Vivo
+    const liveCardImg = document.getElementById('liveCardImg');
+    const liveCardTitle = document.getElementById('liveCardTitle');
+    const liveCardDesc = document.getElementById('liveCardDesc');
+    const liveCardTechList = document.getElementById('liveCardTechList');
+
+    // Checklist de Validación
+    const chkTitle = document.getElementById('chkTitle');
+    const chkDesc = document.getElementById('chkDesc');
+    const chkImage = document.getElementById('chkImage');
+    const chkTech = document.getElementById('chkTech');
+    const editorProgressBar = document.getElementById('editorProgressBar');
+    const editorProgressText = document.getElementById('editorProgressText');
+
+    // Estado interno del Estudio
+    let editorActiveTags = [];
+    let editorSelectedFile = null;
+    let editorExistingImgUrl = '';
+    const DEFAULT_PLACEHOLDER_IMG = 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80';
+
+    // Función para cambiar de vista (Lista vs Dashboard de Creación)
+    function switchAdminView(viewName) {
+        const mainContainer = document.querySelector('.admin-main-col');
+        if (mainContainer) mainContainer.scrollTo({ top: 0, behavior: 'smooth' });
+
+        if (viewName === 'editor') {
+            if (viewProjectsList) viewProjectsList.classList.add('d-none');
+            if (viewProjectEditor) {
+                viewProjectEditor.classList.remove('d-none');
+                viewProjectEditor.classList.add('admin-view-container');
+            }
+        } else {
+            if (viewProjectEditor) viewProjectEditor.classList.add('d-none');
+            if (viewProjectsList) {
+                viewProjectsList.classList.remove('d-none');
+                viewProjectsList.classList.add('admin-view-container');
+            }
+        }
+    }
+
+    // Abrir el Dashboard en modo Creación o Edición
+    function openProjectEditor(mode = 'create', project = null) {
+        if (editorProjectForm) editorProjectForm.reset();
+        editorSelectedFile = null;
+        editorExistingImgUrl = '';
+        if (dropzoneFileSelected) dropzoneFileSelected.classList.add('d-none');
+        if (editorFileInput) editorFileInput.value = '';
+
+        if (mode === 'edit' && project) {
+            // Modo Edición
+            if (editorProjectId) editorProjectId.value = project.id;
+            if (editorViewHeading) editorViewHeading.textContent = `Editar: ${project.titulo}`;
+            if (editorStatusBadge) {
+                editorStatusBadge.textContent = `✏️ Editando #${project.id}`;
+                editorStatusBadge.style.background = 'rgba(139, 92, 246, 0.15)';
+                editorStatusBadge.style.color = '#c084fc';
+                editorStatusBadge.style.borderColor = 'rgba(139, 92, 246, 0.4)';
+            }
+            if (btnPublishProjectTopText) btnPublishProjectTopText.textContent = 'Guardar Cambios';
+            if (btnPublishProjectSidebarText) btnPublishProjectSidebarText.textContent = 'Actualizar Proyecto';
+
+            if (editorTitle) editorTitle.value = project.titulo || '';
+            if (editorDesc) editorDesc.value = project.descripcion || '';
+
+            // Procesar tecnologías
+            editorActiveTags = [];
+            if (project.tecnologias) {
+                editorActiveTags = project.tecnologias.split(',').map(t => t.trim()).filter(Boolean);
+            }
+            renderEditorTags();
+
+            // Imagen previa
+            const imgSource = project.imagen_url || project.imagen;
+            if (imgSource) {
+                editorExistingImgUrl = imgSource;
+                if (imgSource.startsWith('http')) {
+                    if (editorImgUrl) editorImgUrl.value = imgSource;
                 }
-            } else {
-                const nextId = projectsTableBody.children.length + 1;
-                const newRow = document.createElement('tr');
-                newRow.setAttribute('data-id', nextId);
-                newRow.setAttribute('data-category', catKey);
-                newRow.innerHTML = `
-                    <td class="text-secondary fw-semibold">#${nextId}</td>
-                    <td>
-                        <img src="${img}" alt="${title}" class="admin-thumb-img" onerror="this.src='https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=200&q=80'">
-                    </td>
-                    <td>
-                        <span class="fw-semibold text-white d-block">${title}</span>
-                        <span class="small text-secondary" style="color: #94a3b8 !important;">${tech || 'General'}</span>
-                    </td>
-                    <td>
-                        <span class="badge" style="background: ${catInfo.bg}; color: ${catInfo.color}; border: 1px solid ${catInfo.border}; font-weight: 500; font-size: 0.78rem; padding: 5px 12px; border-radius: 20px;">
-                            ${catInfo.label}
-                        </span>
-                    </td>
-                    <td class="text-end">
-                        <div class="d-inline-flex gap-2">
-                            <button type="button" class="btn-action btn-action-edit" title="Editar" data-id="${nextId}">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <path d="M11 4H4a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path>
-                                    <path d="M18.5 2.5a2.121 2.121 0 0 1 3 3L12 15l-4 1 1-4 9.5-9.5z"></path>
-                                </svg>
-                            </button>
-                            <button type="button" class="btn-action btn-action-delete" title="Eliminar" data-id="${nextId}">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                    <polyline points="3 6 5 6 21 6"></polyline>
-                                    <path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
-                                    <line x1="10" y1="11" x2="10" y2="17"></line>
-                                    <line x1="14" y1="11" x2="14" y2="17"></line>
-                                </svg>
-                            </button>
-                        </div>
-                    </td>
-                `;
-                projectsTableBody.prepend(newRow);
             }
 
-            projectForm.reset();
-            if (idInput) idInput.value = '';
-            if (projectModal) projectModal.hide();
+            // Estado de destacado (Espiral 3D)
+            if (editorDestacado) {
+                editorDestacado.checked = (Number(project.destacado) === 1 || project.destacado === true || project.destacado === '1');
+            }
+
+        } else {
+            // Modo Creación
+            if (editorProjectId) editorProjectId.value = '';
+            if (editorViewHeading) editorViewHeading.textContent = 'Estudio de Creación de Proyecto';
+            if (editorStatusBadge) {
+                editorStatusBadge.textContent = '✨ Nuevo Proyecto';
+                editorStatusBadge.style.background = 'rgba(0, 229, 212, 0.12)';
+                editorStatusBadge.style.color = '#00e5d4';
+                editorStatusBadge.style.borderColor = 'rgba(0, 229, 212, 0.3)';
+            }
+            if (btnPublishProjectTopText) btnPublishProjectTopText.textContent = 'Publicar Proyecto';
+            if (btnPublishProjectSidebarText) btnPublishProjectSidebarText.textContent = 'Publicar en el Portafolio';
+
+            if (editorDestacado) {
+                editorDestacado.checked = false;
+            }
+
+            // Tags sugeridos iniciales
+            editorActiveTags = ['JavaScript', 'PHP', 'HTML5'];
+            renderEditorTags();
+        }
+
+        updateEditorCounters();
+        updateLiveCardPreview();
+        updateQualityChecklist();
+        switchAdminView('editor');
+
+        if (editorTitle) setTimeout(() => editorTitle.focus(), 150);
+    }
+
+    // Regresar a la lista de proyectos
+    function closeProjectEditor() {
+        switchAdminView('list');
+    }
+
+
+
+    // Contadores de caracteres
+    function updateEditorCounters() {
+        if (editorTitle && editorTitleCount) {
+            editorTitleCount.textContent = `${editorTitle.value.length} / 80`;
+        }
+        if (editorDesc && editorDescCount) {
+            editorDescCount.textContent = `${editorDesc.value.length} / 300`;
+        }
+    }
+
+    if (editorTitle) {
+        editorTitle.addEventListener('input', () => {
+            updateEditorCounters();
+            updateLiveCardPreview();
+            updateQualityChecklist();
         });
     }
 
-    // Acciones de Editar y Eliminar
+    if (editorDesc) {
+        editorDesc.addEventListener('input', () => {
+            updateEditorCounters();
+            updateLiveCardPreview();
+            updateQualityChecklist();
+        });
+    }
+
+    // Manejo de Tags y Tecnologías
+    function renderEditorTags() {
+        if (!editorActiveTagsList) return;
+        editorActiveTagsList.innerHTML = '';
+
+        editorActiveTags.forEach(tag => {
+            const badge = document.createElement('span');
+            badge.className = 'active-tag-badge';
+            badge.innerHTML = `
+                <span>${tag}</span>
+                <button type="button" class="btn-tag-remove" data-tag="${tag}" title="Remover tag">×</button>
+            `;
+            editorActiveTagsList.appendChild(badge);
+        });
+
+        if (editorTechHidden) {
+            editorTechHidden.value = editorActiveTags.join(', ');
+        }
+
+        // Sincronizar estado visual de los botones de sugerencia rápida
+        if (quickTechPills) {
+            quickTechPills.querySelectorAll('.quick-tech-btn').forEach(btn => {
+                const tech = btn.getAttribute('data-tech');
+                if (tech && editorActiveTags.some(t => t.toLowerCase() === tech.toLowerCase())) {
+                    btn.classList.add('is-added');
+                } else {
+                    btn.classList.remove('is-added');
+                }
+            });
+        }
+
+        updateLiveCardPreview();
+        updateQualityChecklist();
+    }
+
+    function addEditorTag(tagText) {
+        const clean = tagText.trim().replace(/^,+|,+$/g, '');
+        if (clean && !editorActiveTags.some(t => t.toLowerCase() === clean.toLowerCase())) {
+            if (editorActiveTags.length < 8) {
+                editorActiveTags.push(clean);
+                renderEditorTags();
+            } else {
+                showAdminToast('Máximo 8 tecnologías recomendadas para la tarjeta.', 'info');
+            }
+        }
+    }
+
+    function removeEditorTag(tagText) {
+        editorActiveTags = editorActiveTags.filter(t => t.toLowerCase() !== tagText.toLowerCase());
+        renderEditorTags();
+    }
+
+    // Agregar tag mediante tecla Enter o coma
+    if (editorTechInput) {
+        editorTechInput.addEventListener('keydown', function(e) {
+            if (e.key === 'Enter' || e.key === ',') {
+                e.preventDefault();
+                addEditorTag(this.value);
+                this.value = '';
+            }
+        });
+        editorTechInput.addEventListener('blur', function() {
+            if (this.value.trim()) {
+                addEditorTag(this.value);
+                this.value = '';
+            }
+        });
+    }
+
+    if (editorActiveTagsList) {
+        editorActiveTagsList.addEventListener('click', function(e) {
+            const removeBtn = e.target.closest('.btn-tag-remove');
+            if (removeBtn) {
+                const tag = removeBtn.getAttribute('data-tag');
+                if (tag) removeEditorTag(tag);
+            }
+        });
+    }
+
+    // Sugerencias rápidas de tecnologías clicables (Añadir o Alternar)
+    if (quickTechPills) {
+        quickTechPills.addEventListener('click', function(e) {
+            const pillBtn = e.target.closest('.quick-tech-btn');
+            if (pillBtn) {
+                const tech = pillBtn.getAttribute('data-tech');
+                if (tech) {
+                    if (editorActiveTags.some(t => t.toLowerCase() === tech.toLowerCase())) {
+                        removeEditorTag(tech);
+                    } else {
+                        addEditorTag(tech);
+                    }
+                }
+            }
+        });
+    }
+
+    // Manejo de Dropzone & Subida de Archivos
+    if (editorDropzone && editorFileInput) {
+        editorDropzone.addEventListener('click', function(e) {
+            if (e.target.closest('#btnRemoveSelectedFile')) return;
+            editorFileInput.click();
+        });
+
+        editorDropzone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.classList.add('dragover');
+        });
+
+        editorDropzone.addEventListener('dragleave', function() {
+            this.classList.remove('dragover');
+        });
+
+        editorDropzone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('dragover');
+            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                handleSelectedImageFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        editorFileInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                handleSelectedImageFile(this.files[0]);
+            }
+        });
+    }
+
+    function handleSelectedImageFile(file) {
+        if (!file.type.startsWith('image/')) {
+            showAdminToast('Por favor, selecciona un archivo de imagen válido (JPG, PNG, WEBP, GIF).', 'warning');
+            return;
+        }
+
+        editorSelectedFile = file;
+        if (selectedFileName) selectedFileName.textContent = `${file.name} (${Math.round(file.size / 1024)} KB)`;
+        if (dropzoneFileSelected) dropzoneFileSelected.classList.remove('d-none');
+
+        // Previsualizar inmediatamente en la tarjeta en vivo
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            if (liveCardImg) liveCardImg.src = e.target.result;
+            updateQualityChecklist();
+        };
+        reader.readAsDataURL(file);
+    }
+
+    if (btnRemoveSelectedFile) {
+        btnRemoveSelectedFile.addEventListener('click', function(e) {
+            e.stopPropagation();
+            editorSelectedFile = null;
+            if (editorFileInput) editorFileInput.value = '';
+            if (dropzoneFileSelected) dropzoneFileSelected.classList.add('d-none');
+            updateLiveCardPreview();
+            updateQualityChecklist();
+        });
+    }
+
+    if (editorImgUrl) {
+        editorImgUrl.addEventListener('input', () => {
+            updateLiveCardPreview();
+            updateQualityChecklist();
+        });
+    }
+
+    // Actualización del Simulador en Vivo de la Tarjeta
+    function updateLiveCardPreview() {
+        // 1. Título
+        const titleVal = editorTitle ? editorTitle.value.trim() : '';
+        if (liveCardTitle) {
+            liveCardTitle.textContent = titleVal || 'Título de tu Nuevo Proyecto';
+        }
+
+
+
+        // 3. Imagen
+        if (liveCardImg) {
+            if (editorSelectedFile) {
+                // Ya se actualizó con el FileReader
+            } else if (editorImgUrl && editorImgUrl.value.trim()) {
+                liveCardImg.src = editorImgUrl.value.trim();
+            } else if (editorExistingImgUrl) {
+                liveCardImg.src = editorExistingImgUrl;
+            } else {
+                liveCardImg.src = DEFAULT_PLACEHOLDER_IMG;
+            }
+        }
+
+        // 4. Descripción
+        const descVal = editorDesc ? editorDesc.value.trim() : '';
+        if (liveCardDesc) {
+            liveCardDesc.textContent = descVal || 'Redacta una descripción atractiva para verla reflejada aquí en tiempo real.';
+        }
+
+        // 5. Tecnologías
+        if (liveCardTechList) {
+            liveCardTechList.innerHTML = '';
+            if (editorActiveTags.length > 0) {
+                editorActiveTags.forEach(tech => {
+                    const badge = document.createElement('span');
+                    badge.className = 'tech-badge';
+                    badge.textContent = tech;
+                    liveCardTechList.appendChild(badge);
+                });
+            } else {
+                liveCardTechList.innerHTML = `
+                    <span class="tech-badge" style="opacity: 0.5;">Tecnología 1</span>
+                    <span class="tech-badge" style="opacity: 0.5;">Tecnología 2</span>
+                `;
+            }
+        }
+    }
+
+    // Actualización de Checklist de Validación y Progreso (4 ítems: 25% c/u)
+    function updateQualityChecklist() {
+        let completedCount = 0;
+        const totalItems = 4;
+
+        // 1. Título descriptivo (mín. 4 caracteres)
+        const hasTitle = editorTitle && editorTitle.value.trim().length >= 4;
+        setChecklistItem(chkTitle, hasTitle);
+        if (hasTitle) completedCount++;
+
+        // 2. Descripción del proyecto (mín. 10 caracteres)
+        const hasDesc = editorDesc && editorDesc.value.trim().length >= 10;
+        setChecklistItem(chkDesc, hasDesc);
+        if (hasDesc) completedCount++;
+
+        // 3. Portada o imagen
+        const hasImage = Boolean(editorSelectedFile) || (editorImgUrl && editorImgUrl.value.trim().length > 5) || Boolean(editorExistingImgUrl);
+        setChecklistItem(chkImage, hasImage);
+        if (hasImage) completedCount++;
+
+        // 4. Stack tecnológico (al menos 1 tecnología)
+        const hasTech = editorActiveTags.length >= 1;
+        setChecklistItem(chkTech, hasTech);
+        if (hasTech) completedCount++;
+
+        const percentage = Math.round((completedCount / totalItems) * 100);
+        if (editorProgressBar) {
+            editorProgressBar.style.width = `${percentage}%`;
+            editorProgressBar.setAttribute('aria-valuenow', percentage);
+        }
+        if (editorProgressText) {
+            editorProgressText.textContent = `${percentage}% listo para publicar`;
+        }
+    }
+
+    function setChecklistItem(element, isComplete) {
+        if (!element) return;
+        const bullet = element.querySelector('.chk-bullet');
+        if (isComplete) {
+            element.classList.add('completed');
+            if (bullet) {
+                bullet.textContent = '✔️';
+                bullet.style.color = '#00e5d4';
+            }
+        } else {
+            element.classList.remove('completed');
+            if (bullet) {
+                bullet.textContent = '⚪';
+                bullet.style.color = '#64748b';
+            }
+        }
+    }
+
+    // Botones de Navegación del Estudio
+    if (btnNewProject) {
+        btnNewProject.addEventListener('click', () => openProjectEditor('create'));
+    }
+
+    if (btnBackToProjects) {
+        btnBackToProjects.addEventListener('click', closeProjectEditor);
+    }
+
+    if (btnResetEditor) {
+        btnResetEditor.addEventListener('click', () => {
+            if (confirm('¿Deseas restablecer todos los campos del formulario?')) {
+                openProjectEditor('create');
+            }
+        });
+    }
+
+    if (btnPublishProjectTop) {
+        btnPublishProjectTop.addEventListener('click', () => {
+            if (editorProjectForm) {
+                if (typeof editorProjectForm.requestSubmit === 'function') {
+                    editorProjectForm.requestSubmit();
+                } else {
+                    editorProjectForm.dispatchEvent(new Event('submit', { cancelable: true, bubbles: true }));
+                }
+            }
+        });
+    }
+
+    // ==========================================================
+    // Guardar / Publicar Proyecto (Submit del Formulario del Estudio)
+    // ==========================================================
+    if (editorProjectForm) {
+        editorProjectForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+
+            const title = editorTitle ? editorTitle.value.trim() : '';
+            if (!title) {
+                showAdminToast('El título del proyecto es obligatorio.', 'warning');
+                if (editorTitle) editorTitle.focus();
+                return;
+            }
+
+            const id = editorProjectId ? editorProjectId.value.trim() : '';
+            const isEditing = Boolean(id);
+
+            // Estado de carga en ambos botones de publicación
+            const setButtonsLoading = (loading) => {
+                const topBtn = document.getElementById('btnPublishProjectTop');
+                const sideBtn = document.getElementById('btnPublishProjectSidebar');
+
+                if (topBtn) {
+                    topBtn.disabled = loading;
+                    topBtn.innerHTML = loading 
+                        ? '<span class="spinner-border spinner-border-sm me-2"></span>Guardando...'
+                        : `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg><span>${isEditing ? 'Guardar Cambios' : 'Publicar Proyecto'}</span>`;
+                }
+                if (sideBtn) {
+                    sideBtn.disabled = loading;
+                    sideBtn.innerHTML = loading 
+                        ? '<span class="spinner-border spinner-border-sm me-2"></span>Procesando...'
+                        : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg><span>${isEditing ? 'Actualizar Proyecto' : 'Publicar en el Portafolio'}</span>`;
+                }
+            };
+
+            setButtonsLoading(true);
+
+            try {
+                const formData = new FormData(editorProjectForm);
+                const adminUser = localStorage.getItem('devioz_admin_user') || 'admin';
+                const adminToken = 'devioz_admin_' + adminUser;
+
+                formData.append('admin_token', adminToken);
+                if (isEditing) {
+                    formData.append('id', id);
+                    formData.append('action', 'update');
+                }
+
+                // Asegurar tecnologías procesadas y estado destacado
+                formData.set('tecnologias', editorActiveTags.join(', '));
+                formData.set('destacado', editorDestacado && editorDestacado.checked ? '1' : '0');
+
+                const endpoint = getBackendProjectsEndpoint();
+                let response;
+                try {
+                    response = await fetch(endpoint, {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: {
+                            'Authorization': `Bearer ${adminToken}`,
+                            'X-Admin-Token': adminToken
+                        },
+                        body: formData
+                    });
+                } catch (saveErr) {
+                    const fallbackEndpoint = `http://localhost/portafolio-Devioz/backend/api/proyectos.php`;
+                    response = await fetch(fallbackEndpoint, {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: {
+                            'Authorization': `Bearer ${adminToken}`,
+                            'X-Admin-Token': adminToken
+                        },
+                        body: formData
+                    });
+                }
+
+                const result = await response.json();
+
+                if (response.ok && (result.status === 'success' || result.code === 200 || result.code === 201)) {
+                    // Cerrar el dashboard y volver a la vista de lista
+                    closeProjectEditor();
+
+                    // Recargar inmediatamente todos los proyectos en flujo continuo
+                    await loadAdminProjects();
+
+                    showAdminToast(
+                        isEditing ? '¡Proyecto actualizado con éxito!' : '¡Nuevo proyecto publicado exitosamente en tu portafolio!',
+                        'success'
+                    );
+                } else {
+                    showAdminToast(result.message || 'Ocurrió un error al guardar el proyecto.', 'error');
+                }
+            } catch (err) {
+                console.error('[Devioz Admin] Error al guardar proyecto:', err);
+                showAdminToast('Error de conexión al guardar el proyecto. Verifica que Apache esté en ejecución.', 'error');
+            } finally {
+                setButtonsLoading(false);
+            }
+        });
+    }
+
+    // ==========================================================
+    // Acciones en la Tabla de Proyectos (Editar y Eliminar)
+    // ==========================================================
     if (projectsTableBody) {
-        projectsTableBody.addEventListener('click', function(e) {
+        projectsTableBody.addEventListener('click', async function(e) {
             const deleteBtn = e.target.closest('.btn-action-delete');
             const editBtn = e.target.closest('.btn-action-edit');
 
             if (deleteBtn) {
-                const row = deleteBtn.closest('tr');
-                if (row && confirm('¿Estás seguro de que deseas eliminar este proyecto?')) {
-                    row.style.opacity = '0';
-                    row.style.transform = 'scale(0.95)';
-                    row.style.transition = 'all 0.3s ease';
-                    setTimeout(function() { row.remove(); }, 300);
+                const id = deleteBtn.getAttribute('data-id');
+                if (!id) return;
+
+                const project = adminProjectsList.find(p => String(p.id) === String(id));
+                const projectTitle = project ? project.titulo : ('#' + id);
+
+                if (confirm(`¿Estás seguro de que deseas eliminar el proyecto "${projectTitle}" (#${id})? Esta acción removerá el registro y sus archivos asociados.`)) {
+                    try {
+                        const adminUser = localStorage.getItem('devioz_admin_user') || 'admin';
+                        const adminToken = 'devioz_admin_' + adminUser;
+                        const deleteEndpoint = getBackendProjectsEndpoint() + `?action=delete&id=${encodeURIComponent(id)}&admin_token=${encodeURIComponent(adminToken)}`;
+                        let response;
+                        try {
+                            response = await fetch(deleteEndpoint, {
+                                method: 'POST',
+                                credentials: 'include',
+                                headers: {
+                                    'Authorization': `Bearer ${adminToken}`,
+                                    'X-Admin-Token': adminToken
+                                }
+                            });
+                        } catch (delErr) {
+                            const fallbackDelete = `http://localhost/portafolio-Devioz/backend/api/proyectos.php?action=delete&id=${encodeURIComponent(id)}&admin_token=${encodeURIComponent(adminToken)}`;
+                            response = await fetch(fallbackDelete, {
+                                method: 'POST',
+                                credentials: 'include',
+                                headers: {
+                                    'Authorization': `Bearer ${adminToken}`,
+                                    'X-Admin-Token': adminToken
+                                }
+                            });
+                        }
+
+                        const resData = await response.json();
+                        if (response.ok && (resData.status === 'success')) {
+                            const row = deleteBtn.closest('tr');
+                            if (row) {
+                                row.style.opacity = '0';
+                                row.style.transform = 'scale(0.95)';
+                                row.style.transition = 'all 0.25s ease';
+                                setTimeout(() => {
+                                    loadAdminProjects();
+                                }, 260);
+                            } else {
+                                loadAdminProjects();
+                            }
+                            showAdminToast(`El proyecto "${projectTitle}" ha sido eliminado.`, 'success');
+                        } else {
+                            showAdminToast(resData.message || 'No se pudo eliminar el proyecto.', 'error');
+                        }
+                    } catch (err) {
+                        console.error('[Devioz Admin] Error al eliminar proyecto:', err);
+                        showAdminToast('Error de conexión al eliminar el proyecto.', 'error');
+                    }
                 }
             } else if (editBtn) {
-                const row = editBtn.closest('tr');
-                if (!row) return;
-
-                const id = row.getAttribute('data-id');
-                const title = row.querySelector('.fw-semibold.text-white').textContent;
-                const tech = row.querySelector('.small.text-secondary').textContent;
-                const imgSrc = row.querySelector('.admin-thumb-img').src;
-                const catKey = row.getAttribute('data-category');
-
-                const modalTitle = document.getElementById('projectModalLabel');
-                const idInput = document.getElementById('projectId');
-                const titleInput = document.getElementById('projectTitle');
-                const catInput = document.getElementById('projectCategory');
-                const imgInput = document.getElementById('projectImg');
-                const techInput = document.getElementById('projectTech');
-
-                if (modalTitle) modalTitle.textContent = 'Editar Proyecto #' + id;
-                if (idInput) idInput.value = id;
-                if (titleInput) titleInput.value = title;
-                if (catInput && catKey) catInput.value = catKey;
-                if (imgInput) imgInput.value = imgSrc;
-                if (techInput) techInput.value = tech;
-
-                if (projectModal) projectModal.show();
+                const id = editBtn.getAttribute('data-id');
+                const project = adminProjectsList.find(p => String(p.id) === String(id));
+                if (project) {
+                    openProjectEditor('edit', project);
+                }
             }
         });
     }
 
-    // Botón "+ Nuevo Proyecto"
-    const btnNewProject = document.getElementById('btnNewProject');
-    if (btnNewProject) {
-        btnNewProject.addEventListener('click', function() {
-            const modalTitle = document.getElementById('projectModalLabel');
-            const idInput = document.getElementById('projectId');
-            if (modalTitle) modalTitle.textContent = 'Nuevo Proyecto';
-            if (idInput) idInput.value = '';
-            if (projectForm) projectForm.reset();
-        });
+    // Carga inicial al cargar el DOM del admin (flujo continuo de todos los proyectos)
+    if (projectsTableBody) {
+        loadAdminProjects();
     }
 });

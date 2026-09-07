@@ -14,9 +14,8 @@
         <div class="glass-card p-4 p-md-5" style="width: 100%; max-width: 420px;">
             <!-- Encabezado con logo Devioz -->
             <div class="text-center mb-4">
-                <a href="index.html" class="text-white text-decoration-none d-inline-flex align-items-center gap-2 mb-2">
-                    <img src="assets/img/devioz-img.png" alt="Devioz Logo" class="brand-logo-img" style="height: 42px;">
-                    <span class="fs-2 fw-bold" style="letter-spacing: -0.02em;">Devioz</span>
+                <a href="index.html" class="d-inline-block mb-3 text-decoration-none" title="Volver al Inicio">
+                    <img src="assets/img/devioz-img.png" alt="Devioz Logo" class="brand-logo-img" style="height: 68px; width: auto; max-width: 240px; object-fit: contain; display: block; margin: 0 auto; filter: drop-shadow(0 0 18px rgba(0, 229, 212, 0.35)); transition: transform 0.25s ease;">
                 </a>
                 <div class="mb-2">
                     <span class="badge" style="background: rgba(0, 180, 167, 0.18); color: #5eead4; border: 1px solid rgba(0, 180, 167, 0.35); font-weight: 500; font-size: 0.76rem; padding: 4px 10px; border-radius: 20px;">
@@ -26,27 +25,27 @@
                 <p class="small mb-0" style="color: #94a3b8;">Ingresa tus credenciales para gestionar el portafolio</p>
             </div>
 
-            <!-- Formulario de Acceso -->
-            <form id="loginForm" autocomplete="on">
+            <!-- Formulario de Acceso Exclusivo para Administrador -->
+            <form id="loginForm" action="../backend/api/login.php" method="POST" autocomplete="on">
                 <div id="loginAlert" class="alert alert-danger py-2 px-3 small d-none" role="alert" style="background: rgba(239, 68, 68, 0.15); border: 1px solid rgba(239, 68, 68, 0.3); color: #fca5a5; border-radius: 10px;"></div>
 
                 <div class="mb-3">
-                    <label for="username" class="form-label-custom">Usuario</label>
-                    <input type="text" class="form-control form-control-glass" id="username" name="username" placeholder="Ingresa tu usuario" required autocomplete="username">
+                    <label for="username" class="form-label-custom">Usuario o Correo</label>
+                    <input type="text" class="form-control form-control-glass" id="username" name="usuario" placeholder="admin o correo@devioz.com" required autocomplete="username">
                 </div>
 
                 <div class="mb-4">
                     <label for="password" class="form-label-custom">Contraseña</label>
-                    <input type="password" class="form-control form-control-glass" id="password" name="password" placeholder="••••••••" required autocomplete="current-password">
+                    <input type="password" class="form-control form-control-glass" id="password" name="clave" placeholder="••••••••" required autocomplete="current-password">
                 </div>
 
                 <button type="submit" class="btn btn-main w-100 py-2 mb-3" id="btnLoginSubmit">
-                    Ingresar
+                    Ingresar al Panel
                 </button>
 
                 <div class="text-center">
                     <a href="index.html" class="text-secondary small text-decoration-none hover-white" style="color: #94a3b8 !important; transition: color 0.2s;">
-                        ← Volver al inicio
+                        ← Volver al sitio web
                     </a>
                 </div>
             </form>

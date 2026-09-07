@@ -8,81 +8,46 @@
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="assets/css/style.css">
+    <!-- Infinite Spiral 3D Component CSS -->
+    <link rel="stylesheet" href="assets/css/infinite-spiral.css">
 </head>
-<body class="no-scroll">
-    <!-- Filtro SVG Gooey (Efecto Viscoso/Pegajoso) -->
-    <svg xmlns="http://www.w3.org/2000/svg" version="1.1" style="position: absolute; width: 0; height: 0; overflow: hidden;" aria-hidden="true">
-      <defs>
-        <filter id="goo" x="-30%" y="-30%" width="160%" height="160%">
-          <feGaussianBlur in="SourceGraphic" stdDeviation="10" result="blur" />
-          <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -7" result="goo" />
-          <feBlend in="SourceGraphic" in2="goo" />
-        </filter>
-      </defs>
+<body>
+    <!-- Barra de progreso interactiva de scroll superior -->
+    <div id="scrollProgressBar" class="scroll-progress-bar" aria-hidden="true"></div>
+
+    <!-- Logotipo independiente en la esquina superior izquierda -->
+    <a class="navbar-brand navbar-brand-standalone" href="#" title="Devioz">
+        <img src="assets/img/devioz-img.png" alt="Devioz Logo" class="brand-logo-img">
+    </a>
+
+    <!-- Filtro SVG Gooey Nativo (Líquido y 100% transparente sin fondos oscuros ni sombras superpuestas) -->
+    <svg xmlns="http://www.w3.org/2000/svg" style="position: absolute; width: 0; height: 0; overflow: hidden; pointer-events: none;" aria-hidden="true">
+        <defs>
+            <filter id="gooeyNavFilter" color-interpolation-filters="sRGB" x="-100%" y="-100%" width="300%" height="300%">
+                <feGaussianBlur in="SourceGraphic" stdDeviation="5" result="blur" />
+                <feColorMatrix in="blur" mode="matrix" values="1 0 0 0 0  0 1 0 0 0  0 0 1 0 0  0 0 0 18 -8" result="goo" />
+                <feComposite in="SourceGraphic" in2="goo" operator="atop" />
+            </filter>
+        </defs>
     </svg>
 
-    <!-- Navbar flotante de cristal -->
-    <header class="fixed-top d-flex justify-content-center px-3" style="z-index: 100;">
-        <nav class="navbar navbar-expand custom-navbar">
-            <div class="container-fluid d-flex align-items-center gap-2 gap-md-3">
-                <a class="navbar-brand text-white fw-bold m-0 d-inline-flex align-items-center gap-2" href="#">
-                    <img src="assets/img/devioz-img.png" alt="Devioz Logo" class="brand-logo-img">
-                    <span>Devioz</span>
-                </a>
-                <div class="gooey-nav-wrapper d-none" id="nav-categories-wrapper">
-                    <!-- Capa de fondo con filtro Gooey -->
-                    <div class="gooey-layer">
-                        <div class="gooey-pill" id="gooey-pill"></div>
-                        <div class="gooey-bubbles" id="gooey-bubbles"></div>
-                    </div>
-                    <ul class="navbar-nav d-flex flex-row align-items-center gap-1 gap-md-2 m-0 py-1" id="nav-categories-list">
-                        <li class="nav-item">
-                            <a class="nav-category-btn active" href="#todos">
-                                <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
-                                    <rect x="3" y="3" width="7" height="7"></rect>
-                                    <rect x="14" y="3" width="7" height="7"></rect>
-                                    <rect x="14" y="14" width="7" height="7"></rect>
-                                    <rect x="3" y="14" width="7" height="7"></rect>
-                                </svg>
-                                <span>Todos</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-category-btn" href="#diseno-grafico">
-                                <span>🎨</span>
-                                <span>Diseño Gráfico</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-category-btn" href="#spots-publicitarios">
-                                <span>🎬</span>
-                                <span>Spots Publicitarios</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-category-btn" href="#business-intelligence">
-                                <span>📊</span>
-                                <span>Business Intelligence</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-category-btn" href="#desarrollo-web">
-                                <span>🌐</span>
-                                <span>Desarrollo Web</span>
-                            </a>
-                        </li>
-                        <li class="nav-item">
-                            <a class="nav-category-btn" href="#inteligencia-artificial">
-                                <span>🤖</span>
-                                <span>Inteligencia Artificial</span>
-                            </a>
-                        </li>
-                    </ul>
-                </div>
-                <a href="login.html" class="btn btn-sm btn-secondary-glass text-white text-decoration-none ms-auto text-nowrap">Admin Login</a>
-            </div>
-        </nav>
+    <!-- Menú Gooey Nav Flotante (React Bits → Vanilla JS) -->
+    <header class="header-nav-container fixed-top" style="z-index: 100; pointer-events: none;">
+        <div class="gooey-nav-container" id="gooeyNavContainer" style="pointer-events: auto;">
+            <nav>
+                <ul id="gooeyNavList">
+                    <li class="active"><a href="#inicio">Inicio</a></li>
+                    <li><a href="#destacados">Destacados</a></li>
+                    <li><a href="#proyectos">Proyectos</a></li>
+                </ul>
+            </nav>
+            <span class="effect filter" id="gooeyFilter"></span>
+            <span class="effect text" id="gooeyText"></span>
+        </div>
     </header>
+
+    <!-- Ancla de inicio para desplazamiento suave -->
+    <span id="inicio" style="position: absolute; top: 0; left: 0; display: block; visibility: hidden;"></span>
 
     <!-- Sección Hero centrada -->
     <main class="hero-content container px-4">
@@ -94,27 +59,56 @@
         <h1 class="display-3 fw-bold text-white mb-3" style="max-width: 850px; letter-spacing: -0.02em;">
             Soluciones Digitales a tu Medida
         </h1>
-        <p class="lead mb-4 col-md-8 col-lg-6 mx-auto" style="color: #94a3b8;">
+        <p class="lead mb-0 col-md-8 col-lg-6 mx-auto" style="color: #94a3b8;">
             Diseño, desarrollo, IA y más. Paquetes listos para escalar tu negocio con resultados garantizados y soporte Devioz.
         </p>
-        <div class="d-flex flex-wrap gap-3 justify-content-center">
-            <a href="#proyectos" class="btn btn-main text-decoration-none" id="btn-explorar">Explorar portafolio</a>
-            <a href="#demo" class="btn btn-secondary-glass text-decoration-none">Ver Demo</a>
-        </div>
     </main>
 
     <!-- =========================================
-         SECCIÓN PROYECTOS DESTACADOS
+         SECCIÓN ESPIRAL 3D (Infinite Spiral)
          ========================================= -->
-    <section id="proyectos" class="projects-section container px-4">
-        <!-- Grilla de Tarjetas (Grid Layout) -->
+    <section id="spiral-showcase" class="spiral-section" data-alias="destacados">
+        <span id="destacados" style="position: relative; top: -80px; display: block; visibility: hidden;"></span>
+        <div class="spiral-header text-center mb-4 scroll-reveal">
+            <h2 class="portfolio-section-title mb-2">
+                Proyectos Más Destacados
+            </h2>
+            <p class="portfolio-section-subtitle mx-auto mb-0">
+                Explora nuestras creaciones digitales más sobresalientes en este recorrido 3D interactivo continuo.
+            </p>
+        </div>
+
+        <div class="infinite-spiral scroll-reveal" id="infiniteSpiralContainer" aria-label="Espiral interactiva 3D de proyectos">
+            <div class="infinite-spiral__stage" id="infiniteSpiralStage"></div>
+        </div>
+    </section>
+
+    <!-- =========================================
+         SECCIÓN GALERÍA DE PROYECTOS
+         ========================================= -->
+    <section id="galeria-proyectos" class="projects-section container px-4" data-alias="proyectos">
+        <span id="proyectos" style="position: relative; top: -80px; display: block; visibility: hidden;"></span>
+        <!-- Encabezado de Sección con Badge Glow -->
+        <div class="section-header text-center mb-5 scroll-reveal">
+            <div class="d-inline-flex align-items-center gap-2 section-badge mb-3">
+                <span class="badge-dot"></span>
+                <span>Portafolio Completo</span>
+            </div>
+            <h2 class="portfolio-section-title mb-3">
+                Galería de Proyectos
+            </h2>
+            <p class="portfolio-section-subtitle mx-auto">
+                Un recorrido continuo por nuestras creaciones digitales: soluciones web, inteligencia artificial, arquitectura de datos y producción audiovisual.
+            </p>
+        </div>
+
+        <!-- Grilla de Tarjetas en Flujo Continuo -->
         <div class="row g-4" id="projects-grid">
             <!-- Proyecto 1: Desarrollo Web -->
             <div class="col-lg-4 col-md-6 project-item" data-category="desarrollo-web">
                 <div class="project-card">
                     <div class="card-img-wrapper">
                         <img src="https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80" alt="Plataforma E-Commerce SaaS" loading="lazy">
-                        <span class="card-category-badge">🌐 Desarrollo Web</span>
                     </div>
                     <div class="project-card-body">
                         <h3 class="project-card-title">Plataforma E-Commerce SaaS</h3>
@@ -127,13 +121,13 @@
                             <span class="tech-badge">JavaScript</span>
                             <span class="tech-badge">Bootstrap 5</span>
                         </div>
-                        <a href="#demo" class="btn-card-action">
+                        <button type="button" class="btn-card-action">
                             <span>Ver Proyecto</span>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <line x1="5" y1="12" x2="19" y2="12"></line>
                                 <polyline points="12 5 19 12 12 19"></polyline>
                             </svg>
-                        </a>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -143,7 +137,6 @@
                 <div class="project-card">
                     <div class="card-img-wrapper">
                         <img src="https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=800&q=80" alt="Neural Assistant & RAG Copilot" loading="lazy">
-                        <span class="card-category-badge">🤖 Inteligencia Artificial</span>
                     </div>
                     <div class="project-card-body">
                         <h3 class="project-card-title">Neural Assistant &amp; RAG Copilot</h3>
@@ -156,13 +149,13 @@
                             <span class="tech-badge">Gemini API</span>
                             <span class="tech-badge">Vector DB</span>
                         </div>
-                        <a href="#demo" class="btn-card-action">
+                        <button type="button" class="btn-card-action">
                             <span>Ver Proyecto</span>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <line x1="5" y1="12" x2="19" y2="12"></line>
                                 <polyline points="12 5 19 12 12 19"></polyline>
                             </svg>
-                        </a>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -172,7 +165,6 @@
                 <div class="project-card">
                     <div class="card-img-wrapper">
                         <img src="https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80" alt="Dashboard Ejecutivo BI & KPIs" loading="lazy">
-                        <span class="card-category-badge">📊 Business Intelligence</span>
                     </div>
                     <div class="project-card-body">
                         <h3 class="project-card-title">Dashboard Ejecutivo BI &amp; KPIs</h3>
@@ -185,13 +177,13 @@
                             <span class="tech-badge">Python</span>
                             <span class="tech-badge">ETL Pipeline</span>
                         </div>
-                        <a href="#demo" class="btn-card-action">
+                        <button type="button" class="btn-card-action">
                             <span>Ver Proyecto</span>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <line x1="5" y1="12" x2="19" y2="12"></line>
                                 <polyline points="12 5 19 12 12 19"></polyline>
                             </svg>
-                        </a>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -201,7 +193,6 @@
                 <div class="project-card">
                     <div class="card-img-wrapper">
                         <img src="https://images.unsplash.com/photo-1536240478700-b869070f9279?auto=format&fit=crop&w=800&q=80" alt="Spot Publicitario Cinematográfico" loading="lazy">
-                        <span class="card-category-badge">🎬 Spots Publicitarios</span>
                     </div>
                     <div class="project-card-body">
                         <h3 class="project-card-title">Spot Cinematográfico 4K</h3>
@@ -214,13 +205,13 @@
                             <span class="tech-badge">Blender 3D</span>
                             <span class="tech-badge">VFX</span>
                         </div>
-                        <a href="#demo" class="btn-card-action">
+                        <button type="button" class="btn-card-action">
                             <span>Ver Proyecto</span>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <line x1="5" y1="12" x2="19" y2="12"></line>
                                 <polyline points="12 5 19 12 12 19"></polyline>
                             </svg>
-                        </a>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -230,7 +221,6 @@
                 <div class="project-card">
                     <div class="card-img-wrapper">
                         <img src="https://images.unsplash.com/photo-1600132806370-bf17e65e942f?auto=format&fit=crop&w=800&q=80" alt="Branding & Sistema Visual Devioz" loading="lazy">
-                        <span class="card-category-badge">🎨 Diseño Gráfico</span>
                     </div>
                     <div class="project-card-body">
                         <h3 class="project-card-title">Identidad Visual &amp; Branding</h3>
@@ -243,13 +233,13 @@
                             <span class="tech-badge">Photoshop</span>
                             <span class="tech-badge">Brand Guidelines</span>
                         </div>
-                        <a href="#demo" class="btn-card-action">
+                        <button type="button" class="btn-card-action">
                             <span>Ver Proyecto</span>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <line x1="5" y1="12" x2="19" y2="12"></line>
                                 <polyline points="12 5 19 12 12 19"></polyline>
                             </svg>
-                        </a>
+                        </button>
                     </div>
                 </div>
             </div>
@@ -259,7 +249,6 @@
                 <div class="project-card">
                     <div class="card-img-wrapper">
                         <img src="https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=800&q=80" alt="Portal Inmobiliario Smart & CRM" loading="lazy">
-                        <span class="card-category-badge">🌐 Desarrollo Web</span>
                     </div>
                     <div class="project-card-body">
                         <h3 class="project-card-title">Portal Inmobiliario Smart &amp; CRM</h3>
@@ -272,30 +261,23 @@
                             <span class="tech-badge">Leaflet Maps</span>
                             <span class="tech-badge">MySQL</span>
                         </div>
-                        <a href="#demo" class="btn-card-action">
+                        <button type="button" class="btn-card-action">
                             <span>Ver Proyecto</span>
                             <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
                                 <line x1="5" y1="12" x2="19" y2="12"></line>
                                 <polyline points="12 5 19 12 12 19"></polyline>
                             </svg>
-                        </a>
+                        </button>
                     </div>
                 </div>
             </div>
         </div>
-
-        <!-- =========================================
-             GALERÍA ACORDEÓN (AccordionGallery)
-             Se muestra al seleccionar categorías específicas
-             ========================================= -->
-        <div class="accordion-gallery" id="accordionGallery" style="display:none;"></div>
-
     </section>
 
     <!-- =========================================
          FOOTER MINIMALISTA
          ========================================= -->
-    <footer class="custom-footer">
+    <footer class="custom-footer scroll-reveal">
         <div class="container px-4">
             <div class="row align-items-center gy-4">
                 <div class="col-md-6 text-center text-md-start">
@@ -333,12 +315,52 @@
         </div>
     </footer>
 
+    <!-- Modal para Vista Detallada del Proyecto -->
+    <div class="modal fade" id="projectDetailModal" tabindex="-1" aria-labelledby="projectDetailTitle" aria-hidden="true">
+        <div class="modal-dialog modal-dialog-centered modal-lg">
+            <div class="modal-content glass-card border-0" style="background: rgba(12, 12, 24, 0.96); backdrop-filter: blur(25px); border: 1px solid rgba(255, 255, 255, 0.12); border-radius: 20px; box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.7);">
+                <div class="modal-header border-bottom border-white border-opacity-10 px-4 py-3">
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="badge" id="modalProjectCategoryBadge" style="background: rgba(0, 229, 212, 0.15); color: #5eead4; border: 1px solid rgba(0, 229, 212, 0.3); font-weight: 500; font-size: 0.78rem; padding: 5px 12px; border-radius: 20px;">
+                            Categoría
+                        </span>
+                        <h5 class="modal-title text-white fw-bold mb-0" id="projectDetailTitle">Detalle del Proyecto</h5>
+                    </div>
+                    <button type="button" class="btn-close btn-close-white" data-bs-dismiss="modal" aria-label="Cerrar"></button>
+                </div>
+                <div class="modal-body px-4 py-4">
+                    <div class="rounded-3 overflow-hidden mb-4" style="max-height: 380px; border: 1px solid rgba(255, 255, 255, 0.1); background: #06060e;">
+                        <img id="modalProjectImg" src="" alt="Vista previa del proyecto" class="w-100" style="object-fit: cover; max-height: 380px;">
+                    </div>
+                    <div class="mb-3">
+                        <h6 class="text-secondary small fw-semibold text-uppercase mb-2" style="color: #94a3b8 !important; letter-spacing: 0.05em;">Descripción</h6>
+                        <p class="text-white mb-0" id="modalProjectDesc" style="color: #e2e8f0 !important; line-height: 1.7; font-size: 0.95rem;"></p>
+                    </div>
+                    <div>
+                        <h6 class="text-secondary small fw-semibold text-uppercase mb-2" style="color: #94a3b8 !important; letter-spacing: 0.05em;">Tecnologías & Herramientas</h6>
+                        <div class="tech-badges-list" id="modalProjectTechList"></div>
+                    </div>
+                </div>
+                <div class="modal-footer border-top border-white border-opacity-10 px-4 py-3 d-flex justify-content-between align-items-center">
+                    <div id="modalProjectDemoContainer">
+                        <span class="text-secondary small" style="color: #94a3b8 !important;">Proyecto de muestra del portafolio</span>
+                    </div>
+                    <button type="button" class="btn btn-secondary-glass" data-bs-dismiss="modal">Cerrar</button>
+                </div>
+            </div>
+        </div>
+    </div>
+
     <!-- Fondo de Scanner WebGL -->
     <div id="scanner-bg" class="scanner-container"></div>
 
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
-    <!-- Custom JS (GooeyNav + AccordionGallery) -->
+    <!-- Infinite Spiral 3D Component (Vanilla JS) -->
+    <script src="assets/js/infinite-spiral.js"></script>
+    <!-- Gooey Nav Component (React Bits Vanilla JS) -->
+    <script src="assets/js/gooey-nav.js"></script>
+    <!-- Custom JS (Portafolio & Scroll Animations) -->
     <script src="assets/js/main.js"></script>
     <!-- ParticleText Component (React Bits Vanilla) -->
     <script src="assets/js/particles.js"></script>

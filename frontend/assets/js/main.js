@@ -1,560 +1,652 @@
 // =========================================
 // Portafolio Devioz — main.js
-// GooeyNav + AccordionGallery (React Bits → Vanilla JS)
+// Flujo Continuo de Proyectos + Animaciones de Scroll
 // =========================================
 
 // -----------------------------------------
-// DATOS DE PROYECTOS POR CATEGORÍA
+// CATÁLOGO BASE DE PROYECTOS (Fallback / Cache en memoria)
 // -----------------------------------------
-const PROJECT_DATA = {
-    'diseno-grafico': [
-        {
-            title: 'Identidad Visual & Branding',
-            category: '🎨 Diseño Gráfico',
-            img: 'https://images.unsplash.com/photo-1600132806370-bf17e65e942f?auto=format&fit=crop&w=1200&q=80',
-            tech: ['Figma', 'Illustrator', 'Photoshop', 'Brand Guidelines'],
-        },
-        {
-            title: 'Sistema de Iconografía UI',
-            category: '🎨 Diseño Gráfico',
-            img: 'https://images.unsplash.com/photo-1558655146-d09347e92766?auto=format&fit=crop&w=1200&q=80',
-            tech: ['Figma', 'SVG', 'Design Tokens'],
-        },
-        {
-            title: 'Packaging & Print Design',
-            category: '🎨 Diseño Gráfico',
-            img: 'https://images.unsplash.com/photo-1586717791821-3f44a563fa4c?auto=format&fit=crop&w=1200&q=80',
-            tech: ['Illustrator', 'InDesign', 'CMYK'],
-        },
-        {
-            title: 'Motion Graphics & Reel',
-            category: '🎨 Diseño Gráfico',
-            img: 'https://images.unsplash.com/photo-1551650975-87deedd944c3?auto=format&fit=crop&w=1200&q=80',
-            tech: ['After Effects', 'Premiere', 'Lottie'],
-        },
-        {
-            title: 'Editorial & Infografías',
-            category: '🎨 Diseño Gráfico',
-            img: 'https://images.unsplash.com/photo-1504868584819-f8e8b4b6d7e3?auto=format&fit=crop&w=1200&q=80',
-            tech: ['InDesign', 'Illustrator', 'Data Viz'],
-        },
-    ],
-    'spots-publicitarios': [
-        {
-            title: 'Spot Cinematográfico 4K',
-            category: '🎬 Spots Publicitarios',
-            img: 'https://images.unsplash.com/photo-1536240478700-b869070f9279?auto=format&fit=crop&w=1200&q=80',
-            tech: ['After Effects', 'Premiere Pro', 'Blender 3D', 'VFX'],
-        },
-        {
-            title: 'Campaña Social Media 360°',
-            category: '🎬 Spots Publicitarios',
-            img: 'https://images.unsplash.com/photo-1611162617213-7d7a39e9b1d7?auto=format&fit=crop&w=1200&q=80',
-            tech: ['Premiere', 'DaVinci Resolve', 'CapCut Pro'],
-        },
-        {
-            title: 'Animación de Producto 3D',
-            category: '🎬 Spots Publicitarios',
-            img: 'https://images.unsplash.com/photo-1620121692029-d088224ddc74?auto=format&fit=crop&w=1200&q=80',
-            tech: ['Blender 3D', 'Cinema 4D', 'After Effects'],
-        },
-        {
-            title: 'Documental Corporativo',
-            category: '🎬 Spots Publicitarios',
-            img: 'https://images.unsplash.com/photo-1585771724684-38269d6639fd?auto=format&fit=crop&w=1200&q=80',
-            tech: ['Sony FX3', 'Premiere', 'Color Grade'],
-        },
-        {
-            title: 'Reels & TikTok Ads',
-            category: '🎬 Spots Publicitarios',
-            img: 'https://images.unsplash.com/photo-1611162616305-c69b3fa7fbe0?auto=format&fit=crop&w=1200&q=80',
-            tech: ['CapCut', 'Canva Pro', 'Meta Ads'],
-        },
-    ],
-    'business-intelligence': [
-        {
-            title: 'Dashboard Ejecutivo BI & KPIs',
-            category: '📊 Business Intelligence',
-            img: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80',
-            tech: ['Power BI', 'PostgreSQL', 'Python', 'ETL Pipeline'],
-        },
-        {
-            title: 'Data Warehouse & Modelado',
-            category: '📊 Business Intelligence',
-            img: 'https://images.unsplash.com/photo-1518186285589-2f7649de83e0?auto=format&fit=crop&w=1200&q=80',
-            tech: ['Snowflake', 'dbt', 'Airflow', 'SQL'],
-        },
-        {
-            title: 'Análisis Predictivo de Ventas',
-            category: '📊 Business Intelligence',
-            img: 'https://images.unsplash.com/photo-1543286386-713bdd548da4?auto=format&fit=crop&w=1200&q=80',
-            tech: ['Python', 'Scikit-learn', 'Tableau'],
-        },
-        {
-            title: 'Reportes Automatizados',
-            category: '📊 Business Intelligence',
-            img: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=80',
-            tech: ['Power Automate', 'Excel VBA', 'SharePoint'],
-        },
-        {
-            title: 'Segmentación & Clustering',
-            category: '📊 Business Intelligence',
-            img: 'https://images.unsplash.com/photo-1666875753105-c63a6f3bdc86?auto=format&fit=crop&w=1200&q=80',
-            tech: ['Python', 'K-Means', 'Power BI', 'Pandas'],
-        },
-    ],
-    'desarrollo-web': [
-        {
-            title: 'Plataforma E-Commerce SaaS',
-            category: '🌐 Desarrollo Web',
-            img: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=80',
-            tech: ['PHP', 'MySQL', 'JavaScript', 'Bootstrap 5'],
-        },
-        {
-            title: 'Portal Inmobiliario Smart & CRM',
-            category: '🌐 Desarrollo Web',
-            img: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1200&q=80',
-            tech: ['JavaScript ES6', 'PHP', 'Leaflet Maps', 'MySQL'],
-        },
-        {
-            title: 'API REST Microservicios',
-            category: '🌐 Desarrollo Web',
-            img: 'https://images.unsplash.com/photo-1629654297299-c8506221ca97?auto=format&fit=crop&w=1200&q=80',
-            tech: ['Node.js', 'Express', 'MongoDB', 'Docker'],
-        },
-        {
-            title: 'Dashboard Admin Next.js',
-            category: '🌐 Desarrollo Web',
-            img: 'https://images.unsplash.com/photo-1486312338219-ce68d2c6f44d?auto=format&fit=crop&w=1200&q=80',
-            tech: ['Next.js', 'TypeScript', 'Tailwind', 'Prisma'],
-        },
-        {
-            title: 'Landing Page de Alto Impacto',
-            category: '🌐 Desarrollo Web',
-            img: 'https://images.unsplash.com/photo-1547658719-da2b51169166?auto=format&fit=crop&w=1200&q=80',
-            tech: ['HTML5', 'CSS3', 'GSAP', 'Vanilla JS'],
-        },
-    ],
-    'inteligencia-artificial': [
-        {
-            title: 'Neural Assistant & RAG Copilot',
-            category: '🤖 Inteligencia Artificial',
-            img: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=1200&q=80',
-            tech: ['Python', 'FastAPI', 'Gemini API', 'Vector DB'],
-        },
-        {
-            title: 'Clasificador de Imágenes CNN',
-            category: '🤖 Inteligencia Artificial',
-            img: 'https://images.unsplash.com/photo-1589254065878-42c9da997008?auto=format&fit=crop&w=1200&q=80',
-            tech: ['TensorFlow', 'Keras', 'Python', 'OpenCV'],
-        },
-        {
-            title: 'Generador de Contenido IA',
-            category: '🤖 Inteligencia Artificial',
-            img: 'https://images.unsplash.com/photo-1686191129009-79e6fef1c047?auto=format&fit=crop&w=1200&q=80',
-            tech: ['Gemini API', 'LangChain', 'FastAPI', 'React'],
-        },
-        {
-            title: 'Detección de Anomalías',
-            category: '🤖 Inteligencia Artificial',
-            img: 'https://images.unsplash.com/photo-1518186233392-c232efbf2373?auto=format&fit=crop&w=1200&q=80',
-            tech: ['PyTorch', 'Scikit-learn', 'Pandas', 'Grafana'],
-        },
-        {
-            title: 'Chatbot Multicanal NLP',
-            category: '🤖 Inteligencia Artificial',
-            img: 'https://images.unsplash.com/photo-1531746790731-6c087fecd65a?auto=format&fit=crop&w=1200&q=80',
-            tech: ['Dialogflow', 'Node.js', 'WhatsApp API', 'GCP'],
-        },
-    ],
-};
+const DEFAULT_PROJECTS = [
+    {
+        id: 1,
+        titulo: 'Plataforma E-Commerce SaaS',
+        categoria_nombre: 'Desarrollo Web',
+        categoria_icono: '🌐',
+        categoria_slug: 'desarrollo-web',
+        imagen_url: 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=1200&q=80',
+        descripcion: 'Sistema integral de comercio electrónico con pasarela de pagos, gestión de inventario en tiempo real y panel de analítica avanzada.',
+        tecnologias_array: ['PHP', 'MySQL', 'JavaScript', 'Bootstrap 5'],
+        enlace_demo: null,
+        destacado: 1
+    },
+    {
+        id: 2,
+        titulo: 'Neural Assistant & RAG Copilot',
+        categoria_nombre: 'Inteligencia Artificial',
+        categoria_icono: '🤖',
+        categoria_slug: 'inteligencia-artificial',
+        imagen_url: 'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=1200&q=80',
+        descripcion: 'Motor conversacional con embeddings vectoriales para consultas sobre documentación corporativa con respuestas precisas al instante.',
+        tecnologias_array: ['Python', 'FastAPI', 'Gemini API', 'Vector DB'],
+        enlace_demo: null,
+        destacado: 1
+    },
+    {
+        id: 3,
+        titulo: 'Dashboard Ejecutivo BI & KPIs',
+        categoria_nombre: 'Business Intelligence',
+        categoria_icono: '📊',
+        categoria_slug: 'business-intelligence',
+        imagen_url: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=1200&q=80',
+        descripcion: 'Tableros de analítica interactiva y pronóstico de ventas con sincronización automatizada de bases de datos relacionales.',
+        tecnologias_array: ['Power BI', 'PostgreSQL', 'Python', 'ETL Pipeline'],
+        enlace_demo: null,
+        destacado: 1
+    },
+    {
+        id: 4,
+        titulo: 'Spot Cinematográfico 4K',
+        categoria_nombre: 'Spots Publicitarios',
+        categoria_icono: '🎬',
+        categoria_slug: 'spots-publicitarios',
+        imagen_url: 'https://images.unsplash.com/photo-1536240478700-b869070f9279?auto=format&fit=crop&w=1200&q=80',
+        descripcion: 'Producción audiovisual publicitaria con modelado 3D, animación de marca y masterización de sonido envolvente para difusión digital.',
+        tecnologias_array: ['After Effects', 'Premiere Pro', 'Blender 3D', 'VFX'],
+        enlace_demo: null,
+        destacado: 1
+    },
+    {
+        id: 5,
+        titulo: 'Identidad Visual & Branding',
+        categoria_nombre: 'Diseño Gráfico',
+        categoria_icono: '🎨',
+        categoria_slug: 'diseno-grafico',
+        imagen_url: 'https://images.unsplash.com/photo-1600132806370-bf17e65e942f?auto=format&fit=crop&w=1200&q=80',
+        descripcion: 'Diseño integral de marca corporativa, guías de estilo, kit de tipografía y papelería digital con altos estándares estéticos.',
+        tecnologias_array: ['Figma', 'Illustrator', 'Photoshop', 'Brand Guidelines'],
+        enlace_demo: null,
+        destacado: 0
+    },
+    {
+        id: 6,
+        titulo: 'Portal Inmobiliario Smart & CRM',
+        categoria_nombre: 'Desarrollo Web',
+        categoria_icono: '🌐',
+        categoria_slug: 'desarrollo-web',
+        imagen_url: 'https://images.unsplash.com/photo-1560518883-ce09059eeffa?auto=format&fit=crop&w=1200&q=80',
+        descripcion: 'Aplicación web interactiva con mapas dinámicos, tours virtuales 3D y administración automatizada de prospectos comerciales.',
+        tecnologias_array: ['JavaScript ES6', 'PHP', 'Leaflet Maps', 'MySQL'],
+        enlace_demo: null,
+        destacado: 0
+    },
+    {
+        id: 7,
+        titulo: 'Clasificador de Imágenes CNN',
+        categoria_nombre: 'Inteligencia Artificial',
+        categoria_icono: '🤖',
+        categoria_slug: 'inteligencia-artificial',
+        imagen_url: 'https://images.unsplash.com/photo-1589254065878-42c9da997008?auto=format&fit=crop&w=1200&q=80',
+        descripcion: 'Red neuronal convolucional entrenada para el reconocimiento de defectos en líneas de producción automatizadas en tiempo real.',
+        tecnologias_array: ['TensorFlow', 'Keras', 'Python', 'OpenCV'],
+        enlace_demo: null,
+        destacado: 0
+    },
+    {
+        id: 8,
+        titulo: 'Data Warehouse & Modelado Dimensional',
+        categoria_nombre: 'Business Intelligence',
+        categoria_icono: '📊',
+        categoria_slug: 'business-intelligence',
+        imagen_url: 'https://images.unsplash.com/photo-1518186285589-2f7649de83e0?auto=format&fit=crop&w=1200&q=80',
+        descripcion: 'Arquitectura analítica empresarial en la nube con pipelines de ingesta continua, transformaciones dbt y orquestación Airflow.',
+        tecnologias_array: ['Snowflake', 'dbt', 'Airflow', 'SQL'],
+        enlace_demo: null,
+        destacado: 0
+    },
+    {
+        id: 9,
+        titulo: 'Animación de Producto 3D & Reels',
+        categoria_nombre: 'Spots Publicitarios',
+        categoria_icono: '🎬',
+        categoria_slug: 'spots-publicitarios',
+        imagen_url: 'https://images.unsplash.com/photo-1620121692029-d088224ddc74?auto=format&fit=crop&w=1200&q=80',
+        descripcion: 'Renders fotorrealistas y simulaciones de dinámica física optimizadas para campañas publicitarias de alto impacto en redes.',
+        tecnologias_array: ['Blender 3D', 'Cinema 4D', 'After Effects'],
+        enlace_demo: null,
+        destacado: 0
+    }
+];
+
+// Variable global en memoria para proyectos
+let allLoadedProjects = [...DEFAULT_PROJECTS];
+window.allLoadedProjects = allLoadedProjects;
+let scrollObserver = null;
 
 // -----------------------------------------
-// ACORDEÓN GALLERY
+// MODAL DE DETALLE DE PROYECTO
 // -----------------------------------------
-function buildAccordionGallery(category) {
-    const gallery = document.getElementById('accordionGallery');
-    if (!gallery) return;
+function openProjectModal(data) {
+    const modalEl = document.getElementById('projectDetailModal');
+    if (!modalEl || typeof bootstrap === 'undefined') return;
 
-    const projects = PROJECT_DATA[category] || [];
-    gallery.innerHTML = '';
+    const titleEl = document.getElementById('projectDetailTitle');
+    const badgeEl = document.getElementById('modalProjectCategoryBadge');
+    const imgEl = document.getElementById('modalProjectImg');
+    const descEl = document.getElementById('modalProjectDesc');
+    const techListEl = document.getElementById('modalProjectTechList');
+    const demoContainerEl = document.getElementById('modalProjectDemoContainer');
 
-    projects.forEach((project, idx) => {
-        const item = document.createElement('div');
-        item.className = 'accordion-item' + (idx === 0 ? ' active' : '');
+    if (titleEl) titleEl.textContent = data.title || 'Detalle del Proyecto';
+    if (badgeEl) badgeEl.textContent = data.category || 'Proyecto';
+    if (imgEl) {
+        imgEl.src = data.img || 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80';
+        imgEl.alt = data.title || 'Proyecto';
+    }
+    if (descEl) descEl.textContent = data.desc || 'Proyecto en portafolio Devioz.';
 
-        const techHTML = project.tech
-            .map(t => `<span class="accordion-tech-badge">${t}</span>`)
-            .join('');
+    if (techListEl) {
+        techListEl.innerHTML = '';
+        if (Array.isArray(data.tech) && data.tech.length > 0) {
+            data.tech.forEach(t => {
+                const badge = document.createElement('span');
+                badge.className = 'tech-badge';
+                badge.textContent = t;
+                techListEl.appendChild(badge);
+            });
+        }
+    }
 
-        item.innerHTML =
-            '<span class="accordion-index">0' + (idx + 1) + '</span>' +
-            '<img src="' + project.img + '" alt="' + project.title + '" loading="lazy">' +
-            '<div class="accordion-label">' +
-                '<span class="accordion-category-tag">' + project.category + '</span>' +
-                '<h3 class="accordion-title">' + project.title + '</h3>' +
-                '<div class="accordion-tech-row">' + techHTML + '</div>' +
-            '</div>';
+    if (demoContainerEl) {
+        const hasExternalDemo = data.demo && 
+                                typeof data.demo === 'string' && 
+                                data.demo.startsWith('http') && 
+                                !data.demo.includes('devioz.com');
 
-        // Hover expande el ítem activo
-        item.addEventListener('mouseenter', () => {
-            gallery.querySelectorAll('.accordion-item').forEach(el => el.classList.remove('active'));
-            item.classList.add('active');
+        if (hasExternalDemo) {
+            demoContainerEl.innerHTML = `
+                <a href="${data.demo}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-main d-inline-flex align-items-center gap-1" style="font-size: 0.84rem; padding: 6px 14px;">
+                    <span>Visitar Demo / Sitio</span>
+                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                        <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                        <polyline points="15 3 21 3 21 9"></polyline>
+                        <line x1="10" y1="14" x2="21" y2="3"></line>
+                    </svg>
+                </a>
+            `;
+        } else {
+            demoContainerEl.innerHTML = `
+                <span class="text-secondary small" style="color: #94a3b8 !important;">Proyecto de muestra del portafolio</span>
+            `;
+        }
+    }
+
+    const modalInstance = bootstrap.Modal.getInstance(modalEl) || new bootstrap.Modal(modalEl);
+    modalInstance.show();
+}
+
+// Abrir modal buscando por ID de proyecto
+function openProjectModalById(projectId) {
+    if (!projectId && projectId !== 0) return;
+    const project = (allLoadedProjects || []).find(p => String(p.id) === String(projectId));
+    if (project) {
+        openProjectModal({
+            id: project.id,
+            title: project.titulo,
+            category: (project.categoria_icono ? project.categoria_icono + ' ' : '') + (project.categoria_nombre || 'Proyecto Destacado'),
+            img: project.imagen_url || project.imagen,
+            desc: project.descripcion,
+            tech: project.tecnologias_array || (project.tecnologias ? project.tecnologias.split(',').map(s => s.trim()) : []),
+            demo: project.enlace_demo || project.demo_url
         });
 
-        gallery.appendChild(item);
+        // Resaltar suavemente la tarjeta correspondiente en la grilla
+        const cardItem = document.querySelector(`.project-item[data-id="${project.id}"] .project-card`) ||
+                         document.querySelector(`.project-item[data-id="${project.id}"]`);
+        if (cardItem) {
+            cardItem.classList.add('project-card-highlight');
+            setTimeout(() => cardItem.classList.remove('project-card-highlight'), 2200);
+        }
+    }
+}
+
+// Exponer funciones globalmente para componentes interactivos como Infinite Spiral
+window.openProjectModal = openProjectModal;
+window.openProjectModalById = openProjectModalById;
+
+
+// -----------------------------------------
+// RENDERIZADO DINÁMICO EN FLUJO CONTINUO
+// -----------------------------------------
+function renderPublicProjectsGrid(projects) {
+    const projectsGrid = document.getElementById('projects-grid');
+    if (!projectsGrid || !Array.isArray(projects) || projects.length === 0) return;
+
+    projectsGrid.innerHTML = '';
+
+    projects.forEach((p, idx) => {
+        const catSlug = p.categoria_slug || 'desarrollo-web';
+        const catName = p.categoria_nombre || 'General';
+        const catIcon = p.categoria_icono || '📁';
+        const imgUrl = p.imagen_url || p.imagen || 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80';
+        const techs = p.tecnologias_array && p.tecnologias_array.length 
+            ? p.tecnologias_array 
+            : (p.tecnologias ? p.tecnologias.split(',').map(s => s.trim()) : []);
+
+        const col = document.createElement('div');
+        col.className = 'col-lg-4 col-md-6 project-item';
+        col.setAttribute('data-category', catSlug);
+        col.setAttribute('data-id', p.id);
+        col.setAttribute('data-index', idx);
+        col.id = `project-item-${p.id}`;
+
+        col.innerHTML = `
+            <div class="project-card">
+                <div class="project-card-glow"></div>
+                <div class="card-img-wrapper">
+                    <img src="${imgUrl}" alt="${p.titulo}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80'">
+                </div>
+                <div class="project-card-body">
+                    <h3 class="project-card-title">${p.titulo}</h3>
+                    <p class="project-card-desc">
+                        ${p.descripcion || ''}
+                    </p>
+                    <div class="tech-badges-list">
+                        ${techs.map(t => `<span class="tech-badge">${t}</span>`).join('')}
+                    </div>
+                    <button type="button" class="btn-card-action" data-id="${p.id || idx}">
+                        <span>Ver Proyecto</span>
+                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                            <line x1="5" y1="12" x2="19" y2="12"></line>
+                            <polyline points="12 5 19 12 12 19"></polyline>
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        `;
+        projectsGrid.appendChild(col);
     });
 
-    // Al salir del gallery completo, restaurar el primero como activo
-    gallery.addEventListener('mouseleave', () => {
-        const items = gallery.querySelectorAll('.accordion-item');
-        items.forEach((el, i) => el.classList.toggle('active', i === 0));
+    // Configurar animaciones de scroll y efectos visuales sobre las tarjetas renderizadas
+    setupScrollAnimations();
+}
+
+// -----------------------------------------
+// CARGA DE TODOS LOS PROYECTOS DESDE LA API
+// -----------------------------------------
+async function fetchPublicProjects() {
+    try {
+        const port = window.location.port;
+        const isLiveDev = (port === '5500' || port === '5501' || port === '3000' || port === '5173' || window.location.protocol === 'file:');
+        const host = window.location.hostname || 'localhost';
+
+        const endpoints = [];
+        if (isLiveDev) {
+            endpoints.push(`http://${host}/portafolio-Devioz/backend/api/proyectos.php`);
+            endpoints.push(`http://localhost/portafolio-Devioz/backend/api/proyectos.php`);
+            endpoints.push(`http://127.0.0.1/portafolio-Devioz/backend/api/proyectos.php`);
+        }
+        endpoints.push(window.location.pathname.includes('/frontend/') ? '../backend/api/proyectos.php' : 'backend/api/proyectos.php');
+        if (!isLiveDev) {
+            endpoints.push(`http://localhost/portafolio-Devioz/backend/api/proyectos.php`);
+        }
+
+        let resData = null;
+        for (const url of endpoints) {
+            try {
+                const response = await fetch(url, {
+                    method: 'GET',
+                    headers: { 'Accept': 'application/json' }
+                });
+                if (!response.ok) continue;
+                const txt = await response.text();
+                if (txt.trim().startsWith('<?php')) continue;
+                resData = JSON.parse(txt);
+                if (resData && (Array.isArray(resData) || Array.isArray(resData.data))) break;
+            } catch (ignore) {}
+        }
+
+        const projsList = resData 
+            ? (Array.isArray(resData) ? resData : (resData.data || [])) 
+            : [];
+
+        if (projsList.length > 0) {
+            allLoadedProjects = projsList;
+            window.allLoadedProjects = projsList;
+            renderPublicProjectsGrid(projsList);
+            if (window.deviozSpiral && typeof window.deviozSpiral.updateProjectData === 'function') {
+                window.deviozSpiral.updateProjectData(projsList);
+            }
+        } else {
+            // Si la base de datos no está disponible o no tiene registros, renderizar catálogo base
+            renderPublicProjectsGrid(DEFAULT_PROJECTS);
+            if (window.deviozSpiral && typeof window.deviozSpiral.updateProjectData === 'function') {
+                window.deviozSpiral.updateProjectData(DEFAULT_PROJECTS);
+            }
+        }
+    } catch (err) {
+        console.warn('Cargando proyectos por defecto en flujo continuo:', err);
+        renderPublicProjectsGrid(DEFAULT_PROJECTS);
+        if (window.deviozSpiral && typeof window.deviozSpiral.updateProjectData === 'function') {
+            window.deviozSpiral.updateProjectData(DEFAULT_PROJECTS);
+        }
+    }
+}
+
+// -----------------------------------------
+// ANIMACIONES DE SCROLL Y EFECTOS GLOW / PARALLAX
+// -----------------------------------------
+let scrollRevealObserver = null;
+
+function setupScrollAnimations() {
+    // 1. IntersectionObserver Reversible para Revelado Universal de Bloques y Encabezados (.scroll-reveal)
+    const reveals = document.querySelectorAll('.scroll-reveal');
+    if (reveals.length) {
+        if ('IntersectionObserver' in window) {
+            if (scrollRevealObserver) {
+                scrollRevealObserver.disconnect();
+            }
+            scrollRevealObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    if (entry.isIntersecting) {
+                        entry.target.classList.add('is-visible');
+                    } else {
+                        // Si el elemento sale por la parte inferior de la ventana (el usuario subió)
+                        if (entry.boundingClientRect.top > 0) {
+                            entry.target.classList.remove('is-visible');
+                        }
+                    }
+                });
+            }, {
+                root: null,
+                rootMargin: '0px 0px -40px 0px',
+                threshold: 0.08
+            });
+
+            reveals.forEach(el => scrollRevealObserver.observe(el));
+        } else {
+            reveals.forEach(el => el.classList.add('is-visible'));
+        }
+    }
+
+    // 2. IntersectionObserver Reversible para Fade-Up, Scale-In y Revelado Progresivo de Tarjetas
+    const items = document.querySelectorAll('.project-item');
+    if (items.length) {
+        if (scrollObserver) {
+            scrollObserver.disconnect();
+        }
+
+        if ('IntersectionObserver' in window) {
+            scrollObserver = new IntersectionObserver((entries) => {
+                entries.forEach(entry => {
+                    const el = entry.target;
+                    if (entry.isIntersecting) {
+                        const idx = parseInt(el.getAttribute('data-index') || '0', 10);
+                        
+                        // Retraso escalonado fluido (stagger) por columnas (110ms)
+                        const staggerDelay = (idx % 3) * 110;
+                        
+                        clearTimeout(el._revealTimer);
+                        el._revealTimer = setTimeout(() => {
+                            el.classList.add('revealed');
+                        }, staggerDelay);
+                    } else {
+                        // Si el elemento sale por la parte inferior de la pantalla (el usuario subió)
+                        if (entry.boundingClientRect.top > 0) {
+                            clearTimeout(el._revealTimer);
+                            el.classList.remove('revealed');
+                        }
+                    }
+                });
+            }, {
+                root: null,
+                rootMargin: '0px 0px -50px 0px',
+                threshold: 0.08
+            });
+
+            items.forEach(item => {
+                scrollObserver.observe(item);
+            });
+        } else {
+            items.forEach(item => item.classList.add('revealed'));
+        }
+    }
+
+    // 3. Efecto de Resplandor Dinámico y Parallax 3D al interactuar con el mouse
+    const cards = document.querySelectorAll('.project-card');
+    cards.forEach(card => {
+        card.style.setProperty('--mouse-x', '50%');
+        card.style.setProperty('--mouse-y', '50%');
+
+        card.addEventListener('mousemove', (e) => {
+            const rect = card.getBoundingClientRect();
+            const x = e.clientX - rect.left;
+            const y = e.clientY - rect.top;
+
+            const percentX = Math.round((x / rect.width) * 100);
+            const percentY = Math.round((y / rect.height) * 100);
+
+            card.style.setProperty('--mouse-x', `${percentX}%`);
+            card.style.setProperty('--mouse-y', `${percentY}%`);
+
+            // Sutil inclinación 3D (tilt parallax)
+            const tiltX = ((y / rect.height) - 0.5) * -7;
+            const tiltY = ((x / rect.width) - 0.5) * 7;
+            card.style.transform = `perspective(1000px) rotateX(${tiltX.toFixed(2)}deg) rotateY(${tiltY.toFixed(2)}deg) translateY(-6px) scale(1.015)`;
+        });
+
+        card.addEventListener('mouseleave', () => {
+            card.style.setProperty('--mouse-x', '50%');
+            card.style.setProperty('--mouse-y', '50%');
+            card.style.transform = '';
+        });
     });
 }
 
 // -----------------------------------------
-// FILTRADO UNIFICADO (Grid ↔ Acordeón) Y VISIBILIDAD DE BARRA
+// CONTROL DE NAVEGACIÓN Y EVENTOS GENERALES
 // -----------------------------------------
-function initFilter() {
-    const navButtons    = document.querySelectorAll('.nav-category-btn');
-    const projectsGrid  = document.getElementById('projects-grid');
-    const accordionGall = document.getElementById('accordionGallery');
-    const navWrapper    = document.getElementById('nav-categories-wrapper');
-    const heroContent   = document.querySelector('.hero-content');
-    const btnExplorar   = document.getElementById('btn-explorar');
-    const brandLink     = document.querySelector('.navbar-brand');
-    const proyectosSec  = document.getElementById('proyectos');
+function initNavbarScrollEffect() {
+    const navbar = document.querySelector('.custom-navbar');
+    const headerWrapper = document.querySelector('.header-nav-container');
+    const spiralSection = document.getElementById('spiral-showcase');
+    const progressBar = document.getElementById('scrollProgressBar');
 
-    if (!navButtons.length || !projectsGrid || !accordionGall || !navWrapper) return;
+    const handleScroll = () => {
+        const scrollTop = window.scrollY || document.documentElement.scrollTop;
+        const scrollHeight = document.documentElement.scrollHeight - window.innerHeight;
 
-    let hideTimeout = null;
-    let isManualNavigating = false;
-
-    // --------------------------------------------------
-    // Muestra suavemente la barra de categorías
-    // --------------------------------------------------
-    function showCategoriesBar() {
-        clearTimeout(hideTimeout);
-
-        if (navWrapper.classList.contains('nav-categories-visible') && !navWrapper.classList.contains('d-none')) {
-            const activeBtn = navWrapper.querySelector('.nav-category-btn.active') || navButtons[0];
-            if (activeBtn && window.updateGooeyNav) {
-                window.updateGooeyNav(activeBtn, false);
-            }
-            return;
+        // Barra de progreso de lectura / scroll interactiva en tiempo real
+        if (progressBar && scrollHeight > 0) {
+            const pct = Math.min(100, Math.max(0, (scrollTop / scrollHeight) * 100));
+            progressBar.style.width = `${pct}%`;
         }
 
-        navWrapper.classList.remove('d-none');
-        requestAnimationFrame(() => {
-            navWrapper.classList.add('nav-categories-visible');
-            setTimeout(() => {
-                const activeBtn = navWrapper.querySelector('.nav-category-btn.active') || navButtons[0];
-                if (activeBtn && window.updateGooeyNav) {
-                    window.updateGooeyNav(activeBtn, false);
+        // Si el usuario regresa al tope de la página, resetear elementos inferiores para que vuelvan a animarse al bajar
+        if (scrollTop < 80) {
+            document.querySelectorAll('.scroll-reveal').forEach(el => {
+                const rect = el.getBoundingClientRect();
+                if (rect.top > window.innerHeight * 0.4) {
+                    el.classList.remove('is-visible');
                 }
-            }, 60);
-        });
-    }
-
-    // --------------------------------------------------
-    // Oculta suavemente la barra de categorías
-    // --------------------------------------------------
-    function hideCategoriesBar() {
-        if (!navWrapper.classList.contains('nav-categories-visible') && navWrapper.classList.contains('d-none')) {
-            return;
-        }
-        navWrapper.classList.remove('nav-categories-visible');
-        clearTimeout(hideTimeout);
-        hideTimeout = setTimeout(() => {
-            if (!navWrapper.classList.contains('nav-categories-visible')) {
-                navWrapper.classList.add('d-none');
-            }
-        }, 400);
-    }
-
-    // --------------------------------------------------
-    // Evalúa si el usuario está en la sección de proyectos
-    // --------------------------------------------------
-    function checkCategoryBarVisibility() {
-        if (isManualNavigating || !proyectosSec) return;
-
-        // Si el Hero ya fue ocultado, la sección de proyectos es la vista activa permanente
-        if (heroContent && (heroContent.classList.contains('d-none') || heroContent.style.display === 'none')) {
-            showCategoriesBar();
-            return;
-        }
-
-        // Si el Hero está visible y estamos cerca de la parte superior, ocultar barra
-        if (window.scrollY < 120) {
-            hideCategoriesBar();
-            return;
-        }
-
-        const rect = proyectosSec.getBoundingClientRect();
-        // La sección de proyectos está visible si su parte superior ya alcanzó el área de vista
-        // y su parte inferior no ha quedado atrás por completo
-        const inProjects = (rect.top <= 160 && rect.bottom >= 80);
-
-        if (inProjects) {
-            showCategoriesBar();
-        } else if (rect.top > 160) {
-            hideCategoriesBar();
-        }
-    }
-
-    // --------------------------------------------------
-    // Aplica el filtro de categoría (Grilla vs Acordeón)
-    // --------------------------------------------------
-    function applyFilter(category) {
-        const isAll = (category === 'all' || category === 'todos');
-
-        // Sincronizar botón activo + GooeyNav pill
-        navButtons.forEach(btn => {
-            const href     = btn.getAttribute('href').replace('#', '');
-            const isActive = isAll ? (href === 'todos' || href === 'all') : (href === category);
-            btn.classList.toggle('active', isActive);
-            if (isActive && window.updateGooeyNav) {
-                window.updateGooeyNav(btn, true);
-            }
-        });
-
-        if (isAll) {
-            // "Todos": mostrar grilla completa de proyectos y ocultar acordeón
-            projectsGrid.classList.remove('hidden-view');
-            projectsGrid.style.display = '';
-            accordionGall.style.display = 'none';
-            document.querySelectorAll('.project-item').forEach(el => {
-                el.style.display = '';
             });
-        } else {
-            // Categoría específica: ocultar grilla, mostrar acordeón interactivo
-            projectsGrid.classList.add('hidden-view');
-            projectsGrid.style.display = 'none';
-            accordionGall.style.display = 'flex';
-            buildAccordionGallery(category);
+            document.querySelectorAll('.project-item').forEach(el => {
+                const rect = el.getBoundingClientRect();
+                if (rect.top > window.innerHeight * 0.4) {
+                    clearTimeout(el._revealTimer);
+                    el.classList.remove('revealed');
+                }
+            });
         }
-    }
 
-    // --------------------------------------------------
-    // Botón "Explorar Proyectos" — punto de entrada principal
-    // --------------------------------------------------
-    if (btnExplorar) {
-        btnExplorar.addEventListener('click', (e) => {
-            e.preventDefault();
-
-            // 1. Quitar la clase .no-scroll del <body> para habilitar el desplazamiento
-            document.body.classList.remove('no-scroll');
-
-            // 2. Ocultar la sección Hero completamente del flujo del documento
-            if (heroContent) {
-                heroContent.classList.add('d-none');
-                heroContent.style.display = 'none';
+        // Compactación y transición de la barra de navegación al bajar
+        if (navbar) {
+            let triggerOffset = 100;
+            if (spiralSection) {
+                triggerOffset = Math.max(60, spiralSection.offsetTop - 300);
             }
 
-            // 3. Ajustar la vista inmediatamente a la parte superior de la página
-            window.scrollTo(0, 0);
+            const isScrolled = scrollTop >= triggerOffset;
 
-            // 4. Mostrar la barra superior de categorías (activando opción "Todos" por defecto)
-            applyFilter('all');
-            showCategoriesBar();
-        });
-    }
-
-    // --------------------------------------------------
-    // Click en botones de categoría del navbar
-    // --------------------------------------------------
-    navButtons.forEach(btn => {
-        btn.addEventListener('click', (e) => {
-            e.preventDefault();
-            let category = btn.getAttribute('href').replace('#', '');
-            if (category === 'todos') category = 'all';
-
-            // Filtrar proyectos (grilla para "Todos" o galería acordeón para individual)
-            applyFilter(category);
-
-            // Mantener la vista enfocada exclusivamente en la sección de proyectos
-            if (proyectosSec) {
-                proyectosSec.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            if (isScrolled) {
+                navbar.classList.add('navbar-scrolled');
+                if (headerWrapper) headerWrapper.classList.add('header-scrolled');
+            } else {
+                navbar.classList.remove('navbar-scrolled');
+                if (headerWrapper) headerWrapper.classList.remove('header-scrolled');
             }
-        });
-    });
+        }
+    };
 
-    // --------------------------------------------------
-    // Logo "Devioz" — Volver al Dashboard (Hero)
-    // --------------------------------------------------
-    if (brandLink) {
-        brandLink.addEventListener('click', (e) => {
+    window.addEventListener('scroll', handleScroll, { passive: true });
+    // Verificación inicial al cargar la página
+    handleScroll();
+}
+
+function initNavigationEvents() {
+    const brandLink = document.querySelector('.navbar-brand, .navbar-brand-standalone');
+    const proyectosSec = document.getElementById('galeria-proyectos') || document.getElementById('proyectos');
+
+    // Inicializar efecto de compactación al hacer scroll
+    initNavbarScrollEffect();
+
+    // Desplazamiento suave al hacer clic en "Inicio"
+    document.querySelectorAll('.nav-link-glass[href="#"], .nav-link-glass[href="#inicio"]').forEach(link => {
+        link.addEventListener('click', (e) => {
             e.preventDefault();
-
-            // 1. Volver a mostrar la sección principal (Hero)
-            if (heroContent) {
-                heroContent.classList.remove('d-none');
-                heroContent.style.display = '';
-            }
-
-            // 2. Ocultar la barra superior de categorías
-            hideCategoriesBar();
-
-            // 3. Restablecer la página al tope superior
-            window.scrollTo(0, 0);
-
-            // 4. Volver a agregar la clase .no-scroll al <body>
-            document.body.classList.add('no-scroll');
-
-            // 5. Reanimar las partículas al volver al Hero
+            window.scrollTo({ top: 0, behavior: 'smooth' });
             if (window.resetParticleText) {
                 window.resetParticleText();
             }
+            // Resetear estados para que vuelvan a animarse fluidamente al volver a bajar
+            setTimeout(() => {
+                document.querySelectorAll('.scroll-reveal').forEach(el => {
+                    const rect = el.getBoundingClientRect();
+                    if (rect.top > window.innerHeight * 0.2) el.classList.remove('is-visible');
+                });
+                document.querySelectorAll('.project-item').forEach(el => {
+                    const rect = el.getBoundingClientRect();
+                    if (rect.top > window.innerHeight * 0.2) {
+                        clearTimeout(el._revealTimer);
+                        el.classList.remove('revealed');
+                    }
+                });
+            }, 300);
+        });
+    });
+
+    // Desplazamiento suave para enlaces con ancla a #destacados o #spiral-showcase
+    document.querySelectorAll('a[href="#destacados"], a[href="#spiral-showcase"]').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const target = document.getElementById('spiral-showcase') || document.getElementById('destacados');
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+    });
+
+    // Desplazamiento suave para enlaces con ancla a #proyectos o #galeria-proyectos
+    document.querySelectorAll('a[href="#proyectos"], a[href="#galeria-proyectos"]').forEach(link => {
+        link.addEventListener('click', (e) => {
+            e.preventDefault();
+            const target = document.getElementById('galeria-proyectos') || proyectosSec;
+            if (target) {
+                target.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        });
+    });
+
+    // Clic en el logotipo: volver suavemente al Hero superior
+    if (brandLink) {
+        brandLink.addEventListener('click', (e) => {
+            e.preventDefault();
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            if (window.resetParticleText) {
+                window.resetParticleText();
+            }
+            setTimeout(() => {
+                document.querySelectorAll('.scroll-reveal').forEach(el => {
+                    const rect = el.getBoundingClientRect();
+                    if (rect.top > window.innerHeight * 0.2) el.classList.remove('is-visible');
+                });
+                document.querySelectorAll('.project-item').forEach(el => {
+                    const rect = el.getBoundingClientRect();
+                    if (rect.top > window.innerHeight * 0.2) {
+                        clearTimeout(el._revealTimer);
+                        el.classList.remove('revealed');
+                    }
+                });
+            }, 300);
         });
     }
 
-    // --------------------------------------------------
-    // Control de visibilidad según la posición del scroll
-    // --------------------------------------------------
-    window.addEventListener('scroll', checkCategoryBarVisibility, { passive: true });
-    window.addEventListener('resize', checkCategoryBarVisibility, { passive: true });
+    // Delegación de clic en botones "Ver Proyecto" o en las tarjetas
+    document.addEventListener('click', (e) => {
+        const btn = e.target.closest('.btn-card-action');
+        if (!btn) return;
+        e.preventDefault();
 
-    // Observador para transiciones precisas al entrar/salir de #proyectos
-    if (proyectosSec && 'IntersectionObserver' in window) {
-        const observer = new IntersectionObserver((entries) => {
-            entries.forEach(() => {
-                checkCategoryBarVisibility();
+        const card = btn.closest('.project-card') || btn.closest('.project-item');
+        if (card) {
+            const title = card.querySelector('.project-card-title')?.textContent?.trim() || '';
+            const projectId = btn.getAttribute('data-id');
+            const matched = allLoadedProjects.find(p => String(p.id) === String(projectId) || p.titulo === title);
+            const category = (matched && (matched.categoria_nombre || matched.categoria))
+                ? (matched.categoria_nombre || matched.categoria)
+                : (card.closest('.project-item')?.getAttribute('data-category') || 'Proyecto');
+            const img = card.querySelector('.card-img-wrapper img')?.getAttribute('src') || '';
+            const desc = card.querySelector('.project-card-desc')?.textContent?.trim() || '';
+            const techEls = card.querySelectorAll('.tech-badges-list .tech-badge');
+            const tech = Array.from(techEls).map(el => el.textContent.trim());
+
+            const demo = (matched && matched.enlace_demo && !matched.enlace_demo.includes('devioz.com'))
+                ? matched.enlace_demo
+                : null;
+
+            openProjectModal({
+                title,
+                category,
+                img,
+                desc,
+                tech,
+                demo
             });
-        }, {
-            rootMargin: '-90px 0px -50px 0px',
-            threshold: [0, 0.1, 0.5]
-        });
-        observer.observe(proyectosSec);
-    }
+        }
+    });
 
-    // Verificación de estado inicial
-    document.body.classList.add('no-scroll');
-    checkCategoryBarVisibility();
+    // Atajo de teclado discreto (Ctrl + Shift + A) para acceder al Login de Administrador
+    window.addEventListener('keydown', (e) => {
+        if (e.ctrlKey && e.shiftKey && (e.key === 'A' || e.key === 'a')) {
+            e.preventDefault();
+            window.location.href = 'login.html';
+        }
+    });
+}
+
+// Sincronización de eventos para desenfoque cinemático del fondo al ver proyectos
+function initModalBlurEvents() {
+    const modalEl = document.getElementById('projectDetailModal');
+    if (!modalEl) return;
+
+    modalEl.addEventListener('show.bs.modal', () => {
+        document.body.classList.add('project-modal-active');
+    });
+
+    modalEl.addEventListener('hidden.bs.modal', () => {
+        document.body.classList.remove('project-modal-active');
+    });
 }
 
 // -----------------------------------------
-// GOOEY NAV
+// BOOTSTRAP INICIAL
 // -----------------------------------------
-function initGooeyNav() {
-    const wrapper    = document.querySelector('.gooey-nav-wrapper');
-    const pill       = document.getElementById('gooey-pill');
-    const bubblesEl  = document.getElementById('gooey-bubbles');
-    const navList    = document.getElementById('nav-categories-list');
-    const navButtons = document.querySelectorAll('.nav-category-btn');
+document.addEventListener('DOMContentLoaded', () => {
+    // Asegurar que el scroll del documento esté habilitado sin bloqueos
+    document.body.classList.remove('no-scroll');
 
-    if (!wrapper || !pill || !navButtons.length) return;
-
-    let currentActiveBtn = document.querySelector('.nav-category-btn.active') || navButtons[0];
-    let prevPos = null;
-
-    // Obtiene la posición y tamaño del botón respecto al contenedor directo sin usar getBoundingClientRect
-    function getButtonPosition(targetBtn) {
-        let x = 0;
-        let y = 0;
-        let el = targetBtn;
-
-        while (el && el !== wrapper && wrapper.contains(el)) {
-            x += el.offsetLeft;
-            y += el.offsetTop;
-            el = el.offsetParent;
-        }
-
-        if (navList && navList.scrollLeft) {
-            x -= navList.scrollLeft;
-        }
-
-        return {
-            x: x,
-            y: y,
-            width: targetBtn.offsetWidth,
-            height: targetBtn.offsetHeight
-        };
-    }
-
-    function movePill(targetBtn, spawnBubbles) {
-        if (!targetBtn) return;
-        const width  = targetBtn.offsetWidth;
-        const height = targetBtn.offsetHeight;
-        if (width === 0 && height === 0) return;
-
-        const pos = getButtonPosition(targetBtn);
-        const x = pos.x;
-        const y = pos.y;
-
-        pill.style.width     = width  + 'px';
-        pill.style.height    = height + 'px';
-        pill.style.transform = 'translate3d(' + x + 'px,' + y + 'px,0)';
-        pill.style.opacity   = '1';
-
-        if (spawnBubbles && prevPos && bubblesEl) {
-            const fromX = prevPos.x + prevPos.width  / 2;
-            const fromY = prevPos.y + prevPos.height / 2;
-            const toX   = x + width  / 2;
-            const toY   = y + height / 2;
-            for (var i = 0; i < 15; i++) createBubble(fromX, fromY, toX, toY, i, 15);
-        }
-        prevPos = { x: x, y: y, width: width, height: height };
-    }
-
-    function createBubble(startX, startY, endX, endY, index, total) {
-        var bubble = document.createElement('div');
-        bubble.className = 'gooey-bubble';
-        var size  = Math.random() * 12 + 10;
-        var initX = startX + (Math.random() - 0.5) * 25;
-        var initY = startY + (Math.random() - 0.5) * 14;
-        bubble.style.cssText = 'width:' + size + 'px;height:' + size + 'px;transform:translate3d(' + (initX - size / 2) + 'px,' + (initY - size / 2) + 'px,0) scale(1);opacity:1;';
-        bubblesEl.appendChild(bubble);
-        var progress = (index + 1) / total;
-        var tX = initX + (endX - initX) * progress + (Math.random() - 0.5) * 20;
-        var tY = initY + (endY - initY) * progress + (Math.random() - 0.5) * 14;
-        requestAnimationFrame(function() {
-            bubble.style.transform = 'translate3d(' + (tX - size / 2) + 'px,' + (tY - size / 2) + 'px,0) scale(0.2)';
-            bubble.style.opacity   = '0';
-        });
-        setTimeout(function() { bubble.remove(); }, 550);
-    }
-
-    requestAnimationFrame(function() {
-        setTimeout(function() { movePill(currentActiveBtn, false); }, 80);
-    });
-
-    navButtons.forEach(function(btn) {
-        btn.addEventListener('mouseenter', function() { movePill(btn, true); });
-        btn.addEventListener('click', function() {
-            navButtons.forEach(function(b) { b.classList.remove('active'); });
-            btn.classList.add('active');
-            currentActiveBtn = btn;
-            movePill(btn, true);
-        });
-    });
-
-    wrapper.addEventListener('mouseleave', function() {
-        if (currentActiveBtn) movePill(currentActiveBtn, true);
-    });
-
-    window.addEventListener('resize', function() {
-        if (currentActiveBtn) movePill(currentActiveBtn, false);
-    });
-
-    if (navList) {
-        navList.addEventListener('scroll', function() {
-            if (currentActiveBtn) movePill(currentActiveBtn, false);
-        });
-    }
-
-    window.updateGooeyNav = function(btn, spawnBubbles) {
-        if (btn) {
-            currentActiveBtn = btn;
-            movePill(btn, spawnBubbles !== undefined ? spawnBubbles : true);
-        }
-    };
-}
-
-// -----------------------------------------
-// BOOTSTRAP
-// -----------------------------------------
-document.addEventListener('DOMContentLoaded', function() {
-    initGooeyNav();
-    initFilter();
+    initNavigationEvents();
+    initModalBlurEvents();
+    setupScrollAnimations();
+    fetchPublicProjects();
 });
 
