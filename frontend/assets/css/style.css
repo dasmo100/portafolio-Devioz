@@ -679,18 +679,16 @@ body.no-scroll,
     box-shadow: 0 4px 16px rgba(0, 187, 166, 0.4);
 }
 
-/* Tarjetas de Proyecto Glassmorphism */
+/* Tarjetas de Proyecto */
 .project-card {
     position: relative;
-    background: rgba(255, 255, 255, 0.03);
+    background: #000000;
     border: 1px solid rgba(255, 255, 255, 0.1);
     border-radius: 20px;
     overflow: hidden;
     display: flex;
     flex-direction: column;
     height: 100%;
-    backdrop-filter: blur(16px);
-    -webkit-backdrop-filter: blur(16px);
     transition: transform 0.35s ease-in-out, box-shadow 0.35s ease-in-out, border-color 0.35s ease-in-out;
 }
 
@@ -705,6 +703,7 @@ body.no-scroll,
     position: relative;
     height: 220px;
     overflow: hidden;
+    background: #000000;
 }
 
 .card-img-wrapper img {
@@ -725,6 +724,7 @@ body.no-scroll,
 
 /* Cuerpo de la tarjeta */
 .project-card-body {
+    background: #000000;
     padding: 24px;
     display: flex;
     flex-direction: column;
