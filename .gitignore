@@ -1,0 +1,62 @@
+# ==============================================================================
+# .gitignore — Portafolio Devioz
+# ==============================================================================
+
+# Entornos y Archivos de Configuración Local
+.env
+.env.*
+!.env.example
+*.local
+
+# Editores e IDEs
+.vscode/
+.idea/
+*.sublime-project
+*.sublime-workspace
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.swp
+*.swo
+*~
+
+# Archivos del Sistema Operativo
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+Thumbs.db:encryptable
+desktop.ini
+
+# Logs y Archivos Temporales
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+logs/
+temp/
+tmp/
+*.tmp
+
+# Dependencias (si se agregan en el futuro)
+node_modules/
+vendor/
+
+# Archivos de Pruebas y Scratch
+scratch/
+coverage/
+*.lcov
+
+# Almacenamiento de Uploads Dinámicos (conservando estructura con .gitkeep)
+frontend/assets/img/uploads/*
+!frontend/assets/img/uploads/.gitkeep
+
+# Respaldos de Base de Datos
+*.sql.bak
+*.sql.gz
+*.sqlite
+*.db
