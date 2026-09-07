@@ -165,16 +165,6 @@ $user = 'root';
 $pass = ''; // Por defecto vacía en XAMPP
 ```
 
-#### 5. Crear el Usuario Administrador Inicial
-
-Abre en tu navegador la siguiente URL para configurar tu acceso de forma automática:
-
-```plaintext
-http://localhost/portafolio-Devioz/backend/crear_primer_admin.php
-```
-
-Este asistente verificará la base de datos, generará las credenciales maestras y te facilitará el botón directo de acceso.
-
 ---
 
 ## 📄 Licencia y Créditos
