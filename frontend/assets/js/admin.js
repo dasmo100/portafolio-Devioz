@@ -643,7 +643,17 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Renderiza las filas en la tabla del panel admin
+    // Normalizar ruta de imagen local o externa
+    function formatProjectImageUrl(img) {
+        if (!img) return 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80';
+        if (img.startsWith('http://') || img.startsWith('https://') || img.startsWith('data:')) {
+            return img;
+        }
+        const clean = img.replace(/^.*[\\\/]/, '');
+        return `assets/img/uploads/${clean}`;
+    }
+
+    // Renderizado de la tabla de proyectos en el Panel de Administración
     function renderAdminTable(projects, searchQuery = '') {
         if (!projectsTableBody) return;
 
@@ -705,7 +715,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
             row.innerHTML = `
                 <td class="text-center" style="width: 90px;">
-                    <img src="${p.imagen_url || p.imagen}" alt="${p.titulo}" class="admin-thumb-img" onerror="this.src='https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=200&q=80'">
+                    <img src="${formatProjectImageUrl(p.imagen_url || p.imagen)}" alt="${p.titulo}" class="admin-thumb-img" onerror="this.src='https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=200&q=80'">
                 </td>
                 <td>
                     <div class="d-flex align-items-center gap-2">
@@ -859,7 +869,7 @@ document.addEventListener('DOMContentLoaded', function() {
             // Imagen previa
             const imgSource = project.imagen_url || project.imagen;
             if (imgSource) {
-                editorExistingImgUrl = imgSource;
+                editorExistingImgUrl = formatProjectImageUrl(imgSource);
                 if (imgSource.startsWith('http')) {
                     if (editorImgUrl) editorImgUrl.value = imgSource;
                 }
@@ -913,7 +923,7 @@ document.addEventListener('DOMContentLoaded', function() {
             editorTitleCount.textContent = `${editorTitle.value.length} / 80`;
         }
         if (editorDesc && editorDescCount) {
-            editorDescCount.textContent = `${editorDesc.value.length} / 300`;
+            editorDescCount.textContent = `${editorDesc.value.length} / 700`;
         }
     }
 
@@ -1032,7 +1042,7 @@ document.addEventListener('DOMContentLoaded', function() {
     // Manejo de Dropzone & Subida de Archivos
     if (editorDropzone && editorFileInput) {
         editorDropzone.addEventListener('click', function(e) {
-            if (e.target.closest('#btnRemoveSelectedFile')) return;
+            if (e.target.closest('#btnRemoveSelectedFile') || e.target === editorFileInput) return;
             editorFileInput.click();
         });
 
@@ -1049,6 +1059,9 @@ document.addEventListener('DOMContentLoaded', function() {
             e.preventDefault();
             this.classList.remove('dragover');
             if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                try {
+                    editorFileInput.files = e.dataTransfer.files;
+                } catch (err) {}
                 handleSelectedImageFile(e.dataTransfer.files[0]);
             }
         });
@@ -1114,7 +1127,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } else if (editorImgUrl && editorImgUrl.value.trim()) {
                 liveCardImg.src = editorImgUrl.value.trim();
             } else if (editorExistingImgUrl) {
-                liveCardImg.src = editorExistingImgUrl;
+                liveCardImg.src = formatProjectImageUrl(editorExistingImgUrl);
             } else {
                 liveCardImg.src = DEFAULT_PLACEHOLDER_IMG;
             }
@@ -1274,6 +1287,12 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (isEditing) {
                     formData.append('id', id);
                     formData.append('action', 'update');
+                }
+
+                // Asegurar que el archivo seleccionado se adjunte explícitamente y anule URLs viejas
+                if (editorSelectedFile) {
+                    formData.set('imagen', editorSelectedFile);
+                    formData.set('imagen_url', '');
                 }
 
                 // Asegurar tecnologías procesadas y estado destacado

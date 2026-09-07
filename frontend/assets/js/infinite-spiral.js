@@ -235,7 +235,7 @@ class InfiniteSpiral {
 
             let imgUrl = proj.imagen_url || proj.imagen;
             if (imgUrl && !imgUrl.startsWith('http') && !imgUrl.startsWith('data:')) {
-                imgUrl = (imgUrl.startsWith('assets/') ? '' : 'assets/img/uploads/') + imgUrl.replace(/^.*[\\\/]/, '');
+                imgUrl = 'assets/img/uploads/' + imgUrl.replace(/^.*[\\\/]/, '');
             }
 
             const catName = proj.categoria_nombre || fallback.category;
@@ -274,7 +274,7 @@ class InfiniteSpiral {
                 let img = p.imagen_url || p.imagen;
                 if (img) {
                     if (!img.startsWith('http') && !img.startsWith('data:')) {
-                        img = (img.startsWith('assets/') ? '' : 'assets/img/uploads/') + img.replace(/^.*[\\\/]/, '');
+                        img = 'assets/img/uploads/' + img.replace(/^.*[\\\/]/, '');
                     }
                     item.url = img;
                 }

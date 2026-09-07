@@ -436,9 +436,9 @@ if ($method === 'GET') {
             
             // Normalizar imagen tanto para imagen_url como para imagen
             $img = $p['imagen_url'] ?? ($p['imagen'] ?? '');
-            if (!empty($img) && !str_starts_with($img, 'http://') && !str_starts_with($img, 'https://')) {
+            if (!empty($img) && !str_starts_with($img, 'http://') && !str_starts_with($img, 'https://') && !str_starts_with($img, 'data:')) {
                 // Formato relativo estándar: assets/img/uploads/archivo.ext
-                $img = (str_starts_with($img, 'assets/') ? '' : 'assets/img/uploads/') . basename($img);
+                $img = 'assets/img/uploads/' . basename($img);
             }
             $p['imagen_url'] = $img;
             $p['imagen'] = $img;

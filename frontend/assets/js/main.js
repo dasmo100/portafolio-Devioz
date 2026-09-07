@@ -184,6 +184,16 @@ function openProjectModal(data) {
     modalInstance.show();
 }
 
+// Formateador robusto de URL de imágenes locales o externas
+function formatProjectImageUrl(img) {
+    if (!img) return 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80';
+    if (img.startsWith('http://') || img.startsWith('https://') || img.startsWith('data:')) {
+        return img;
+    }
+    const clean = img.replace(/^.*[\\\/]/, '');
+    return `assets/img/uploads/${clean}`;
+}
+
 // Abrir modal buscando por ID de proyecto
 function openProjectModalById(projectId) {
     if (!projectId && projectId !== 0) return;
@@ -193,7 +203,7 @@ function openProjectModalById(projectId) {
             id: project.id,
             title: project.titulo,
             category: (project.categoria_icono ? project.categoria_icono + ' ' : '') + (project.categoria_nombre || 'Proyecto Destacado'),
-            img: project.imagen_url || project.imagen,
+            img: formatProjectImageUrl(project.imagen_url || project.imagen),
             desc: project.descripcion,
             tech: project.tecnologias_array || (project.tecnologias ? project.tecnologias.split(',').map(s => s.trim()) : []),
             demo: project.enlace_demo || project.demo_url
@@ -227,7 +237,7 @@ function renderPublicProjectsGrid(projects) {
         const catSlug = p.categoria_slug || 'desarrollo-web';
         const catName = p.categoria_nombre || 'General';
         const catIcon = p.categoria_icono || '📁';
-        const imgUrl = p.imagen_url || p.imagen || 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80';
+        const imgUrl = formatProjectImageUrl(p.imagen_url || p.imagen);
         const techs = p.tecnologias_array && p.tecnologias_array.length 
             ? p.tecnologias_array 
             : (p.tecnologias ? p.tecnologias.split(',').map(s => s.trim()) : []);
