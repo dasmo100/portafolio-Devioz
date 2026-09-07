@@ -10,11 +10,11 @@ El proyecto está desarrollado con estándares modernos, priorizando el rendimie
 
 - **Frontend**:
   - **HTML5 Semántico**: Estructura limpia, accesible y optimizada para SEO.
-  - **Vanilla CSS3**: Sistema de diseño con variables CSS (`:root`), efectos de *Glassmorphism*, gradientes cinemáticos y animaciones `@keyframes`.
+  - **Vanilla CSS3**: Sistema de diseño con variables CSS (`:root`), efectos de _Glassmorphism_, gradientes cinemáticos y animaciones `@keyframes`.
   - **Vanilla JavaScript (ES6+)**: Lógica reactiva modular sin frameworks pesados.
-  - **WebGL Shaders (GLSL)**: Fondo dinámico e interactivo de ondas luminosas (*Scanner Waves*).
-  - **SVG Filters**: Filtro vectorial nativo para la animación de fusión líquida (*GooeyNav*).
-  - **Bootstrap 5.3.3**: Utilidades de rejilla responsiva (*Grid System*) y componentes modales accesibles.
+  - **WebGL Shaders (GLSL)**: Fondo dinámico e interactivo de ondas luminosas (_Scanner Waves_).
+  - **SVG Filters**: Filtro vectorial nativo para la animación de fusión líquida (_GooeyNav_).
+  - **Bootstrap 5.3.3**: Utilidades de rejilla responsiva (_Grid System_) y componentes modales accesibles.
 
 - **Backend**:
   - **PHP 8.x**: Arquitectura RESTful ligera con respuestas JSON, manejo estricto de sesiones y procesamiento seguro de subida de imágenes (`multipart/form-data`).
@@ -28,32 +28,38 @@ El proyecto está desarrollado con estándares modernos, priorizando el rendimie
 ## ✨ Características y Avances Implementados
 
 ### 1. 🖥️ Vista Principal en Arquitectura SPA (Single Page Application)
-- Navegación fluida y desplazamiento suave (*smooth scrolling*) entre secciones (`#inicio`, `#destacados`, `#proyectos`).
+
+- Navegación fluida y desplazamiento suave (_smooth scrolling_) entre secciones (`#inicio`, `#destacados`, `#proyectos`).
 - Barra de progreso superior interactiva que refleja el porcentaje de lectura de la página en tiempo real.
-- Sincronización inteligente de desplazamiento (*ScrollSpy*) bidireccional que actualiza la sección activa tanto al bajar como al subir.
+- Sincronización inteligente de desplazamiento (_ScrollSpy_) bidireccional que actualiza la sección activa tanto al bajar como al subir.
 
 ### 2. 🫧 Menú de Navegación Flotante con Componente GooeyNav
-- Adaptación de la animación **Gooey Nav** de *React Bits* a **Vanilla JS puro**.
+
+- Adaptación de la animación **Gooey Nav** de _React Bits_ a **Vanilla JS puro**.
 - Cálculo dinámico de dimensiones y coordenadas con `getBoundingClientRect()`.
 - Generador polar de partículas orgánicas con dispersión matemática y tiempo de vida configurable.
 - **Filtro SVG Nativo 100% Transparente**: Empleo de `feGaussianBlur` y `feColorMatrix` sobre el canal alfa, garantizando una fusión líquida orgánica sin superponer bloques ni sombras oscuras sobre el contenido de la web.
 - Soporte reactivo con `ResizeObserver` para adaptarse dinámicamente a cualquier resolución de pantalla.
 
 ### 3. ✨ Canvas de Texto de Partículas Interactivas "Devioz" (ParticleText)
+
 - Renderizado tipográfico rasterizado en tiempo real sobre `<canvas>`.
 - **Calibración Cromática Corporativa de Alta Fidelidad**: Letra **"D"** con gradiente tridimensional continuo de 7 paradas (desde verde petróleo profundo hasta cian eléctrico luminoso, sin ruido ni puntos blancos) y letras **"evioz"** en blanco puro brillante cristalino.
 - Física de dispersión radial, inercia, atracción elástica y repulsión reactiva ante el movimiento del cursor del mouse.
 
 ### 4. 🌀 Vitrina 3D Interactiva en Espiral Infinita (Infinite Spiral 3D)
+
 - Exhibición tridimensional de proyectos destacados con transformación matricial en el espacio 3D.
-- Controles táctiles y de mouse con soporte para arrastre (*drag & drop*), inercia suave y zoom cinemático con la rueda del ratón.
+- Controles táctiles y de mouse con soporte para arrastre (_drag & drop_), inercia suave y zoom cinemático con la rueda del ratón.
 
 ### 5. 📂 Galería de Proyectos Dinámica y Cinemática
+
 - Carga automatizada desde la API REST de PHP.
-- Animación escalonada de revelado al deslizarse (*Scroll Reveal Stagger*).
+- Animación escalonada de revelado al deslizarse (_Scroll Reveal Stagger_).
 - **Ventana Modal con Desenfoque Cinemático de Fondo**: Al abrir el detalle de cualquier proyecto, todo el fondo del sitio web aplica un filtro de desenfoque profundo (`backdrop-filter: blur(14px)`), centrando la atención del usuario en el contenido multimedia.
 
 ### 6. 🔐 Panel de Administración Completo (Admin Dashboard)
+
 - Interfaz moderna e independiente en `frontend/admin.html`.
 - **Gestión CRUD Integral**: Creación, lectura, edición y eliminación de proyectos del portafolio.
 - Subida física de imágenes con previsualización en vivo o vinculación mediante URLs externas.
@@ -61,11 +67,13 @@ El proyecto está desarrollado con estándares modernos, priorizando el rendimie
 - Tarjetas de estadísticas y métricas generales del portafolio en tiempo real.
 
 ### 7. 🛡️ Módulo de Autenticación y Seguridad
+
 - Acceso administrativo exclusivo mediante `frontend/login.html`.
 - Sesiones seguras en PHP (`$_SESSION`) con validación de roles y mitigación de acceso directo a endpoints.
 - Hasheo robusto de contraseñas con el algoritmo nativo `PASSWORD_BCRYPT`.
 
 ### 8. 🗄️ Base de Datos Optimizada
+
 - Estructura limpia y normalizada sin tablas obsoletas ni dependencias redundantes.
 - Script de migración y sincronización automática desde el backend para garantizar compatibilidad inmediata en entornos limpios.
 
@@ -117,6 +125,7 @@ portafolio-Devioz/
 ## 🛠️ Instalación y Despliegue Local
 
 ### Requisitos Previos
+
 - Servidor web local: **XAMPP**, **WampServer**, **Laragon** o entorno **LAMP/LEMP**.
 - **PHP 8.0** o superior (con extensiones `pdo`, `pdo_mysql`, `gd` o `fileinfo` habilitadas).
 - **MySQL 5.7+** o **MariaDB 10.4+**.
@@ -126,13 +135,17 @@ portafolio-Devioz/
 ### Paso a Paso
 
 #### 1. Ubicar el proyecto en el servidor web
+
 Copia o clona el repositorio dentro de la carpeta raíz de documentos de tu servidor local:
+
 - Para **XAMPP**: `C:\xampp\htdocs\portafolio-Devioz\`
 
 #### 2. Iniciar los servicios
+
 Abre el panel de control de tu entorno (ej. XAMPP Control Panel) e inicia los módulos de **Apache** y **MySQL**.
 
 #### 3. Importar la Base de Datos
+
 1. Accede a phpMyAdmin en tu navegador: `http://localhost/phpmyadmin/`.
 2. Crea una base de datos llamada `portafolio_devioz` o dirígete a la pestaña **Importar**.
 3. Selecciona y ejecuta el archivo:
@@ -142,7 +155,9 @@ Abre el panel de control de tu entorno (ej. XAMPP Control Panel) e inicia los m�
 4. El script creará la base de datos, las tablas optimizadas y los datos iniciales de demostración.
 
 #### 4. Verificar la Configuración de Conexión
+
 Revisa el archivo `backend/config/db.php`. La configuración por defecto para entornos locales estándar es:
+
 ```php
 $host = 'localhost';
 $db   = 'portafolio_devioz';
@@ -151,31 +166,17 @@ $pass = ''; // Por defecto vacía en XAMPP
 ```
 
 #### 5. Crear el Usuario Administrador Inicial
+
 Abre en tu navegador la siguiente URL para configurar tu acceso de forma automática:
+
 ```plaintext
 http://localhost/portafolio-Devioz/backend/crear_primer_admin.php
 ```
+
 Este asistente verificará la base de datos, generará las credenciales maestras y te facilitará el botón directo de acceso.
-
----
-
-## 🖥️ Enlaces de Acceso Local
-
-| Sección | URL Local | Descripción |
-| :--- | :--- | :--- |
-| **Sitio Web Público** | [http://localhost/portafolio-Devioz/frontend/index.html](http://localhost/portafolio-Devioz/frontend/index.html) | Portafolio digital SPA completo con animaciones y proyectos |
-| **Acceso Administrativo** | [http://localhost/portafolio-Devioz/frontend/login.html](http://localhost/portafolio-Devioz/frontend/login.html) | Formulario de autenticación para administradores |
-| **Panel de Control** | [http://localhost/portafolio-Devioz/frontend/admin.html](http://localhost/portafolio-Devioz/frontend/admin.html) | Dashboard administrativo para gestión CRUD de proyectos |
-
----
-
-## 🔒 Credenciales por Defecto
-
-- **Usuario**: `admin`
-- **Contraseña**: `admin123` *(configurable desde el asistente de creación)*
 
 ---
 
 ## 📄 Licencia y Créditos
 
-Desarrollado con dedicación y excelencia visual para **Devioz**. Todos los derechos reservados.
+Desarrollado con dedicación, innovación y excelencia visual por **Daniel Leandro** para **Devioz**.
