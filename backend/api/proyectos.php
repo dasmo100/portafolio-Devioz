@@ -2,10 +2,10 @@
 header('Content-Type: application/json; charset=utf-8');
 
 /**
- * Portafolio Devioz - API CRUD de Proyectos
+ * Portafolio Devioz - API CRUD de Proyectos (Completamente autónomo sin dependencia de categorias)
  * 
  * Maneja operaciones completas:
- * GET: Obtener todos los proyectos o filtrados por categoría
+ * GET: Obtener todos los proyectos o filtrados
  * POST: Crear nuevo proyecto (con subida de imagen local o URL)
  * PUT / POST (action=update): Editar proyecto existente
  * DELETE / POST (action=delete): Eliminar proyecto y remover imagen física
@@ -50,69 +50,36 @@ if (!is_dir($uploadDir)) {
 }
 
 // -------------------------------------------------------------
-// Sincronización automática de estructura y categorías requeridas
+// Sincronización de estructura en tabla proyectos (Sin dependencia de categorias)
 // -------------------------------------------------------------
 try {
-    // 0. Asegurar existencia de la tabla categorias
-    $tablesInDb = $pdo->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN);
-    if (!in_array('categorias', $tablesInDb)) {
-        $pdo->exec("CREATE TABLE IF NOT EXISTS `categorias` (
-            `id` INT AUTO_INCREMENT PRIMARY KEY,
-            `slug` VARCHAR(50) NOT NULL UNIQUE,
-            `nombre` VARCHAR(100) NOT NULL,
-            `icono` VARCHAR(50) DEFAULT NULL,
-            `orden` INT DEFAULT 0,
-            `creado_en` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
-        ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci");
-
-        $pdo->exec("INSERT IGNORE INTO `categorias` (`slug`, `nombre`, `icono`, `orden`) VALUES
-            ('desarrollo-web', 'Desarrollo Web', '🌐', 1),
-            ('diseno-grafico', 'Diseño Gráfico', '🎨', 2),
-            ('spots-publicitarios', 'Spots Publicitarios', '🎬', 3),
-            ('business-intelligence', 'Business Intelligence', '📊', 4),
-            ('ia', 'Inteligencia Artificial', '🤖', 5)");
-    }
-
-    // 1. Asegurar columnas en categorias
-    $catCols = $pdo->query("SHOW COLUMNS FROM `categorias`")->fetchAll(PDO::FETCH_COLUMN);
-    if (!in_array('slug', $catCols)) {
-        $pdo->exec("ALTER TABLE `categorias` ADD COLUMN `slug` VARCHAR(50) NULL AFTER `id`");
-    }
-    if (!in_array('icono', $catCols)) {
-        $pdo->exec("ALTER TABLE `categorias` ADD COLUMN `icono` VARCHAR(50) NULL AFTER `nombre`");
-    }
-
-    // 2. Asegurar que las 5 categorías oficiales de Devioz existan con sus slugs e iconos
-    $defaultCategories = [
-        ['slug' => 'desarrollo-web', 'nombre' => 'Desarrollo Web', 'icono' => '🌐'],
-        ['slug' => 'diseno-grafico', 'nombre' => 'Diseño Gráfico', 'icono' => '🎨'],
-        ['slug' => 'spots-publicitarios', 'nombre' => 'Spots Publicitarios', 'icono' => '🎬'],
-        ['slug' => 'business-intelligence', 'nombre' => 'Business Intelligence', 'icono' => '📊'],
-        ['slug' => 'inteligencia-artificial', 'nombre' => 'Inteligencia Artificial', 'icono' => '🤖']
-    ];
-
-    foreach ($defaultCategories as $dCat) {
-        $stmtCheck = $pdo->prepare("SELECT `id`, `slug`, `icono` FROM `categorias` WHERE `slug` = :s OR `nombre` = :n LIMIT 1");
-        $stmtCheck->execute([':s' => $dCat['slug'], ':n' => $dCat['nombre']]);
-        $existing = $stmtCheck->fetch(PDO::FETCH_ASSOC);
-
-        if ($existing) {
-            if (empty($existing['slug']) || empty($existing['icono'])) {
-                $upCat = $pdo->prepare("UPDATE `categorias` SET `slug` = :s, `icono` = :i WHERE `id` = :id");
-                $upCat->execute([':s' => $dCat['slug'], ':i' => $dCat['icono'], ':id' => $existing['id']]);
-            }
-        } else {
-            $insCat = $pdo->prepare("INSERT INTO `categorias` (`slug`, `nombre`, `icono`) VALUES (:s, :n, :i)");
-            $insCat->execute([':s' => $dCat['slug'], ':n' => $dCat['nombre'], ':i' => $dCat['icono']]);
+    // 1. Eliminar cualquier restricción de clave foránea hacia categorias si estuviera presente
+    try {
+        $fks = $pdo->query("SELECT CONSTRAINT_NAME FROM information_schema.KEY_COLUMN_USAGE 
+            WHERE TABLE_SCHEMA = DATABASE() AND TABLE_NAME = 'proyectos' AND CONSTRAINT_NAME = 'fk_proyectos_categoria'")->fetchAll();
+        if (!empty($fks)) {
+            $pdo->exec("ALTER TABLE `proyectos` DROP FOREIGN KEY `fk_proyectos_categoria`");
         }
+    } catch (Exception $fkEx) {
+        // Ignorar si no existe restricción
     }
 
-    // 3. Asegurar columnas compatibles en proyectos
+    // 2. Asegurar columnas en la tabla proyectos
     $projCols = $pdo->query("SHOW COLUMNS FROM `proyectos`")->fetchAll(PDO::FETCH_COLUMN);
-    if (!in_array('categoria_id', $projCols)) {
-        $pdo->exec("ALTER TABLE `proyectos` ADD COLUMN `categoria_id` INT NULL DEFAULT NULL AFTER `id`");
-        $projCols[] = 'categoria_id';
+
+    // Almacenar categoría directamente como texto plano en proyectos
+    if (!in_array('categoria', $projCols)) {
+        $pdo->exec("ALTER TABLE `proyectos` ADD COLUMN `categoria` VARCHAR(100) NULL DEFAULT 'General' AFTER `id`");
+        $projCols[] = 'categoria';
     }
+
+    // Si existe categoria_id, permitir que sea NULLABLE para máxima compatibilidad
+    if (in_array('categoria_id', $projCols)) {
+        try {
+            $pdo->exec("ALTER TABLE `proyectos` MODIFY COLUMN `categoria_id` INT NULL DEFAULT NULL");
+        } catch (Exception $alterEx) {}
+    }
+
     if (!in_array('tecnologias', $projCols)) {
         $pdo->exec("ALTER TABLE `proyectos` ADD COLUMN `tecnologias` VARCHAR(255) NULL");
     }
@@ -146,14 +113,7 @@ try {
         $pdo->exec("UPDATE `proyectos` SET `fecha_creacion` = `creado_en` WHERE `fecha_creacion` IS NULL");
     }
 
-    // Permitir categoria_id NULLABLE para compatibilidad con proyectos sin categoría
-    try {
-        $pdo->exec("ALTER TABLE `proyectos` MODIFY COLUMN `categoria_id` INT NULL DEFAULT NULL");
-    } catch (Exception $alterEx) {
-        // En caso de restricción de llave foránea estricta
-    }
-
-    // 4. Si la tabla proyectos tiene menos de 3 proyectos, insertar proyectos iniciales del portafolio
+    // 3. Proyectos iniciales en caso de base de datos vacía
     $countProjs = (int) $pdo->query("SELECT COUNT(*) FROM `proyectos`")->fetchColumn();
     if ($countProjs < 2) {
         $initialProjs = [
@@ -163,7 +123,7 @@ try {
                 'imagen' => 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80',
                 'enlace_demo' => null,
                 'tecnologias' => 'PHP, MySQL, JavaScript, Bootstrap 5',
-                'cat_slug' => 'desarrollo-web'
+                'categoria' => 'Desarrollo Web'
             ],
             [
                 'titulo' => 'Identidad Visual & Branding',
@@ -171,7 +131,7 @@ try {
                 'imagen' => 'https://images.unsplash.com/photo-1600132806370-bf17e65e942f?auto=format&fit=crop&w=800&q=80',
                 'enlace_demo' => null,
                 'tecnologias' => 'Figma, Illustrator, Photoshop, Brand Guidelines',
-                'cat_slug' => 'diseno-grafico'
+                'categoria' => 'Diseño Gráfico'
             ],
             [
                 'titulo' => 'Spot Cinematográfico 4K',
@@ -179,7 +139,7 @@ try {
                 'imagen' => 'https://images.unsplash.com/photo-1536240478700-b869070f9279?auto=format&fit=crop&w=800&q=80',
                 'enlace_demo' => null,
                 'tecnologias' => 'After Effects, Premiere Pro, Blender 3D, VFX',
-                'cat_slug' => 'spots-publicitarios'
+                'categoria' => 'Spots Publicitarios'
             ],
             [
                 'titulo' => 'Dashboard Ejecutivo BI & KPIs',
@@ -187,7 +147,7 @@ try {
                 'imagen' => 'https://images.unsplash.com/photo-1460925895917-afdab827c52f?auto=format&fit=crop&w=800&q=80',
                 'enlace_demo' => null,
                 'tecnologias' => 'Power BI, PostgreSQL, Python, ETL Pipeline',
-                'cat_slug' => 'business-intelligence'
+                'categoria' => 'Business Intelligence'
             ],
             [
                 'titulo' => 'Neural Assistant & RAG Copilot',
@@ -195,56 +155,57 @@ try {
                 'imagen' => 'https://images.unsplash.com/photo-1677442136019-21780ecad995?auto=format&fit=crop&w=800&q=80',
                 'enlace_demo' => null,
                 'tecnologias' => 'Python, FastAPI, Gemini API, Vector DB',
-                'cat_slug' => 'inteligencia-artificial'
+                'categoria' => 'Inteligencia Artificial'
             ]
         ];
 
-        // Columnas actuales tras sincronización
         $activeCols = $pdo->query("SHOW COLUMNS FROM `proyectos`")->fetchAll(PDO::FETCH_COLUMN);
 
         foreach ($initialProjs as $pData) {
-            $catId = (int) $pdo->query("SELECT `id` FROM `categorias` WHERE `slug` = '{$pData['cat_slug']}' LIMIT 1")->fetchColumn();
-            if ($catId > 0) {
-                $checkP = $pdo->prepare("SELECT `id` FROM `proyectos` WHERE `titulo` = :t LIMIT 1");
-                $checkP->execute([':t' => $pData['titulo']]);
-                if (!$checkP->fetch()) {
-                    $insertCols = ['`titulo`', '`descripcion`', '`categoria_id`'];
-                    $insertVals = [':t', ':d', ':cid'];
-                    $insertParams = [':t' => $pData['titulo'], ':d' => $pData['descripcion'], ':cid' => $catId];
+            $checkP = $pdo->prepare("SELECT `id` FROM `proyectos` WHERE `titulo` = :t LIMIT 1");
+            $checkP->execute([':t' => $pData['titulo']]);
+            if (!$checkP->fetch()) {
+                $insertCols = ['`titulo`', '`descripcion`'];
+                $insertVals = [':t', ':d'];
+                $insertParams = [':t' => $pData['titulo'], ':d' => $pData['descripcion']];
 
-                    if (in_array('imagen', $activeCols)) {
-                        $insertCols[] = '`imagen`';
-                        $insertVals[] = ':img';
-                        $insertParams[':img'] = $pData['imagen'];
-                    }
-                    if (in_array('imagen_url', $activeCols)) {
-                        $insertCols[] = '`imagen_url`';
-                        $insertVals[] = ':img_url';
-                        $insertParams[':img_url'] = $pData['imagen'];
-                    }
-                    if (in_array('tecnologias', $activeCols)) {
-                        $insertCols[] = '`tecnologias`';
-                        $insertVals[] = ':tech';
-                        $insertParams[':tech'] = $pData['tecnologias'];
-                    }
-                    if (in_array('usuario_id', $activeCols)) {
-                        $insertCols[] = '`usuario_id`';
-                        $insertVals[] = '1';
-                    }
-                    if (in_array('estado', $activeCols)) {
-                        $insertCols[] = '`estado`';
-                        $insertVals[] = '1';
-                    }
-
-                    $sqlIns = "INSERT INTO `proyectos` (" . implode(', ', $insertCols) . ") VALUES (" . implode(', ', $insertVals) . ")";
-                    $insP = $pdo->prepare($sqlIns);
-                    $insP->execute($insertParams);
+                if (in_array('categoria', $activeCols)) {
+                    $insertCols[] = '`categoria`';
+                    $insertVals[] = ':cat';
+                    $insertParams[':cat'] = $pData['categoria'];
                 }
+                if (in_array('imagen', $activeCols)) {
+                    $insertCols[] = '`imagen`';
+                    $insertVals[] = ':img';
+                    $insertParams[':img'] = $pData['imagen'];
+                }
+                if (in_array('imagen_url', $activeCols)) {
+                    $insertCols[] = '`imagen_url`';
+                    $insertVals[] = ':img_url';
+                    $insertParams[':img_url'] = $pData['imagen'];
+                }
+                if (in_array('tecnologias', $activeCols)) {
+                    $insertCols[] = '`tecnologias`';
+                    $insertVals[] = ':tech';
+                    $insertParams[':tech'] = $pData['tecnologias'];
+                }
+                if (in_array('usuario_id', $activeCols)) {
+                    $insertCols[] = '`usuario_id`';
+                    $insertVals[] = '1';
+                }
+                if (in_array('estado', $activeCols)) {
+                    $insertCols[] = '`estado`';
+                    $insertVals[] = '1';
+                }
+
+                $sqlIns = "INSERT INTO `proyectos` (" . implode(', ', $insertCols) . ") VALUES (" . implode(', ', $insertVals) . ")";
+                $insP = $pdo->prepare($sqlIns);
+                $insP->execute($insertParams);
             }
         }
     }
 
-    // 5. Limpieza preventiva: asegurar que ningún proyecto temporal apunte a devioz.com
+    // 4. Limpieza preventiva de URLs inválidas
     $cleanCols = $pdo->query("SHOW COLUMNS FROM `proyectos`")->fetchAll(PDO::FETCH_COLUMN);
     if (in_array('enlace_demo', $cleanCols)) {
         $pdo->exec("UPDATE `proyectos` SET `enlace_demo` = NULL WHERE `enlace_demo` LIKE '%devioz.com%'");
@@ -254,7 +215,6 @@ try {
     }
 
 } catch (Exception $e) {
-    // Si hay algún error menor en la migración, se captura para continuar con las peticiones
     error_log("Error de sincronización en BD: " . $e->getMessage());
 }
 
@@ -304,22 +264,29 @@ if ($method === 'POST') {
 }
 
 // -------------------------------------------------------------
-// 1. GET: Consultar proyectos (todos o filtrados por categoría)
+// 1. GET: Consultar proyectos (totalmente desacoplado de categorias)
 // -------------------------------------------------------------
 if ($method === 'GET') {
     try {
-        // Detectar columnas existentes en la tabla proyectos para máxima resiliencia
+        // Detectar columnas existentes en la tabla proyectos
         $projCols = $pdo->query("SHOW COLUMNS FROM `proyectos`")->fetchAll(PDO::FETCH_COLUMN);
 
-        $hasCatTable = in_array('categorias', $pdo->query("SHOW TABLES")->fetchAll(PDO::FETCH_COLUMN));
-        $catCols = $hasCatTable ? $pdo->query("SHOW COLUMNS FROM `categorias`")->fetchAll(PDO::FETCH_COLUMN) : [];
-
         $selectFields = ['p.`id`'];
+        $selectFields[] = 'p.`titulo`';
+
+        if (in_array('categoria', $projCols)) {
+            $selectFields[] = 'p.`categoria`';
+            $selectFields[] = "COALESCE(p.`categoria`, 'General') AS `categoria_nombre`";
+        } else {
+            $selectFields[] = "'General' AS `categoria`";
+            $selectFields[] = "'General' AS `categoria_nombre`";
+        }
+        $selectFields[] = "'general' AS `categoria_slug`";
+        $selectFields[] = "'📁' AS `categoria_icono`";
+
         if (in_array('categoria_id', $projCols)) {
             $selectFields[] = 'p.`categoria_id`';
         }
-        $selectFields[] = 'p.`titulo`';
-
         if (in_array('descripcion', $projCols)) {
             $selectFields[] = 'p.`descripcion`';
         }
@@ -351,52 +318,21 @@ if ($method === 'GET') {
             $selectFields[] = 'p.`fecha_creacion`';
         }
 
-        // Columnas de la categoría asociada
-        if ($hasCatTable) {
-            $selectFields[] = "COALESCE(c.`nombre`, 'General') AS `categoria_nombre`";
-            if (in_array('slug', $catCols)) {
-                $selectFields[] = "COALESCE(c.`slug`, 'general') AS `categoria_slug`";
-            }
-            if (in_array('icono', $catCols)) {
-                $selectFields[] = "COALESCE(c.`icono`, '📁') AS `categoria_icono`";
-            }
-        } else {
-            $selectFields[] = "'General' AS `categoria_nombre`";
-            $selectFields[] = "'general' AS `categoria_slug`";
-            $selectFields[] = "'📁' AS `categoria_icono`";
-        }
+        // Lectura del parámetro de categoría opcional
+        $catParam = isset($_GET['categoria']) ? trim($_GET['categoria']) : (isset($_GET['categoria_id']) ? trim($_GET['categoria_id']) : '');
 
-        // Lectura del parámetro de categoría (por ID numérico o por nombre / slug)
-        $catParam = isset($_GET['categoria_id']) ? trim($_GET['categoria_id']) : (isset($_GET['categoria']) ? trim($_GET['categoria']) : '');
-
-        // Resolver filtro por categoría a su ID numérico para evitar fallos de tipos en MySQL
-        $targetCatId = null;
-        if (is_numeric($catParam)) {
-            $targetCatId = (int) $catParam;
-        } else if ($hasCatTable && $catParam !== '' && strtolower($catParam) !== 'all' && strtolower($catParam) !== 'todos') {
-            $stmtCat = $pdo->prepare("SELECT `id` FROM `categorias` WHERE `slug` = :s OR `nombre` = :s OR LOWER(`slug`) = LOWER(:s) OR LOWER(`nombre`) = LOWER(:s) LIMIT 1");
-            $stmtCat->execute([':s' => $catParam]);
-            $foundCatId = $stmtCat->fetchColumn();
-            if ($foundCatId !== false) {
-                $targetCatId = (int) $foundCatId;
-            } else if (in_array(strtolower($catParam), ['ia', 'inteligencia-artificial'])) {
-                $stmtIa = $pdo->query("SELECT `id` FROM `categorias` WHERE `slug` IN ('ia', 'inteligencia-artificial') LIMIT 1");
-                $targetCatId = $stmtIa ? (int) $stmtIa->fetchColumn() : null;
-            } else {
-                // Categoría no encontrada en base de datos: retornar arreglo vacío con 200 OK
-                http_response_code(200);
-                echo json_encode([]);
-                exit();
-            }
-        }
-
-        // Soporte opcional de categoría si se solicita específicamente (por defecto se traen todos los proyectos)
         $whereClauses = [];
         $params = [];
 
-        if ($targetCatId !== null && in_array('categoria_id', $projCols)) {
-            $whereClauses[] = "p.`categoria_id` = :cat_id";
-            $params[':cat_id'] = $targetCatId;
+        if ($catParam !== '' && strtolower($catParam) !== 'all' && strtolower($catParam) !== 'todos') {
+            if (in_array('categoria', $projCols)) {
+                $whereClauses[] = "(p.`categoria` = :cat OR LOWER(p.`categoria`) = LOWER(:cat) OR p.`categoria` LIKE :cat_like)";
+                $params[':cat'] = $catParam;
+                $params[':cat_like'] = '%' . $catParam . '%';
+            } else if (is_numeric($catParam) && in_array('categoria_id', $projCols)) {
+                $whereClauses[] = "p.`categoria_id` = :cat_id";
+                $params[':cat_id'] = (int) $catParam;
+            }
         }
 
         // Si la columna 'estado' existe, asegurar que se muestren los proyectos activos para el público
@@ -404,11 +340,7 @@ if ($method === 'GET') {
             $whereClauses[] = "(p.`estado` = 1 OR p.`estado` IS NULL)";
         }
 
-        $sql = "SELECT " . implode(', ', $selectFields) . " 
-                FROM `proyectos` p";
-        if ($hasCatTable && in_array('categoria_id', $projCols)) {
-            $sql .= " LEFT JOIN `categorias` c ON p.`categoria_id` = c.`id`";
-        }
+        $sql = "SELECT " . implode(', ', $selectFields) . " FROM `proyectos` p";
 
         if (!empty($whereClauses)) {
             $sql .= " WHERE " . implode(' AND ', $whereClauses);
@@ -431,7 +363,16 @@ if ($method === 'GET') {
         // Formatear rutas de imagen y tecnologías para fácil consumo
         foreach ($proyectos as &$p) {
             $p['id'] = (int) $p['id'];
-            $p['categoria_id'] = $p['categoria_id'] !== null ? (int)$p['categoria_id'] : null;
+            if (isset($p['categoria_id'])) {
+                $p['categoria_id'] = $p['categoria_id'] !== null ? (int)$p['categoria_id'] : null;
+            }
+            $catName = !empty($p['categoria']) ? trim($p['categoria']) : (!empty($p['categoria_nombre']) ? trim($p['categoria_nombre']) : 'General');
+            $p['categoria'] = $catName;
+            $p['categoria_nombre'] = $catName;
+            $p['categoria_slug'] = strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $catName), '-'));
+            if (empty($p['categoria_slug'])) $p['categoria_slug'] = 'general';
+            $p['categoria_icono'] = '📁';
+
             $p['estado'] = (int) ($p['estado'] ?? ($p['destacado'] ?? 1));
             
             // Normalizar imagen tanto para imagen_url como para imagen
@@ -458,7 +399,6 @@ if ($method === 'GET') {
         }
         unset($p);
 
-        // Si una categoría no tiene proyectos asociados, retorna un arreglo vacío [] con código HTTP 200 OK
         http_response_code(200);
         echo json_encode($proyectos);
         exit();
@@ -516,48 +456,17 @@ function procesarSubidaImagen($fileField, $uploadDir, $urlFieldFallback = '') {
 }
 
 // -------------------------------------------------------------
-// Función auxiliar para resolver categoria_id
+// Función auxiliar para normalizar el texto de categoría (Autónoma)
 // -------------------------------------------------------------
-// Función auxiliar para resolver categoria_id (Opcional / Nullable)
-// -------------------------------------------------------------
-function resolverCategoriaId($pdo, $catRaw) {
+function resolverCategoriaTexto($catRaw) {
     if ($catRaw === null || $catRaw === '' || $catRaw === false) {
-        return obtenerFallbackCategoriaSiRequerida($pdo);
+        return 'General';
     }
-
-    if (is_numeric($catRaw)) {
-        $num = (int) $catRaw;
-        return $num > 0 ? $num : obtenerFallbackCategoriaSiRequerida($pdo);
+    $str = trim((string) $catRaw);
+    if (in_array(strtolower($str), ['null', 'undefined', 'none', '0'], true) || empty($str)) {
+        return 'General';
     }
-
-    $slug = trim((string) $catRaw);
-    if ($slug === '' || strtolower($slug) === 'null' || strtolower($slug) === 'undefined' || strtolower($slug) === 'none') {
-        return obtenerFallbackCategoriaSiRequerida($pdo);
-    }
-
-    $stmt = $pdo->prepare("SELECT `id` FROM `categorias` WHERE `slug` = :s OR `nombre` = :s LIMIT 1");
-    $stmt->execute([':s' => $slug]);
-    $catId = $stmt->fetchColumn();
-
-    if (!$catId && in_array(strtolower($slug), ['ia', 'inteligencia-artificial'])) {
-        $stmtIa = $pdo->query("SELECT `id` FROM `categorias` WHERE `slug` IN ('ia', 'inteligencia-artificial') LIMIT 1");
-        $catId = $stmtIa ? $stmtIa->fetchColumn() : null;
-    }
-
-    return $catId ? (int) $catId : obtenerFallbackCategoriaSiRequerida($pdo);
-}
-
-function obtenerFallbackCategoriaSiRequerida($pdo) {
-    try {
-        $stmtCol = $pdo->query("SHOW COLUMNS FROM `proyectos` LIKE 'categoria_id'");
-        $col = $stmtCol ? $stmtCol->fetch(PDO::FETCH_ASSOC) : null;
-        if ($col && strtoupper($col['Null'] ?? '') === 'NO' && ($col['Default'] ?? null) === null) {
-            // Si la columna física en MySQL no admite NULL y no tiene DEFAULT, usamos la primera categoría registrada como fallback seguro
-            $first = $pdo->query("SELECT `id` FROM `categorias` ORDER BY `id` ASC LIMIT 1")->fetchColumn();
-            return $first ? (int) $first : 1;
-        }
-    } catch (Exception $e) {}
-    return null;
+    return $str;
 }
 
 // -------------------------------------------------------------
@@ -577,7 +486,7 @@ if ($method === 'POST') {
     $descripcion  = trim($inputData['descripcion'] ?? ($inputData['desc'] ?? ''));
     $enlaceDemo   = trim($inputData['enlace_demo'] ?? ($inputData['demo_url'] ?? ($inputData['url'] ?? '')));
     $tecnologias  = trim($inputData['tecnologias'] ?? ($inputData['tech'] ?? ''));
-    $categoriaRaw = $inputData['categoria_id'] ?? ($inputData['categoria'] ?? ($inputData['category'] ?? null));
+    $categoriaRaw = $inputData['categoria'] ?? ($inputData['categoria_nombre'] ?? ($inputData['category'] ?? ($inputData['categoria_id'] ?? null)));
     $urlImagen    = trim($inputData['imagen'] ?? ($inputData['imagen_url'] ?? ($inputData['img'] ?? '')));
 
     if ($titulo === '') {
@@ -599,8 +508,8 @@ if ($method === 'POST') {
         $imagenRuta = 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80';
     }
 
-    $categoriaId = resolverCategoriaId($pdo, $categoriaRaw);
-    $usuarioId   = (int) ($_SESSION['usuario_id'] ?? 1);
+    $categoriaTexto = resolverCategoriaTexto($categoriaRaw);
+    $usuarioId      = (int) ($_SESSION['usuario_id'] ?? 1);
 
     try {
         $cols = $pdo->query("SHOW COLUMNS FROM `proyectos`")->fetchAll(PDO::FETCH_COLUMN);
@@ -608,10 +517,14 @@ if ($method === 'POST') {
         $insertVals = [':t', ':d'];
         $insertParams = [':t' => $titulo, ':d' => $descripcion];
 
+        if (in_array('categoria', $cols)) {
+            $insertCols[] = '`categoria`';
+            $insertVals[] = ':cat';
+            $insertParams[':cat'] = $categoriaTexto;
+        }
         if (in_array('categoria_id', $cols)) {
             $insertCols[] = '`categoria_id`';
-            $insertVals[] = ':cid';
-            $insertParams[':cid'] = $categoriaId;
+            $insertVals[] = 'NULL';
         }
 
         if (in_array('imagen', $cols)) {
@@ -661,14 +574,6 @@ if ($method === 'POST') {
 
         $nuevoId = (int) $pdo->lastInsertId();
 
-        // Obtener datos de la categoría para responder el objeto completo (si está asignada)
-        $catData = null;
-        if ($categoriaId) {
-            $stmtCat = $pdo->prepare("SELECT `nombre`, `slug`, `icono` FROM `categorias` WHERE `id` = :id");
-            $stmtCat->execute([':id' => $categoriaId]);
-            $catData = $stmtCat->fetch(PDO::FETCH_ASSOC);
-        }
-
         http_response_code(201);
         echo json_encode([
             'status' => 'success',
@@ -683,10 +588,10 @@ if ($method === 'POST') {
                 'enlace_demo' => $enlaceDemo,
                 'tecnologias' => $tecnologias,
                 'destacado' => $destacado,
-                'categoria_id' => $categoriaId,
-                'categoria_nombre' => $catData['nombre'] ?? '',
-                'categoria_slug' => $catData['slug'] ?? '',
-                'categoria_icono' => $catData['icono'] ?? ''
+                'categoria' => $categoriaTexto,
+                'categoria_nombre' => $categoriaTexto,
+                'categoria_slug' => strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $categoriaTexto), '-')),
+                'categoria_icono' => '📁'
             ]
         ]);
         exit();
@@ -743,14 +648,16 @@ if ($method === 'PUT') {
 
     $titulo       = isset($inputData['titulo']) ? trim($inputData['titulo']) : (isset($inputData['title']) ? trim($inputData['title']) : $proyectoActual['titulo']);
     $descripcion  = isset($inputData['descripcion']) ? trim($inputData['descripcion']) : (isset($inputData['desc']) ? trim($inputData['desc']) : $proyectoActual['descripcion']);
-    $enlaceDemo   = isset($inputData['enlace_demo']) ? trim($inputData['enlace_demo']) : (isset($inputData['demo_url']) ? trim($inputData['demo_url']) : $proyectoActual['enlace_demo']);
-    $tecnologias  = isset($inputData['tecnologias']) ? trim($inputData['tecnologias']) : (isset($inputData['tech']) ? trim($inputData['tech']) : $proyectoActual['tecnologias']);
+    $enlaceDemo   = isset($inputData['enlace_demo']) ? trim($inputData['enlace_demo']) : (isset($inputData['demo_url']) ? trim($inputData['demo_url']) : ($proyectoActual['enlace_demo'] ?? $proyectoActual['demo_url'] ?? null));
+    $tecnologias  = isset($inputData['tecnologias']) ? trim($inputData['tecnologias']) : (isset($inputData['tech']) ? trim($inputData['tech']) : ($proyectoActual['tecnologias'] ?? null));
     
-    // categoria_id es opcional: si se envía, se actualiza; si no se envía, se mantiene la actual
-    $tieneCatEnInput = array_key_exists('categoria_id', $inputData) || array_key_exists('categoria', $inputData) || array_key_exists('category', $inputData);
+    // categoria es opcional: si se envía, se actualiza; si no se envía, se mantiene la actual
+    $tieneCatEnInput = array_key_exists('categoria', $inputData) || array_key_exists('categoria_nombre', $inputData) || array_key_exists('category', $inputData) || array_key_exists('categoria_id', $inputData);
     $categoriaRaw = $tieneCatEnInput 
-        ? ($inputData['categoria_id'] ?? ($inputData['categoria'] ?? ($inputData['category'] ?? null)))
-        : ($proyectoActual['categoria_id'] ?? null);
+        ? ($inputData['categoria'] ?? ($inputData['categoria_nombre'] ?? ($inputData['category'] ?? ($inputData['categoria_id'] ?? null))))
+        : ($proyectoActual['categoria'] ?? 'General');
+    $categoriaTexto = resolverCategoriaTexto($categoriaRaw);
+
     $urlImagen    = trim($inputData['imagen'] ?? ($inputData['imagen_url'] ?? ($inputData['img'] ?? '')));
 
     // Procesar nueva imagen si se subió
@@ -759,11 +666,11 @@ if ($method === 'PUT') {
         $nuevaImagen = procesarSubidaImagen('projectImgFile', $uploadDir, $urlImagen);
     }
 
-    $imagenFinal = $proyectoActual['imagen'];
+    $imagenFinal = $proyectoActual['imagen'] ?? ($proyectoActual['imagen_url'] ?? '');
     if ($nuevaImagen) {
         // Si la imagen anterior era un archivo subido en uploads, eliminarlo del disco
-        if (!empty($proyectoActual['imagen']) && str_contains($proyectoActual['imagen'], 'uploads/')) {
-            $archivoViejo = $uploadDir . basename($proyectoActual['imagen']);
+        if (!empty($imagenFinal) && str_contains($imagenFinal, 'uploads/')) {
+            $archivoViejo = $uploadDir . basename($imagenFinal);
             if (is_file($archivoViejo)) {
                 @unlink($archivoViejo);
             }
@@ -771,16 +678,14 @@ if ($method === 'PUT') {
         $imagenFinal = $nuevaImagen;
     }
 
-    $categoriaId = resolverCategoriaId($pdo, $categoriaRaw);
-
     try {
         $cols = $pdo->query("SHOW COLUMNS FROM `proyectos`")->fetchAll(PDO::FETCH_COLUMN);
         $upFields = ['`titulo` = :t', '`descripcion` = :d'];
         $upParams = [':t' => $titulo, ':d' => $descripcion, ':id' => $id];
 
-        if (in_array('categoria_id', $cols)) {
-            $upFields[] = '`categoria_id` = :cid';
-            $upParams[':cid'] = $categoriaId;
+        if (in_array('categoria', $cols)) {
+            $upFields[] = '`categoria` = :cat';
+            $upParams[':cat'] = $categoriaTexto;
         }
 
         if (in_array('imagen', $cols)) {
@@ -814,13 +719,6 @@ if ($method === 'PUT') {
         $updateStmt = $pdo->prepare($sqlUpdate);
         $updateStmt->execute($upParams);
 
-        $catData = null;
-        if ($categoriaId) {
-            $stmtCat = $pdo->prepare("SELECT `nombre`, `slug`, `icono` FROM `categorias` WHERE `id` = :id");
-            $stmtCat->execute([':id' => $categoriaId]);
-            $catData = $stmtCat->fetch(PDO::FETCH_ASSOC);
-        }
-
         echo json_encode([
             'status' => 'success',
             'message' => 'Proyecto actualizado exitosamente.',
@@ -833,10 +731,10 @@ if ($method === 'PUT') {
                 'enlace_demo' => $enlaceDemo,
                 'tecnologias' => $tecnologias,
                 'destacado' => $destVal !== null ? $destVal : (int)($proyectoActual['destacado'] ?? 0),
-                'categoria_id' => $categoriaId,
-                'categoria_nombre' => $catData['nombre'] ?? '',
-                'categoria_slug' => $catData['slug'] ?? '',
-                'categoria_icono' => $catData['icono'] ?? ''
+                'categoria' => $categoriaTexto,
+                'categoria_nombre' => $categoriaTexto,
+                'categoria_slug' => strtolower(trim(preg_replace('/[^A-Za-z0-9-]+/', '-', $categoriaTexto), '-')),
+                'categoria_icono' => '📁'
             ]
         ]);
         exit();

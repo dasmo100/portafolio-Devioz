@@ -815,19 +815,28 @@ document.addEventListener('DOMContentLoaded', function() {
     let editorExistingImgUrl = '';
     const DEFAULT_PLACEHOLDER_IMG = 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80';
 
-    // Función para cambiar de vista (Lista vs Dashboard de Creación)
+    // Función para cambiar de vista (Lista vs Dashboard de Creación vs Perfil de Administrador)
     function switchAdminView(viewName) {
         const mainContainer = document.querySelector('.admin-main-col');
         if (mainContainer) mainContainer.scrollTo({ top: 0, behavior: 'smooth' });
 
         if (viewName === 'editor') {
             if (viewProjectsList) viewProjectsList.classList.add('d-none');
+            if (viewAdminProfile) viewAdminProfile.classList.add('d-none');
             if (viewProjectEditor) {
                 viewProjectEditor.classList.remove('d-none');
                 viewProjectEditor.classList.add('admin-view-container');
             }
+        } else if (viewName === 'profile') {
+            if (viewProjectsList) viewProjectsList.classList.add('d-none');
+            if (viewProjectEditor) viewProjectEditor.classList.add('d-none');
+            if (viewAdminProfile) {
+                viewAdminProfile.classList.remove('d-none');
+                viewAdminProfile.classList.add('admin-view-container');
+            }
         } else {
             if (viewProjectEditor) viewProjectEditor.classList.add('d-none');
+            if (viewAdminProfile) viewAdminProfile.classList.add('d-none');
             if (viewProjectsList) {
                 viewProjectsList.classList.remove('d-none');
                 viewProjectsList.classList.add('admin-view-container');
@@ -1418,6 +1427,321 @@ document.addEventListener('DOMContentLoaded', function() {
                 const project = adminProjectsList.find(p => String(p.id) === String(id));
                 if (project) {
                     openProjectEditor('edit', project);
+                }
+            }
+        });
+    }
+
+    // ==========================================================
+    // 6. GESTIÓN DE PERFIL DEL ADMINISTRADOR (Ver Perfil & Editar)
+    // ==========================================================
+    const viewAdminProfile = document.getElementById('viewAdminProfile');
+    const btnViewProfile = document.getElementById('btnViewProfile');
+    const btnBackToProjectsFromProfile = document.getElementById('btnBackToProjectsFromProfile');
+    const btnCancelProfile = document.getElementById('btnCancelProfile');
+    const btnSaveProfile = document.getElementById('btnSaveProfile');
+    const btnSaveProfileText = document.getElementById('btnSaveProfileText');
+    const adminProfileForm = document.getElementById('adminProfileForm');
+    const profileAlert = document.getElementById('profileAlert');
+    const profileAlertIcon = document.getElementById('profileAlertIcon');
+    const profileAlertText = document.getElementById('profileAlertText');
+
+    // Inputs del Formulario de Perfil
+    const profileNombreCompleto = document.getElementById('profileNombreCompleto');
+    const profileUsuario = document.getElementById('profileUsuario');
+    const profileEmail = document.getElementById('profileEmail');
+    const profileClaveActual = document.getElementById('profileClaveActual');
+    const profileNuevaClave = document.getElementById('profileNuevaClave');
+    const profileConfirmarClave = document.getElementById('profileConfirmarClave');
+
+    // Elementos del Resumen de Perfil (Sidebar)
+    const profileAvatarInitials = document.getElementById('profileAvatarInitials');
+    const profileSummaryName = document.getElementById('profileSummaryName');
+    const profileSummaryUser = document.getElementById('profileSummaryUser');
+    const profileSummaryEmail = document.getElementById('profileSummaryEmail');
+    const profileSummaryId = document.getElementById('profileSummaryId');
+    const profileSummaryRole = document.getElementById('profileSummaryRole');
+    const profileSummaryDate = document.getElementById('profileSummaryDate');
+
+    function getBackendProfileEndpoint() {
+        const port = window.location.port;
+        const isLiveDev = (port === '5500' || port === '5501' || port === '3000' || port === '5173' || window.location.protocol === 'file:');
+        const host = window.location.hostname || 'localhost';
+
+        if (isLiveDev) {
+            return `http://${host}/portafolio-Devioz/backend/api/perfil.php`;
+        }
+        return window.location.pathname.includes('/admin/') 
+            ? '../../backend/api/perfil.php' 
+            : '../backend/api/perfil.php';
+    }
+
+    function showProfileAlert(message, type = 'success') {
+        if (!profileAlert) return;
+        profileAlert.className = `alert alert-${type === 'success' ? 'success' : 'danger'} mb-4 d-flex align-items-center gap-2`;
+        if (profileAlertIcon) {
+            profileAlertIcon.textContent = type === 'success' ? '✅' : '⚠️';
+        }
+        if (profileAlertText) {
+            profileAlertText.textContent = message;
+        }
+        profileAlert.classList.remove('d-none');
+        profileAlert.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    }
+
+    function hideProfileAlert() {
+        if (profileAlert) profileAlert.classList.add('d-none');
+    }
+
+    // Toggle de visibilidad de contraseñas (ojito 👁️)
+    document.querySelectorAll('.btn-toggle-pw').forEach(btn => {
+        btn.addEventListener('click', function() {
+            const targetId = this.getAttribute('data-target');
+            const targetInput = document.getElementById(targetId);
+            if (!targetInput) return;
+
+            if (targetInput.type === 'password') {
+                targetInput.type = 'text';
+                this.textContent = '🙈';
+                this.title = 'Ocultar contraseña';
+            } else {
+                targetInput.type = 'password';
+                this.textContent = '👁️';
+                this.title = 'Ver contraseña';
+            }
+        });
+    });
+
+    // Cargar información del perfil desde el backend
+    async function loadAdminProfile() {
+        hideProfileAlert();
+        if (profileClaveActual) profileClaveActual.value = '';
+        if (profileNuevaClave) profileNuevaClave.value = '';
+        if (profileConfirmarClave) profileConfirmarClave.value = '';
+
+        const endpoint = getBackendProfileEndpoint();
+        const adminUser = localStorage.getItem('devioz_admin_user') || 'admin';
+
+        try {
+            let response = await fetch(endpoint, {
+                method: 'GET',
+                credentials: 'include',
+                headers: {
+                    'Accept': 'application/json',
+                    'Authorization': `Bearer devioz_admin_${adminUser}`,
+                    'X-Admin-Token': `devioz_admin_${adminUser}`
+                }
+            });
+
+            // Si Live Server devuelve 405 o ruta relativa falla, intentar localhost de Apache
+            if (!response.ok && !endpoint.includes('http://localhost')) {
+                response = await fetch(`http://localhost/portafolio-Devioz/backend/api/perfil.php`, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json',
+                        'Authorization': `Bearer devioz_admin_${adminUser}`,
+                        'X-Admin-Token': `devioz_admin_${adminUser}`
+                    }
+                });
+            }
+
+            const resData = await response.json();
+            if (response.ok && resData.status === 'success' && resData.data) {
+                const u = resData.data;
+
+                // Actualizar inputs del formulario
+                const displayName = u.nombre_completo || u.nombre || 'Admin Devioz';
+                if (profileNombreCompleto) profileNombreCompleto.value = displayName;
+                if (profileUsuario) profileUsuario.value = u.usuario || '';
+                if (profileEmail) profileEmail.value = u.email || '';
+
+                // Actualizar tarjeta lateral de resumen
+                if (profileSummaryName) profileSummaryName.textContent = displayName;
+                if (profileSummaryUser) profileSummaryUser.textContent = u.usuario || 'admin';
+                if (profileSummaryEmail) profileSummaryEmail.textContent = u.email || '—';
+                if (profileSummaryId) profileSummaryId.textContent = `#${u.id || 1}`;
+                if (profileSummaryRole) profileSummaryRole.textContent = u.rol_nombre || 'Administrador';
+                if (profileSummaryDate) {
+                    const dateStr = u.fecha_registro ? u.fecha_registro.split(' ')[0] : '—';
+                    profileSummaryDate.textContent = dateStr;
+                }
+
+                // Generar iniciales para el avatar
+                if (profileAvatarInitials) {
+                    const parts = displayName.trim().split(/\s+/);
+                    const initials = parts.length > 1 
+                        ? (parts[0][0] + parts[1][0]).toUpperCase()
+                        : (displayName.substring(0, 2)).toUpperCase();
+                    profileAvatarInitials.textContent = initials || 'AD';
+                }
+            } else {
+                showProfileAlert(resData.message || 'No se pudieron cargar los datos del perfil.', 'error');
+            }
+        } catch (err) {
+            console.error('[Devioz Admin] Error al cargar perfil:', err);
+            showProfileAlert('Error de conexión al cargar la información del perfil.', 'error');
+        }
+    }
+
+    // Botones para navegar a Ver Perfil
+    if (btnViewProfile) {
+        btnViewProfile.addEventListener('click', () => {
+            switchAdminView('profile');
+            loadAdminProfile();
+        });
+    }
+
+    if (btnBackToProjectsFromProfile) {
+        btnBackToProjectsFromProfile.addEventListener('click', () => {
+            switchAdminView('list');
+        });
+    }
+
+    if (btnCancelProfile) {
+        btnCancelProfile.addEventListener('click', () => {
+            switchAdminView('list');
+        });
+    }
+
+    // Envío del formulario de perfil
+    if (adminProfileForm) {
+        adminProfileForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            hideProfileAlert();
+
+            const nombre = profileNombreCompleto ? profileNombreCompleto.value.trim() : '';
+            const usuario = profileUsuario ? profileUsuario.value.trim() : '';
+            const email = profileEmail ? profileEmail.value.trim() : '';
+            const claveActual = profileClaveActual ? profileClaveActual.value : '';
+            const nuevaClave = profileNuevaClave ? profileNuevaClave.value : '';
+            const confirmarClave = profileConfirmarClave ? profileConfirmarClave.value : '';
+
+            // Validaciones locales
+            if (!nombre) {
+                showProfileAlert('Por favor, ingresa tu nombre completo.', 'error');
+                if (profileNombreCompleto) profileNombreCompleto.focus();
+                return;
+            }
+
+            if (!usuario || usuario.length < 3) {
+                showProfileAlert('El nombre de usuario debe contener al menos 3 caracteres.', 'error');
+                if (profileUsuario) profileUsuario.focus();
+                return;
+            }
+
+            if (!email || !email.includes('@')) {
+                showProfileAlert('Por favor, ingresa un correo electrónico válido.', 'error');
+                if (profileEmail) profileEmail.focus();
+                return;
+            }
+
+            if (nuevaClave) {
+                if (!claveActual) {
+                    showProfileAlert('Para establecer una nueva contraseña, debes ingresar tu contraseña actual.', 'error');
+                    if (profileClaveActual) profileClaveActual.focus();
+                    return;
+                }
+                if (nuevaClave.length < 6) {
+                    showProfileAlert('La nueva contraseña debe tener como mínimo 6 caracteres.', 'error');
+                    if (profileNuevaClave) profileNuevaClave.focus();
+                    return;
+                }
+                if (nuevaClave !== confirmarClave) {
+                    showProfileAlert('La nueva contraseña y su confirmación no coinciden.', 'error');
+                    if (profileConfirmarClave) profileConfirmarClave.focus();
+                    return;
+                }
+            }
+
+            // Estado de carga en botón
+            const originalBtnText = btnSaveProfileText ? btnSaveProfileText.textContent : 'Guardar Credenciales';
+
+            if (btnSaveProfile) {
+                btnSaveProfile.disabled = true;
+                if (btnSaveProfileText) btnSaveProfileText.innerHTML = '<span class="spinner-border spinner-border-sm me-2" role="status" aria-hidden="true"></span>Guardando...';
+            }
+
+            const adminUser = localStorage.getItem('devioz_admin_user') || 'admin';
+            const endpoint = getBackendProfileEndpoint();
+
+            const payload = {
+                action: 'update',
+                nombre_completo: nombre,
+                nombre: nombre,
+                usuario: usuario,
+                email: email,
+                clave_actual: claveActual,
+                nueva_clave: nuevaClave,
+                confirmar_clave: confirmarClave,
+                admin_token: `devioz_admin_${adminUser}`
+            };
+
+            try {
+                let response = await fetch(endpoint, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json',
+                        'Authorization': `Bearer devioz_admin_${adminUser}`,
+                        'X-Admin-Token': `devioz_admin_${adminUser}`
+                    },
+                    body: JSON.stringify(payload)
+                });
+
+                if (!response.ok && !endpoint.includes('http://localhost')) {
+                    response = await fetch(`http://localhost/portafolio-Devioz/backend/api/perfil.php`, {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'Authorization': `Bearer devioz_admin_${adminUser}`,
+                            'X-Admin-Token': `devioz_admin_${adminUser}`
+                        },
+                        body: JSON.stringify(payload)
+                    });
+                }
+
+                const resData = await response.json();
+
+                if (response.ok && resData.status === 'success') {
+                    showProfileAlert(resData.message || 'Credenciales actualizadas exitosamente.', 'success');
+                    if (typeof showAdminToast === 'function') {
+                        showAdminToast('Credenciales actualizadas correctamente.', 'success');
+                    }
+
+                    // Actualizar localStorage y resumen visual
+                    localStorage.setItem('devioz_admin_user', usuario);
+                    if (profileSummaryName) profileSummaryName.textContent = nombre;
+                    if (profileSummaryUser) profileSummaryUser.textContent = usuario;
+                    if (profileSummaryEmail) profileSummaryEmail.textContent = email;
+
+                    // Actualizar iniciales de avatar
+                    if (profileAvatarInitials) {
+                        const parts = nombre.trim().split(/\s+/);
+                        const initials = parts.length > 1 
+                            ? (parts[0][0] + parts[1][0]).toUpperCase()
+                            : (nombre.substring(0, 2)).toUpperCase();
+                        profileAvatarInitials.textContent = initials || 'AD';
+                    }
+
+                    // Limpiar campos de contraseñas por seguridad
+                    if (profileClaveActual) profileClaveActual.value = '';
+                    if (profileNuevaClave) profileNuevaClave.value = '';
+                    if (profileConfirmarClave) profileConfirmarClave.value = '';
+                } else {
+                    showProfileAlert(resData.message || 'Error al guardar los cambios.', 'error');
+                }
+
+            } catch (err) {
+                console.error('[Devioz Admin] Error al guardar perfil:', err);
+                showProfileAlert('Error de conexión al servidor al actualizar el perfil.', 'error');
+            } finally {
+                if (btnSaveProfile) {
+                    btnSaveProfile.disabled = false;
+                    if (btnSaveProfileText) btnSaveProfileText.textContent = originalBtnText;
                 }
             }
         });

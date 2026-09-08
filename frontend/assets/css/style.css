@@ -1753,3 +1753,46 @@ body.project-modal-active #scanner-bg {
         transition: none !important;
     }
 }
+
+/* =========================================
+   BOTÓN Y VISTA DE PERFIL DE ADMINISTRADOR
+   ========================================= */
+.btn-outline-profile {
+    border-radius: 10px;
+    font-size: 0.85rem;
+    padding: 7px 16px;
+    border: 1px solid rgba(0, 229, 212, 0.4);
+    color: #5eead4;
+    background: rgba(0, 229, 212, 0.08);
+    transition: all 0.25s ease;
+}
+
+.btn-outline-profile:hover,
+.btn-outline-profile:focus {
+    border-color: #00e5d4;
+    color: #06060e;
+    background: #00e5d4;
+    box-shadow: 0 0 20px rgba(0, 229, 212, 0.45);
+}
+
+.profile-avatar-glow {
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.profile-avatar-glow:hover {
+    transform: scale(1.05);
+    box-shadow: 0 0 35px rgba(0, 229, 212, 0.6) !important;
+}
+
+.btn-toggle-pw {
+    cursor: pointer;
+    font-size: 1.05rem;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+    user-select: none;
+}
+
+.btn-toggle-pw:hover {
+    opacity: 0.8;
+    transform: translateY(-50%) scale(1.15) !important;
+}
+
