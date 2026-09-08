@@ -3,6 +3,7 @@
 > Plataforma web interactiva de alto impacto visual y experiencia cinemática, diseñada para exhibir proyectos de software, desarrollo web, inteligencia artificial, diseño e innovación digital. Implementada bajo arquitectura SPA modular en Vanilla JavaScript, WebGL Shaders, animaciones interactivas 3D y un robusto panel administrativo (CRUD) respaldado por PHP y MySQL.
 
 ---
+<img width="1899" height="942" alt="Captura de pantalla 2026-09-07 225133" src="https://github.com/user-attachments/assets/7a4cd92b-45a6-452f-9b57-7a885046a3c9" />
 
 ## 🚀 Tecnologías y Herramientas
 
