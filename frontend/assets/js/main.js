@@ -194,10 +194,32 @@ function formatProjectImageUrl(img) {
     return `assets/img/uploads/${clean}`;
 }
 
-// Abrir modal buscando por ID de proyecto
-function openProjectModalById(projectId) {
-    if (!projectId && projectId !== 0) return;
-    const project = (allLoadedProjects || []).find(p => String(p.id) === String(projectId));
+// Abrir modal buscando por ID de proyecto o título de respaldo
+function openProjectModalById(projectId, fallbackTitle = '') {
+    if (!projectId && projectId !== 0 && !fallbackTitle) return;
+
+    const list = (window.allLoadedProjects && window.allLoadedProjects.length > 0)
+        ? window.allLoadedProjects
+        : (typeof allLoadedProjects !== 'undefined' && allLoadedProjects.length > 0 ? allLoadedProjects : (typeof DEFAULT_PROJECTS !== 'undefined' ? DEFAULT_PROJECTS : []));
+
+    let project = null;
+
+    // 1. Búsqueda por ID (manejando prefijos sintéticos como 'feat-')
+    if (projectId || projectId === 0) {
+        const rawStr = String(projectId);
+        const cleanId = rawStr.replace(/^feat-/, '');
+        project = list.find(p => String(p.id) === rawStr || String(p.id) === cleanId);
+    }
+
+    // 2. Búsqueda por coincidencia de título si no se localizó por ID
+    if (!project && fallbackTitle) {
+        const norm = fallbackTitle.toLowerCase().trim();
+        project = list.find(p => {
+            const pNorm = (p.titulo || '').toLowerCase().trim();
+            return pNorm === norm || pNorm.includes(norm) || norm.includes(pNorm);
+        });
+    }
+
     if (project) {
         openProjectModal({
             id: project.id,
@@ -209,12 +231,14 @@ function openProjectModalById(projectId) {
             demo: project.enlace_demo || project.demo_url
         });
 
-        // Resaltar suavemente la tarjeta correspondiente en la grilla
-        const cardItem = document.querySelector(`.project-item[data-id="${project.id}"] .project-card`) ||
-                         document.querySelector(`.project-item[data-id="${project.id}"]`);
-        if (cardItem) {
-            cardItem.classList.add('project-card-highlight');
-            setTimeout(() => cardItem.classList.remove('project-card-highlight'), 2200);
+        // Resaltar la tarjeta correspondiente en la galería con resplandor cinemático
+        const cardCol = document.querySelector(`.project-item[data-id="${project.id}"]`) ||
+                        document.getElementById(`project-item-${project.id}`);
+        if (cardCol) {
+            cardCol.classList.add('revealed', 'is-visible');
+            const cardInner = cardCol.querySelector('.project-card') || cardCol;
+            cardInner.classList.add('project-card-highlight');
+            setTimeout(() => cardInner.classList.remove('project-card-highlight'), 3500);
         }
     }
 }
@@ -222,6 +246,7 @@ function openProjectModalById(projectId) {
 // Exponer funciones globalmente para componentes interactivos como Infinite Spiral
 window.openProjectModal = openProjectModal;
 window.openProjectModalById = openProjectModalById;
+window.formatProjectImageUrl = formatProjectImageUrl;
 
 
 // -----------------------------------------

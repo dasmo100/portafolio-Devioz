@@ -21,6 +21,7 @@
     z-index: 10;
     padding: 0 24px;
     pointer-events: none;
+    margin-bottom: 0.6rem;
 }
 
 /* Contenedor principal de la Espiral */
@@ -28,15 +29,15 @@
     position: relative;
     width: 100%;
     max-width: 1100px;
-    height: 800px;
+    height: 770px;
     perspective: 1200px;
-    perspective-origin: 50% 50%;
+    perspective-origin: 50% 48%;
     overflow: hidden;
     cursor: grab;
     user-select: none;
     -webkit-user-select: none;
     touch-action: pan-y; /* Permite deslizar la página hacia abajo sin interrupciones */
-    margin: 0 auto;
+    margin: -10px auto 0;
 }
 
 .infinite-spiral:active,
@@ -49,7 +50,7 @@
 /* Escenario dinámico en 3D centrado */
 .infinite-spiral__stage {
     position: absolute;
-    top: 50%;
+    top: 48%;
     left: 50%;
     width: 0;
     height: 0;
@@ -136,6 +137,7 @@
     gap: 4px;
     transform: translateY(6px);
     transition: transform 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+    pointer-events: auto;
 }
 
 .infinite-spiral__item:hover .infinite-spiral__info {
@@ -160,29 +162,47 @@
     overflow: hidden;
     text-overflow: ellipsis;
     text-shadow: 0 2px 8px rgba(0, 0, 0, 0.95);
+    pointer-events: auto;
+    cursor: pointer;
 }
 
 .infinite-spiral__action {
     display: inline-flex;
     align-items: center;
     gap: 4px;
-    font-size: 0.70rem;
+    font-size: 0.72rem;
     font-weight: 600;
-    color: #ffffff;
+    color: #00e5d4;
     margin-top: 4px;
     opacity: 0;
-    transition: opacity 0.25s ease;
+    visibility: hidden;
+    pointer-events: none;
+    cursor: pointer;
+    transform: translateY(6px);
+    transition: opacity 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                transform 0.3s cubic-bezier(0.16, 1, 0.3, 1),
+                color 0.2s ease,
+                visibility 0.3s ease;
 }
 
-.infinite-spiral__item:hover .infinite-spiral__action {
+.infinite-spiral__item:hover .infinite-spiral__action,
+.infinite-spiral__item:focus-within .infinite-spiral__action {
     opacity: 1;
-    color: #00e5d4;
+    visibility: visible;
+    pointer-events: auto;
+    transform: translateY(0);
+}
+
+.infinite-spiral__action:hover {
+    color: #5eead4;
+    transform: translateY(0) translateX(3px);
 }
 
 /* Adaptabilidad para pantallas móviles y tablets */
 @media (max-width: 1200px) {
     .infinite-spiral {
-        height: 750px;
+        height: 730px;
+        margin: -8px auto 0;
     }
     .infinite-spiral__item {
         width: 150px;
@@ -193,10 +213,11 @@
 
 @media (max-width: 992px) {
     .spiral-section {
-        padding: 55px 0 30px;
+        padding: 50px 0 25px;
     }
     .infinite-spiral {
-        height: 700px;
+        height: 680px;
+        margin: -5px auto 0;
     }
     .infinite-spiral__item {
         width: 140px;
@@ -207,10 +228,11 @@
 
 @media (max-width: 576px) {
     .spiral-section {
-        padding: 40px 0 20px;
+        padding: 35px 0 15px;
     }
     .infinite-spiral {
-        height: 600px;
+        height: 580px;
+        margin: 0 auto;
     }
     .infinite-spiral__item {
         width: 130px;

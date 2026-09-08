@@ -9,6 +9,7 @@
 // Catálogo curado de los proyectos más destacados con imágenes y metadatos completos
 const SPIRAL_FEATURED_CATALOG = [
     {
+        id: 2,
         title: 'Neural Assistant & RAG Copilot',
         category: 'Inteligencia Artificial',
         categoryIcon: '🤖',
@@ -18,6 +19,7 @@ const SPIRAL_FEATURED_CATALOG = [
         enlace_demo: null
     },
     {
+        id: 1,
         title: 'Plataforma E-Commerce SaaS',
         category: 'Desarrollo Web',
         categoryIcon: '🌐',
@@ -27,6 +29,7 @@ const SPIRAL_FEATURED_CATALOG = [
         enlace_demo: null
     },
     {
+        id: 3,
         title: 'Dashboard Ejecutivo BI & KPIs',
         category: 'Business Intelligence',
         categoryIcon: '📊',
@@ -36,16 +39,18 @@ const SPIRAL_FEATURED_CATALOG = [
         enlace_demo: null
     },
     {
-        title: 'Spot Cinematográfico 4K & VFX',
+        id: 4,
+        title: 'Spot Cinematográfico 4K',
         category: 'Spots Publicitarios',
         categoryIcon: '🎬',
         url: 'https://images.unsplash.com/photo-1536240478700-b869070f9279?auto=format&fit=crop&w=1200&q=80',
-        descripcion: 'Producción audiovisual publicitaria con modelado 3D, animación de marca y masterización de sonido envolvente.',
+        descripcion: 'Producción audiovisual publicitaria con modelado 3D, animación de marca y masterización de sonido envolvente para difusión digital.',
         tecnologias_array: ['After Effects', 'Premiere Pro', 'Blender 3D', 'VFX'],
         enlace_demo: null
     },
     {
-        title: 'Identidad Visual & Branding 3D',
+        id: 5,
+        title: 'Identidad Visual & Branding',
         category: 'Diseño Gráfico',
         categoryIcon: '🎨',
         url: 'https://images.unsplash.com/photo-1600132806370-bf17e65e942f?auto=format&fit=crop&w=1200&q=80',
@@ -54,6 +59,7 @@ const SPIRAL_FEATURED_CATALOG = [
         enlace_demo: null
     },
     {
+        id: 6,
         title: 'Portal Inmobiliario Smart & CRM',
         category: 'Desarrollo Web',
         categoryIcon: '🌐',
@@ -63,6 +69,7 @@ const SPIRAL_FEATURED_CATALOG = [
         enlace_demo: null
     },
     {
+        id: 7,
         title: 'Clasificador de Imágenes CNN',
         category: 'Inteligencia Artificial',
         categoryIcon: '🤖',
@@ -72,6 +79,7 @@ const SPIRAL_FEATURED_CATALOG = [
         enlace_demo: null
     },
     {
+        id: 8,
         title: 'Data Warehouse Cloud & BigQuery',
         category: 'Business Intelligence',
         categoryIcon: '📊',
@@ -81,7 +89,8 @@ const SPIRAL_FEATURED_CATALOG = [
         enlace_demo: null
     },
     {
-        title: 'Animación de Producto 3D & CGI',
+        id: 9,
+        title: 'Animación de Producto 3D',
         category: 'Spots Publicitarios',
         categoryIcon: '🎬',
         url: 'https://images.unsplash.com/photo-1620121692029-d088224ddc74?auto=format&fit=crop&w=1200&q=80',
@@ -182,24 +191,40 @@ class InfiniteSpiral {
             const port = window.location.port;
             const isLiveDev = (port === '5500' || port === '5501' || port === '3000' || port === '5173' || window.location.protocol === 'file:');
             const host = window.location.hostname || 'localhost';
-            const endpoint = isLiveDev
-                ? `http://${host}/portafolio-Devioz/backend/api/proyectos.php`
-                : (window.location.pathname.includes('/admin/') ? '../../backend/api/proyectos.php' : 'backend/api/proyectos.php');
 
-            const res = await fetch(endpoint, {
-                headers: { 'Accept': 'application/json' }
-            });
+            const endpoints = [];
+            if (isLiveDev) {
+                endpoints.push(`http://${host}/portafolio-Devioz/backend/api/proyectos.php`);
+                endpoints.push(`http://localhost/portafolio-Devioz/backend/api/proyectos.php`);
+                endpoints.push(`http://127.0.0.1/portafolio-Devioz/backend/api/proyectos.php`);
+            }
+            endpoints.push(window.location.pathname.includes('/frontend/') ? '../backend/api/proyectos.php' : 'backend/api/proyectos.php');
+            if (!isLiveDev) {
+                endpoints.push(`http://localhost/portafolio-Devioz/backend/api/proyectos.php`);
+            }
 
-            if (res.ok) {
-                const data = await res.json();
-                loadedProjects = Array.isArray(data) ? data : (data.proyectos || data.data || []);
+            for (const endpoint of endpoints) {
+                try {
+                    const res = await fetch(endpoint, {
+                        headers: { 'Accept': 'application/json' }
+                    });
+
+                    if (res.ok) {
+                        const txt = await res.text();
+                        if (!txt.trim().startsWith('<?php')) {
+                            const data = JSON.parse(txt);
+                            loadedProjects = Array.isArray(data) ? data : (data.proyectos || data.data || []);
+                            if (loadedProjects.length > 0) break;
+                        }
+                    }
+                } catch (ignore) {}
             }
         } catch (err) {
             // Continuar con fallback
         }
 
         // Si la API no respondió pero los proyectos ya están en memoria
-        if (loadedProjects.length === 0 && window.allLoadedProjects && Array.isArray(window.allLoadedProjects)) {
+        if (loadedProjects.length === 0 && window.allLoadedProjects && Array.isArray(window.allLoadedProjects) && window.allLoadedProjects.length > 0) {
             loadedProjects = window.allLoadedProjects;
         }
 
@@ -213,7 +238,7 @@ class InfiniteSpiral {
         // 2. Si no hay proyectos con destacado == 1 en la BD, usar el catálogo de proyectos destacados curado
         if (featuredList.length === 0) {
             featuredList = SPIRAL_FEATURED_CATALOG.map((fallbackProj, i) => ({
-                id: 'feat-' + (i + 1),
+                id: fallbackProj.id || (i + 1),
                 titulo: fallbackProj.title,
                 categoria_nombre: fallbackProj.category,
                 categoria_icono: fallbackProj.categoryIcon,
@@ -242,6 +267,7 @@ class InfiniteSpiral {
             const catIcon = proj.categoria_icono || fallback.categoryIcon || '⭐';
 
             this.itemsData.push({
+                id: proj.id || fallback.id || (i + 1),
                 url: imgUrl || fallback.url,
                 fallbackUrl: fallback.url,
                 title: proj.titulo || fallback.title,
@@ -265,6 +291,7 @@ class InfiniteSpiral {
             const p = ordered[idx % ordered.length];
             if (p) {
                 item.project = p;
+                item.id = p.id;
                 item.title = p.titulo || item.title;
 
                 const catName = p.categoria_nombre || 'Destacado';
@@ -281,6 +308,7 @@ class InfiniteSpiral {
 
                 const domItem = this.items[idx];
                 if (domItem) {
+                    domItem.setAttribute('data-id', p.id);
                     domItem.setAttribute('aria-label', item.title);
                     const imgEl = domItem.querySelector('.infinite-spiral__image');
                     if (imgEl && item.url) {
@@ -289,6 +317,8 @@ class InfiniteSpiral {
                     }
                     const titleEl = domItem.querySelector('.infinite-spiral__title');
                     if (titleEl) titleEl.textContent = item.title;
+                    const actionEl = domItem.querySelector('.infinite-spiral__action');
+                    if (actionEl) actionEl.setAttribute('aria-label', `Ver detalles de ${item.title}`);
                 }
             }
         });
@@ -302,8 +332,10 @@ class InfiniteSpiral {
             const itemEl = document.createElement('div');
             itemEl.className = 'infinite-spiral__item';
             itemEl.setAttribute('data-index', index);
+            itemEl.setAttribute('data-id', (data.project && data.project.id) || data.id || (index + 1));
             itemEl.setAttribute('role', 'button');
-            itemEl.setAttribute('aria-label', data.title || 'Ver proyecto destacado');
+            itemEl.setAttribute('tabindex', '0');
+            itemEl.setAttribute('aria-label', data.title || 'Ver proyecto');
 
             // 1. Imagen del proyecto destacado en alta calidad
             const imgEl = document.createElement('img');
@@ -317,7 +349,7 @@ class InfiniteSpiral {
                 imgEl.src = data.fallbackUrl || SPIRAL_FEATURED_CATALOG[index % SPIRAL_FEATURED_CATALOG.length].url;
             });
 
-            // 2. Overlay permanente con título del proyecto y acción (sin categoría)
+            // 2. Overlay permanente con título del proyecto y acción "Ver Detalles"
             const overlayEl = document.createElement('div');
             overlayEl.className = 'infinite-spiral__overlay';
 
@@ -330,6 +362,9 @@ class InfiniteSpiral {
 
             const actionEl = document.createElement('div');
             actionEl.className = 'infinite-spiral__action';
+            actionEl.setAttribute('role', 'button');
+            actionEl.setAttribute('tabindex', '0');
+            actionEl.setAttribute('aria-label', `Ver detalles de ${data.title}`);
             actionEl.innerHTML = `
                 <span>Ver Detalles</span>
                 <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
@@ -349,8 +384,8 @@ class InfiniteSpiral {
             itemEl.appendChild(overlayEl);
             this.stage.appendChild(itemEl);
 
-            // Clic interactivo: desplazamiento suave a #galeria-proyectos y apertura automática del modal
-            itemEl.addEventListener('click', (e) => {
+            // Clic interactivo: desplazamiento suave al proyecto en la galería y apertura del modal
+            const handleClick = (e) => {
                 if (this.hasMoved || this.justDragged) {
                     e.preventDefault();
                     e.stopPropagation();
@@ -360,83 +395,142 @@ class InfiniteSpiral {
                 e.stopPropagation();
 
                 this.navigateToGalleryAndOpenModal(data.project, data);
-            });
+            };
+
+            itemEl.addEventListener('click', handleClick);
+            actionEl.addEventListener('click', handleClick);
+
+            // Accesibilidad por teclado (Enter / Espacio)
+            const handleKey = (e) => {
+                if (e.key === 'Enter' || e.key === ' ') {
+                    e.preventDefault();
+                    this.navigateToGalleryAndOpenModal(data.project, data);
+                }
+            };
+            itemEl.addEventListener('keydown', handleKey);
+            actionEl.addEventListener('keydown', handleKey);
 
             this.items.push(itemEl);
         });
     }
 
     // -------------------------------------------------------------
-    // Navegación suave hacia #galeria-proyectos y apertura automática del modal
+    // Navegación suave hacia el proyecto en #galeria-proyectos y apertura del modal
     // -------------------------------------------------------------
     navigateToGalleryAndOpenModal(project, fallbackData = {}) {
-        const proj = project || fallbackData.project;
-        if (!proj) return;
+        const proj = project || fallbackData.project || {};
+        const title = proj.titulo || fallbackData.title || '';
+        const rawId = proj.id !== undefined ? proj.id : fallbackData.id;
+        const cleanId = rawId !== undefined ? String(rawId).replace(/^feat-/, '') : null;
+
+        // 1. Encontrar el proyecto coincidente en allLoadedProjects o DEFAULT_PROJECTS
+        const list = (window.allLoadedProjects && window.allLoadedProjects.length > 0)
+            ? window.allLoadedProjects
+            : (typeof DEFAULT_PROJECTS !== 'undefined' ? DEFAULT_PROJECTS : []);
+
+        let matchedProj = null;
+        if (cleanId) {
+            matchedProj = list.find(p => String(p.id) === String(rawId) || String(p.id) === cleanId);
+        }
+        if (!matchedProj && title) {
+            const norm = title.toLowerCase().trim();
+            matchedProj = list.find(p => {
+                const pNorm = (p.titulo || '').toLowerCase().trim();
+                return pNorm === norm || pNorm.includes(norm) || norm.includes(pNorm);
+            });
+        }
+        if (!matchedProj && proj.titulo) {
+            matchedProj = proj;
+        }
+
+        const targetId = matchedProj ? matchedProj.id : (cleanId || rawId);
+
+        // 2. Localizar la tarjeta del proyecto en el DOM de la galería (#projects-grid)
+        let targetCard = null;
+        if (targetId) {
+            targetCard = document.querySelector(`.project-item[data-id="${targetId}"]`) ||
+                         document.getElementById(`project-item-${targetId}`);
+        }
+        if (!targetCard && title) {
+            const allTitles = document.querySelectorAll('.project-card-title');
+            for (const tEl of allTitles) {
+                const tText = tEl.textContent.trim().toLowerCase();
+                const norm = title.toLowerCase().trim();
+                if (tText === norm || tText.includes(norm) || norm.includes(tText)) {
+                    targetCard = tEl.closest('.project-item');
+                    break;
+                }
+            }
+        }
 
         const gallerySection = document.getElementById('galeria-proyectos') || document.getElementById('proyectos');
+        const scrollTarget = targetCard || gallerySection;
 
-        const openModalHandler = () => {
-            const projectId = proj.id;
-            if (projectId && typeof window.openProjectModalById === 'function') {
-                window.openProjectModalById(projectId);
+        // Función para aplicar resplandor dinámico y abrir el modal
+        const activateProject = () => {
+            if (targetCard) {
+                targetCard.classList.add('revealed', 'is-visible');
+                const innerCard = targetCard.querySelector('.project-card') || targetCard;
+                innerCard.classList.add('project-card-highlight');
+                setTimeout(() => {
+                    innerCard.classList.remove('project-card-highlight');
+                }, 3500);
+            }
+
+            // Abrir el modal de detalle del proyecto
+            if (targetId && typeof window.openProjectModalById === 'function') {
+                window.openProjectModalById(targetId, title);
             } else if (typeof window.openProjectModal === 'function') {
+                const pData = matchedProj || proj || fallbackData;
+                const pImg = (typeof window.formatProjectImageUrl === 'function')
+                    ? window.formatProjectImageUrl(pData.imagen_url || pData.imagen || fallbackData.url)
+                    : (pData.imagen_url || pData.imagen || fallbackData.url);
+
                 window.openProjectModal({
-                    id: proj.id,
-                    title: proj.titulo || fallbackData.title,
-                    category: (proj.categoria_icono ? proj.categoria_icono + ' ' : '') + (proj.categoria_nombre || fallbackData.category || 'Proyecto Destacado'),
-                    img: proj.imagen_url || proj.imagen || fallbackData.url,
-                    desc: proj.descripcion,
-                    tech: proj.tecnologias_array || (proj.tecnologias ? proj.tecnologias.split(',').map(s => s.trim()) : []),
-                    demo: proj.enlace_demo || proj.demo_url
+                    id: targetId,
+                    title: pData.titulo || fallbackData.title || title,
+                    category: (pData.categoria_icono ? pData.categoria_icono + ' ' : '') + (pData.categoria_nombre || fallbackData.category || 'Proyecto Destacado'),
+                    img: pImg,
+                    desc: pData.descripcion || 'Detalle del proyecto en portafolio Devioz.',
+                    tech: pData.tecnologias_array || (pData.tecnologias ? pData.tecnologias.split(',').map(s => s.trim()) : []),
+                    demo: pData.enlace_demo || pData.demo_url
                 });
             }
         };
 
-        if (!gallerySection) {
-            openModalHandler();
-            return;
+        if (scrollTarget) {
+            // Desplazamiento suave directamente hacia el proyecto seleccionado
+            scrollTarget.scrollIntoView({
+                behavior: 'smooth',
+                block: targetCard ? 'center' : 'start'
+            });
+
+            // Si ya está en pantalla, activar de inmediato
+            const rect = scrollTarget.getBoundingClientRect();
+            if (Math.abs(rect.top - window.innerHeight / 2) < 200) {
+                activateProject();
+                return;
+            }
+
+            let triggered = false;
+            const handleArrival = () => {
+                if (triggered) return;
+                triggered = true;
+                activateProject();
+            };
+
+            // Evento nativo scrollend
+            const onScrollEnd = () => {
+                window.removeEventListener('scrollend', onScrollEnd);
+                setTimeout(handleArrival, 80);
+            };
+            window.addEventListener('scrollend', onScrollEnd, { once: true });
+
+            // Respaldo de tiempo sincronizado con la duración del desplazamiento suave
+            setTimeout(handleArrival, 600);
+        } else {
+            activateProject();
         }
-
-        // 1. Iniciar desplazamiento suave hacia la galería
-        gallerySection.scrollIntoView({ behavior: 'smooth', block: 'start' });
-
-        // 2. Control de llegada a la galería para abrir automáticamente el modal
-        let arrived = false;
-        const triggerArrival = () => {
-            if (arrived) return;
-            arrived = true;
-            openModalHandler();
-        };
-
-        // Si ya está visible o a menos de 100px del viewport
-        const currentRect = gallerySection.getBoundingClientRect();
-        if (Math.abs(currentRect.top) < 100) {
-            triggerArrival();
-            return;
-        }
-
-        // Evento scrollend nativo moderno
-        const onScrollEnd = () => {
-            window.removeEventListener('scrollend', onScrollEnd);
-            setTimeout(triggerArrival, 100);
-        };
-        window.addEventListener('scrollend', onScrollEnd, { once: true });
-
-        // Observador de intersección para cuando la galería entre al viewport
-        if ('IntersectionObserver' in window) {
-            const observer = new IntersectionObserver((entries) => {
-                entries.forEach(entry => {
-                    if (entry.isIntersecting) {
-                        observer.disconnect();
-                        setTimeout(triggerArrival, 220);
-                    }
-                });
-            }, { threshold: 0.2 });
-            observer.observe(gallerySection);
-        }
-
-        // Respaldo de seguridad por tiempo (el smooth scroll toma entre 500ms y 750ms)
-        setTimeout(triggerArrival, 700);
     }
 
     // -------------------------------------------------------------
@@ -644,9 +738,7 @@ class InfiniteSpiral {
             this.velocity = 0;
 
             this.container.classList.add('is-dragging');
-            try {
-                this.container.setPointerCapture(e.pointerId);
-            } catch (err) {}
+            // Nota: NO llamamos a setPointerCapture aquí para no interceptar ni anular clics en tarjetas hijas
         };
 
         const onPointerMove = (e) => {
@@ -654,9 +746,16 @@ class InfiniteSpiral {
 
             const deltaY = e.clientY - lastY;
             const dist = Math.hypot(e.clientX - startX, e.clientY - startY);
-            if (dist > 5) {
-                this.hasMoved = true;
+            if (dist > 6) {
+                if (!this.hasMoved) {
+                    this.hasMoved = true;
+                    try {
+                        this.container.setPointerCapture(e.pointerId);
+                    } catch (err) {}
+                }
             }
+
+            if (!this.hasMoved) return;
 
             // Desplazamiento y giro en tiempo real: targetProgress -= deltaY / verticalSpacing
             const verticalSpacing = this.options.verticalSpan;
@@ -687,7 +786,7 @@ class InfiniteSpiral {
             }
 
             try {
-                if (this.container.hasPointerCapture(e.pointerId)) {
+                if (this.container.hasPointerCapture && this.container.hasPointerCapture(e.pointerId)) {
                     this.container.releasePointerCapture(e.pointerId);
                 }
             } catch (err) {}
@@ -698,6 +797,18 @@ class InfiniteSpiral {
         this.container.addEventListener('pointermove', onPointerMove);
         this.container.addEventListener('pointerup', onPointerEnd);
         this.container.addEventListener('pointercancel', onPointerEnd);
+
+        // Delegación de clic de seguridad en el contenedor para máxima fiabilidad
+        this.container.addEventListener('click', (e) => {
+            if (this.hasMoved || this.justDragged) return;
+            const itemEl = e.target.closest('.infinite-spiral__item');
+            if (itemEl) {
+                const idx = parseInt(itemEl.getAttribute('data-index'), 10);
+                if (!isNaN(idx) && this.itemsData && this.itemsData[idx]) {
+                    this.navigateToGalleryAndOpenModal(this.itemsData[idx].project, this.itemsData[idx]);
+                }
+            }
+        });
 
         // Reajuste fluido en redimensionamiento de ventana
         window.addEventListener('resize', () => {
