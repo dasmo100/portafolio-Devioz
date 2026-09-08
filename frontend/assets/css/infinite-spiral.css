@@ -1,43 +1,125 @@
 /* =========================================
    COMPONENTE INFINITE SPIRAL 3D (Vanilla CSS)
    Portafolio Devioz — Showcase de Proyectos Más Destacados
+   Layout Split 2 Columnas (Espiral Izquierda / Título Derecha)
    ========================================= */
 
 .spiral-section {
     position: relative;
     width: 100%;
-    padding: 70px 0 45px;
+    padding: 60px 0 50px;
     scroll-margin-top: 90px;
     overflow: hidden;
+    background: radial-gradient(circle at 35% 50%, rgba(0, 229, 212, 0.08) 0%, rgba(94, 234, 212, 0.02) 42%, rgba(6, 6, 14, 0) 75%);
+}
+
+/* Contenedor Split de 2 columnas centrado */
+.spiral-split-container {
+    position: relative;
+    z-index: 2;
     display: flex;
-    flex-direction: column;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    gap: 30px;
+    width: 100%;
+    max-width: 1360px;
+    margin: 0 auto;
+    padding: 0 32px;
+}
+
+/* Columna Izquierda: Espiral 3D */
+.spiral-split-left {
+    flex: 1 1 54%;
+    max-width: 640px;
+    min-width: 0;
+    display: flex;
     align-items: center;
     justify-content: center;
-    background: radial-gradient(circle at 50% 50%, rgba(0, 229, 212, 0.06) 0%, rgba(94, 234, 212, 0.02) 40%, rgba(6, 6, 14, 0) 75%);
-}
-
-.spiral-header {
     position: relative;
-    z-index: 10;
-    padding: 0 24px;
-    pointer-events: none;
-    margin-bottom: 0.6rem;
 }
 
-/* Contenedor principal de la Espiral */
+/* Columna Derecha: Título, Subtítulo y CTA centrados con la espiral */
+.spiral-split-right {
+    flex: 1 1 46%;
+    max-width: 580px;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    justify-content: center;
+    text-align: left;
+    padding-left: 24px;
+    position: relative;
+    z-index: 5;
+}
+
+/* Kicker pill animado */
+.spiral-kicker {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 16px;
+    border-radius: 9999px;
+    background: rgba(0, 229, 212, 0.08);
+    border: 1px solid rgba(0, 229, 212, 0.3);
+    color: #5eead4;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    backdrop-filter: blur(8px);
+    box-shadow: 0 0 20px rgba(0, 229, 212, 0.12);
+}
+
+.spiral-kicker-dot {
+    width: 7px;
+    height: 7px;
+    border-radius: 50%;
+    background-color: #00e5d4;
+    box-shadow: 0 0 10px #00e5d4;
+    animation: spiralPulse 2s infinite ease-in-out;
+}
+
+@keyframes spiralPulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.4); opacity: 0.6; }
+}
+
+/* Título de la sección ajustado al lado derecho */
+.spiral-side-title {
+    font-size: clamp(2.2rem, 3.4vw, 3.4rem);
+    font-weight: 800;
+    line-height: 1.15;
+    letter-spacing: -0.035em;
+    margin-bottom: 1rem;
+    text-align: left;
+}
+
+/* Subtítulo ajustado y equilibrado con la espiral */
+.spiral-side-subtitle {
+    font-size: clamp(1.05rem, 1.4vw, 1.22rem);
+    line-height: 1.75;
+    color: #94a3b8 !important;
+    max-width: 540px;
+    margin-bottom: 0;
+    text-align: left;
+}
+
+/* Contenedor principal de la Espiral (lado izquierdo) */
 .infinite-spiral {
     position: relative;
     width: 100%;
-    max-width: 1100px;
-    height: 770px;
+    max-width: 640px;
+    height: 720px;
     perspective: 1200px;
-    perspective-origin: 50% 48%;
+    perspective-origin: 50% 50%;
     overflow: hidden;
     cursor: grab;
     user-select: none;
     -webkit-user-select: none;
-    touch-action: pan-y; /* Permite deslizar la página hacia abajo sin interrupciones */
-    margin: -10px auto 0;
+    touch-action: pan-y;
+    margin: 0 auto;
 }
 
 .infinite-spiral:active,
@@ -50,7 +132,7 @@
 /* Escenario dinámico en 3D centrado */
 .infinite-spiral__stage {
     position: absolute;
-    top: 48%;
+    top: 50%;
     left: 50%;
     width: 0;
     height: 0;
@@ -59,7 +141,7 @@
     pointer-events: auto;
 }
 
-/* Tarjeta individual de Proyecto Destacado */
+/* Tarjeta individual de Proyecto Destacado (Dimensiones originales 160px) */
 .infinite-spiral__item {
     position: absolute;
     top: 50%;
@@ -198,11 +280,18 @@
     transform: translateY(0) translateX(3px);
 }
 
-/* Adaptabilidad para pantallas móviles y tablets */
-@media (max-width: 1200px) {
+/* Adaptabilidad para pantallas medianas, tablets y móviles */
+@media (max-width: 1199px) {
+    .spiral-split-container {
+        gap: 20px;
+        padding: 0 24px;
+    }
+    .spiral-split-right {
+        padding-left: 10px;
+    }
     .infinite-spiral {
-        height: 730px;
-        margin: -8px auto 0;
+        max-width: 560px;
+        height: 680px;
     }
     .infinite-spiral__item {
         width: 150px;
@@ -211,17 +300,39 @@
     }
 }
 
-@media (max-width: 992px) {
+@media (max-width: 991px) {
     .spiral-section {
         padding: 50px 0 25px;
     }
+    .spiral-split-container {
+        flex-direction: column;
+        align-items: center;
+        gap: 25px;
+        padding: 0 20px;
+    }
+    .spiral-split-right {
+        order: 1; /* Título y contenido arriba en pantallas móviles/tablets */
+        align-items: center;
+        text-align: center;
+        padding-left: 0;
+        max-width: 650px;
+    }
+    .spiral-side-title,
+    .spiral-side-subtitle {
+        text-align: center !important;
+    }
+    .spiral-split-left {
+        order: 2; /* Espiral debajo */
+        width: 100%;
+        max-width: 580px;
+    }
     .infinite-spiral {
-        height: 680px;
-        margin: -5px auto 0;
+        height: 650px;
+        margin: 0 auto;
     }
     .infinite-spiral__item {
-        width: 140px;
-        height: 140px;
+        width: 145px;
+        height: 145px;
         border-radius: 18px;
     }
 }
@@ -231,8 +342,7 @@
         padding: 35px 0 15px;
     }
     .infinite-spiral {
-        height: 580px;
-        margin: 0 auto;
+        height: 560px;
     }
     .infinite-spiral__item {
         width: 130px;

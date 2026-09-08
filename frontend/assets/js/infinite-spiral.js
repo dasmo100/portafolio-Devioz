@@ -544,9 +544,9 @@ class InfiniteSpiral {
 
         const effectiveVerticalSpan = (verticalSpacing && N) ? (verticalSpacing * N) : verticalSpan;
 
-        // Factor de escala responsive basado en ancho cacheado
-        const width = this.containerWidth || 1000;
-        const scaleFactor = Math.min(1.0, Math.max(0.72, width / 1100));
+        // Factor de escala responsive basado en ancho del contenedor (columna izquierda de ~560px a 640px)
+        const width = this.containerWidth || 600;
+        const scaleFactor = Math.min(1.0, Math.max(0.75, width / 560));
         const effectiveRadiusX = radiusX * scaleFactor;
         const effectiveRadiusZ = radiusZ * scaleFactor;
         const effectiveSpan = effectiveVerticalSpan * scaleFactor;

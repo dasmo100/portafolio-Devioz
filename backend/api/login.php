@@ -105,8 +105,30 @@ if ($method === 'POST') {
     require_once __DIR__ . '/../config/db.php';
 
     try {
-        // Consulta resiliente que busca por usuario, email o nombre
-        $stmt = $pdo->prepare("SELECT * FROM `usuarios` WHERE `usuario` = :id OR `email` = :id OR `nombre` = :id LIMIT 1");
+        // Consulta resiliente: detectar columnas existentes en usuarios para evitar errores SQLSTATE[42S22]
+        $userCols = [];
+        try {
+            $userCols = $pdo->query("SHOW COLUMNS FROM `usuarios`")->fetchAll(PDO::FETCH_COLUMN);
+        } catch (Exception $colEx) {
+            $userCols = ['usuario', 'email', 'nombre', 'clave', 'password'];
+        }
+
+        $whereConditions = [];
+        if (in_array('usuario', $userCols)) {
+            $whereConditions[] = "`usuario` = :id";
+        }
+        if (in_array('email', $userCols)) {
+            $whereConditions[] = "`email` = :id";
+        }
+        if (in_array('nombre', $userCols)) {
+            $whereConditions[] = "`nombre` = :id";
+        }
+        if (in_array('nombre_completo', $userCols)) {
+            $whereConditions[] = "`nombre_completo` = :id";
+        }
+
+        $sqlWhere = !empty($whereConditions) ? implode(' OR ', $whereConditions) : "`email` = :id";
+        $stmt = $pdo->prepare("SELECT * FROM `usuarios` WHERE $sqlWhere LIMIT 1");
         $stmt->execute([':id' => $identificador]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
@@ -121,8 +143,13 @@ if ($method === 'POST') {
                 // Actualizar hash si PHP ha actualizado el algoritmo por defecto
                 if (password_needs_rehash($storedHash, PASSWORD_DEFAULT)) {
                     $newHash = password_hash($clave, PASSWORD_DEFAULT);
-                    $updateStmt = $pdo->prepare("UPDATE `usuarios` SET `clave` = :c, `password` = :c WHERE `id` = :id");
-                    $updateStmt->execute([':c' => $newHash, ':id' => $user['id']]);
+                    $upFields = [];
+                    if (in_array('clave', $userCols)) $upFields[] = "`clave` = :c";
+                    if (in_array('password', $userCols)) $upFields[] = "`password` = :c";
+                    if (!empty($upFields)) {
+                        $updateStmt = $pdo->prepare("UPDATE `usuarios` SET " . implode(', ', $upFields) . " WHERE `id` = :id");
+                        $updateStmt->execute([':c' => $newHash, ':id' => $user['id']]);
+                    }
                 }
             }
             // 2. Soporte para administradores insertados manualmente en texto plano (ej. en phpMyAdmin)
@@ -131,15 +158,25 @@ if ($method === 'POST') {
 
                 // Encriptar automáticamente en la BD con PASSWORD_BCRYPT para proteger la cuenta
                 $newHash = password_hash($clave, PASSWORD_BCRYPT);
-                $updateStmt = $pdo->prepare("UPDATE `usuarios` SET `clave` = :c, `password` = :c WHERE `id` = :id");
-                $updateStmt->execute([':c' => $newHash, ':id' => $user['id']]);
+                $upFields = [];
+                if (in_array('clave', $userCols)) $upFields[] = "`clave` = :c";
+                if (in_array('password', $userCols)) $upFields[] = "`password` = :c";
+                if (!empty($upFields)) {
+                    $updateStmt = $pdo->prepare("UPDATE `usuarios` SET " . implode(', ', $upFields) . " WHERE `id` = :id");
+                    $updateStmt->execute([':c' => $newHash, ':id' => $user['id']]);
+                }
             }
             // 3. Fallback especial para usuario admin inicial con admin123 o password
-            else if (($identificador === 'admin' || $identificador === 'admin@devioz.com' || strpos($user['email'], 'admin') !== false) && ($clave === 'admin123' || $clave === 'password')) {
+            else if (($identificador === 'admin' || $identificador === 'admin@devioz.com' || (isset($user['email']) && strpos($user['email'], 'admin') !== false)) && ($clave === 'admin123' || $clave === 'password')) {
                 $isPasswordValid = true;
                 $newHash = password_hash($clave, PASSWORD_BCRYPT);
-                $updateStmt = $pdo->prepare("UPDATE `usuarios` SET `clave` = :c, `password` = :c WHERE `id` = :id");
-                $updateStmt->execute([':c' => $newHash, ':id' => $user['id']]);
+                $upFields = [];
+                if (in_array('clave', $userCols)) $upFields[] = "`clave` = :c";
+                if (in_array('password', $userCols)) $upFields[] = "`password` = :c";
+                if (!empty($upFields)) {
+                    $updateStmt = $pdo->prepare("UPDATE `usuarios` SET " . implode(', ', $upFields) . " WHERE `id` = :id");
+                    $updateStmt->execute([':c' => $newHash, ':id' => $user['id']]);
+                }
             }
 
             if ($isPasswordValid) {

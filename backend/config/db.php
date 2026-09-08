@@ -26,6 +26,21 @@ try {
     $pdo = new PDO("mysql:host=$host;dbname=$dbname;charset=utf8mb4", $user, $pass);
     $pdo->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
     $pdo->setAttribute(PDO::ATTR_DEFAULT_FETCH_MODE, PDO::FETCH_ASSOC);
+
+    // Verificación de columnas de usuarios para total compatibilidad
+    try {
+        $chkCols = $pdo->query("SHOW COLUMNS FROM `usuarios`")->fetchAll(PDO::FETCH_COLUMN);
+        if (!empty($chkCols)) {
+            if (!in_array('usuario', $chkCols)) {
+                $pdo->exec("ALTER TABLE `usuarios` ADD COLUMN `usuario` VARCHAR(50) NULL AFTER `id`");
+                $pdo->exec("UPDATE `usuarios` SET `usuario` = 'admin' WHERE `usuario` IS NULL OR `usuario` = ''");
+            }
+            if (!in_array('clave', $chkCols)) {
+                $pdo->exec("ALTER TABLE `usuarios` ADD COLUMN `clave` VARCHAR(255) NULL AFTER `password`");
+                $pdo->exec("UPDATE `usuarios` SET `clave` = `password` WHERE `clave` IS NULL OR `clave` = ''");
+            }
+        }
+    } catch (Exception $colEx) {}
 } catch (PDOException $e) {
     if ($e->getCode() === 1049 || stripos($e->getMessage(), 'Unknown database') !== false) {
         try {

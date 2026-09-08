@@ -69,17 +69,28 @@
          ========================================= -->
     <section id="spiral-showcase" class="spiral-section" data-alias="destacados">
         <span id="destacados" style="position: relative; top: -80px; display: block; visibility: hidden;"></span>
-        <div class="spiral-header text-center mb-3 scroll-reveal">
-            <h2 class="portfolio-section-title mb-2">
-                Proyectos Más Destacados
-            </h2>
-            <p class="portfolio-section-subtitle mx-auto mb-0">
-                Explora nuestras creaciones digitales más sobresalientes en este recorrido 3D interactivo continuo.
-            </p>
-        </div>
+        
+        <div class="spiral-split-container container-xl">
+            <!-- Columna Izquierda: Espiral 3D Interactiva -->
+            <div class="spiral-split-left">
+                <div class="infinite-spiral scroll-reveal" id="infiniteSpiralContainer" aria-label="Espiral interactiva 3D de proyectos">
+                    <div class="infinite-spiral__stage" id="infiniteSpiralStage"></div>
+                </div>
+            </div>
 
-        <div class="infinite-spiral scroll-reveal" id="infiniteSpiralContainer" aria-label="Espiral interactiva 3D de proyectos">
-            <div class="infinite-spiral__stage" id="infiniteSpiralStage"></div>
+            <!-- Columna Derecha: Título, Descripción y Acciones centrados verticalmente -->
+            <div class="spiral-split-right scroll-reveal">
+                <div class="spiral-kicker mb-3">
+                    <span class="spiral-kicker-dot"></span>
+                    <span>Showcase 3D Interactivo</span>
+                </div>
+                <h2 class="portfolio-section-title spiral-side-title mb-3">
+                    Proyectos Más Destacados
+                </h2>
+                <p class="portfolio-section-subtitle spiral-side-subtitle mb-0">
+                    Explora nuestras creaciones digitales más sobresalientes en este recorrido 3D interactivo continuo. Desliza o arrastra para rotar la espiral y haz clic en cualquier proyecto para conocer sus tecnologías y detalles en profundidad.
+                </p>
+            </div>
         </div>
     </section>
 
