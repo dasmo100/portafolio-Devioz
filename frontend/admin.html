@@ -3,39 +3,180 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+    <meta http-equiv="Pragma" content="no-cache">
+    <meta http-equiv="Expires" content="0">
     <title>Devioz Admin | Panel de Control</title>
     <!-- Bootstrap 5 CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet" integrity="sha384-QWTKZyjpPEjISv5WaRU9OFeRpok6YctnYmDr5pNlyT2bRjXh0JMhjY6hW+ALEwIH" crossorigin="anonymous">
     <!-- Custom CSS -->
     <link rel="stylesheet" href="assets/css/style.css">
-    <!-- Verificación Estricta de Sesión -->
+    <!-- Blindaje Visual Instantáneo: El panel permanece completamente invisible hasta verificación de sesión -->
+    <style id="adminAuthGuardStyle">
+        html, body {
+            display: none !important;
+            visibility: hidden !important;
+            opacity: 0 !important;
+        }
+    </style>
+    <!-- Verificación Estricta y Blindaje Anti-BFCache de Sesión -->
     <script>
-        (async function checkAdminSession() {
-            try {
+        (function() {
+            function isAuthPresent() {
+                return localStorage.getItem('devioz_admin_auth') === 'true';
+            }
+
+            // 1. Verificación síncrona inmediata antes de cualquier renderizado
+            if (!isAuthPresent()) {
+                window.location.replace('login.html');
+                return;
+            }
+
+            // Función para revelar el panel únicamente si la sesión fue validada
+            window.revealAdminPanel = function() {
+                const guard = document.getElementById('adminAuthGuardStyle');
+                if (guard) guard.remove();
+                document.documentElement.style.display = '';
+                document.documentElement.style.visibility = '';
+                document.documentElement.style.opacity = '';
+                if (document.body) {
+                    document.body.style.display = '';
+                    document.body.style.visibility = '';
+                    document.body.style.opacity = '';
+                }
+            };
+
+            // Función para re-ocultar instantáneamente
+            window.hideAdminPanel = function() {
+                if (!document.getElementById('adminAuthGuardStyle')) {
+                    const style = document.createElement('style');
+                    style.id = 'adminAuthGuardStyle';
+                    style.textContent = 'html, body { display: none !important; visibility: hidden !important; opacity: 0 !important; }';
+                    document.head.appendChild(style);
+                }
+            };
+
+            // 2. Verificación rigurosa contra el servidor PHP
+            async function verifySessionWithBackend() {
+                if (!isAuthPresent()) {
+                    window.hideAdminPanel();
+                    window.location.replace('login.html');
+                    return;
+                }
+
+                try {
+                    const port = window.location.port;
+                    const isLiveDev = (port === '5500' || port === '5501' || port === '3000' || port === '5173' || window.location.protocol === 'file:');
+                    const host = window.location.hostname || 'localhost';
+                    const sessionEndpoint = isLiveDev 
+                        ? `http://${host}/portafolio-Devioz/backend/api/check_session.php?_t=${Date.now()}`
+                        : `../backend/api/check_session.php?_t=${Date.now()}`;
+
+                    const response = await fetch(sessionEndpoint, {
+                        method: 'GET',
+                        credentials: 'include',
+                        cache: 'no-store',
+                        headers: { 
+                            'Accept': 'application/json',
+                            'Cache-Control': 'no-cache, no-store, must-revalidate'
+                        }
+                    });
+
+                    const data = await response.json();
+                    if (!response.ok || !data.success || !data.authenticated) {
+                        // Sesión inválida en el backend PHP
+                        localStorage.removeItem('devioz_admin_auth');
+                        localStorage.removeItem('devioz_admin_user');
+                        localStorage.removeItem('devioz_admin_role');
+                        sessionStorage.clear();
+                        window.hideAdminPanel();
+                        window.location.replace('login.html');
+                        return;
+                    }
+
+                    // Autenticación correcta y verificada
+                    window.revealAdminPanel();
+                } catch (err) {
+                    if (isAuthPresent()) {
+                        window.revealAdminPanel();
+                    } else {
+                        window.hideAdminPanel();
+                        window.location.replace('login.html');
+                    }
+                }
+            }
+
+            verifySessionWithBackend();
+
+            // 3. Blindaje contra navegación de retroceso (Flechas del navegador / BFCache)
+            window.addEventListener('pageshow', function(event) {
+                if (event.persisted || !isAuthPresent()) {
+                    window.hideAdminPanel();
+                    if (!isAuthPresent()) {
+                        window.location.replace('login.html');
+                        return;
+                    }
+                }
+                verifySessionWithBackend();
+            });
+
+            window.addEventListener('popstate', function() {
+                if (!isAuthPresent()) {
+                    window.hideAdminPanel();
+                    window.location.replace('login.html');
+                }
+            });
+
+            window.addEventListener('focus', function() {
+                if (!isAuthPresent()) {
+                    window.hideAdminPanel();
+                    window.location.replace('login.html');
+                } else {
+                    verifySessionWithBackend();
+                }
+            });
+
+            // 4. Lógica de Cierre de Sesión Total e Inmediato
+            window.logoutAdmin = async function(e) {
+                if (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                }
+
+                // Ocultar instantáneamente la interfaz para evitar cualquier parpadeo
+                window.hideAdminPanel();
+
+                // Destruir almacenamiento local y de sesión
+                localStorage.removeItem('devioz_admin_auth');
+                localStorage.removeItem('devioz_admin_user');
+                localStorage.removeItem('devioz_admin_role');
+                sessionStorage.clear();
+
+                // Notificar al backend PHP
                 const port = window.location.port;
                 const isLiveDev = (port === '5500' || port === '5501' || port === '3000' || port === '5173' || window.location.protocol === 'file:');
                 const host = window.location.hostname || 'localhost';
-                const sessionEndpoint = isLiveDev 
-                    ? `http://${host}/portafolio-Devioz/backend/api/check_session.php`
-                    : '../backend/api/check_session.php';
+                const logoutEndpoint = isLiveDev
+                    ? `http://${host}/portafolio-Devioz/backend/api/login.php?action=logout`
+                    : `../backend/api/login.php?action=logout`;
 
-                const response = await fetch(sessionEndpoint, {
-                    method: 'GET',
-                    credentials: 'include',
-                    headers: { 'Accept': 'application/json' }
-                });
-                const data = await response.json();
-                if (!response.ok || !data.success || !data.authenticated) {
-                    localStorage.removeItem('devioz_admin_auth');
-                    localStorage.removeItem('devioz_admin_user');
-                    localStorage.removeItem('devioz_admin_role');
-                    window.location.replace('login.html');
-                }
-            } catch (err) {
-                if (localStorage.getItem('devioz_admin_auth') !== 'true') {
-                    window.location.replace('login.html');
-                }
-            }
+                try {
+                    if (navigator.sendBeacon) {
+                        navigator.sendBeacon(logoutEndpoint);
+                    }
+                } catch (_) {}
+
+                try {
+                    await fetch(logoutEndpoint, {
+                        method: 'POST',
+                        credentials: 'include',
+                        cache: 'no-store'
+                    });
+                } catch (_) {}
+
+                // Reemplazar admin.html en el historial para que jamás se pueda retroceder a él
+                window.location.replace('login.html');
+            };
         })();
     </script>
 </head>
@@ -59,16 +200,23 @@
                         <canvas id="adminParticleText"></canvas>
                     </div>
                     <div class="d-flex align-items-center justify-content-end gap-2" style="min-width: 220px;">
-                        <button type="button" class="btn btn-sm btn-outline-profile d-inline-flex align-items-center gap-2" id="btnViewProfile" title="Consultar y editar mi perfil">
-                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                                <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
-                                <circle cx="12" cy="7" r="4"></circle>
-                            </svg>
-                            <span>Ver Perfil</span>
+                        <!-- Botón de Perfil Animado (Avatar Interactivo Lottie) -->
+                        <button type="button" class="btn-profile-avatar" id="btnViewProfile" title="Ver Perfil" aria-label="Ver Perfil de Administrador">
+                            <div id="btnProfileAnimIcon" class="profile-lottie-icon">
+                                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#00e5d4" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                    <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path>
+                                    <circle cx="12" cy="7" r="4"></circle>
+                                </svg>
+                            </div>
                         </button>
-                        <a href="login.html" class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1" id="btnLogout" style="border-radius: 10px; font-size: 0.85rem; padding: 7px 16px;">
+                        <button type="button" class="btn btn-sm btn-outline-danger d-inline-flex align-items-center gap-1" id="btnLogout" onclick="logoutAdmin(event)" style="border-radius: 10px; font-size: 0.85rem; padding: 7px 16px;">
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path>
+                                <polyline points="16 17 21 12 16 7"></polyline>
+                                <line x1="21" y1="12" x2="9" y2="12"></line>
+                            </svg>
                             Cerrar Sesión
-                        </a>
+                        </button>
                     </div>
                 </div>
             </header>
@@ -652,6 +800,8 @@
 
     <!-- Bootstrap 5 JS Bundle -->
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js" integrity="sha384-YvpcrYf0tY3lHB60NNkmxc5s9fDVZLESaAA55NDzOxhy9GkcIdslK1eN7N6jIeHz" crossorigin="anonymous"></script>
+    <!-- Lottie Web Animation Engine -->
+    <script src="assets/js/lottie.min.js"></script>
     <!-- Custom Admin JS (ParticleText & CRUD) -->
     <script src="assets/js/admin.js"></script>
 </body>

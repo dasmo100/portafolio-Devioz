@@ -17,6 +17,9 @@ if ($origin !== '*') {
 header('Access-Control-Allow-Headers: Origin, X-Requested-With, Content-Type, Accept, Authorization');
 header('Access-Control-Allow-Methods: GET, POST, OPTIONS, DELETE');
 header('Content-Type: application/json; charset=utf-8');
+header('Cache-Control: no-store, no-cache, must-revalidate, max-age=0');
+header('Pragma: no-cache');
+header('Expires: 0');
 
 $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
 
@@ -44,7 +47,22 @@ if ($method === 'GET' && !isset($_GET['action'])) {
 }
 
 // 2. DELETE o parámetro action=logout: Cerrar sesión (sin requerir conexión a DB)
-if ($method === 'DELETE' || (isset($_GET['action']) && $_GET['action'] === 'logout')) {
+$isLogoutAction = ($method === 'DELETE') 
+    || (isset($_GET['action']) && $_GET['action'] === 'logout')
+    || (isset($_POST['action']) && $_POST['action'] === 'logout')
+    || (isset($_REQUEST['action']) && $_REQUEST['action'] === 'logout');
+
+if (!$isLogoutAction && $method === 'POST') {
+    $rawCheck = file_get_contents('php://input');
+    if ($rawCheck) {
+        $jsonCheck = json_decode($rawCheck, true);
+        if (is_array($jsonCheck) && isset($jsonCheck['action']) && $jsonCheck['action'] === 'logout') {
+            $isLogoutAction = true;
+        }
+    }
+}
+
+if ($isLogoutAction) {
     $_SESSION = [];
     if (ini_get("session.use_cookies")) {
         $params = session_get_cookie_params();

@@ -1,0 +1,9 @@
+# Portafolio Devioz - Reglas de Seguridad y Anti-Caché para Frontend
+<IfModule mod_headers.c>
+    # Evitar que el navegador guarde en BFCache el panel de administración
+    <FilesMatch "(admin|login)\.html$">
+        Header set Cache-Control "no-store, no-cache, must-revalidate, max-age=0"
+        Header set Pragma "no-cache"
+        Header set Expires "0"
+    </FilesMatch>
+</IfModule>

@@ -102,7 +102,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     localStorage.setItem('devioz_admin_auth', 'true');
                     localStorage.setItem('devioz_admin_user', data.usuario || username);
                     localStorage.setItem('devioz_admin_role', data.rol || 'administrador');
-                    window.location.href = data.redirect || 'admin.html';
+                    window.location.replace(data.redirect || 'admin.html');
                 } else {
                     if (loginAlert) {
                         loginAlert.textContent = data.message || 'Credenciales inválidas. Verifica tus datos.';
@@ -121,7 +121,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     localStorage.setItem('devioz_admin_auth', 'true');
                     localStorage.setItem('devioz_admin_user', 'admin');
                     localStorage.setItem('devioz_admin_role', 'administrador');
-                    window.location.href = 'admin.html';
+                    window.location.replace('admin.html');
                     return;
                 }
 
@@ -469,23 +469,19 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // Cerrar sesión
+    // Cerrar sesión (delega a window.logoutAdmin blindado si está disponible)
     if (btnLogout) {
-        btnLogout.addEventListener('click', async function(e) {
-            e.preventDefault();
-            try {
-                const port = window.location.port;
-                const isLiveDev = (port === '5500' || port === '5501' || port === '3000' || port === '5173' || window.location.protocol === 'file:');
-                const host = window.location.hostname || 'localhost';
-                const logoutEndpoint = isLiveDev
-                    ? `http://${host}/portafolio-Devioz/backend/api/login.php?action=logout`
-                    : (window.location.pathname.includes('/admin/') ? '../../backend/api/login.php?action=logout' : '../backend/api/login.php?action=logout');
-
-                await fetch(logoutEndpoint, { method: 'POST', credentials: 'include' });
-            } catch (ignore) {}
-            localStorage.removeItem('devioz_admin_auth');
-            localStorage.removeItem('devioz_admin_user');
-            localStorage.removeItem('devioz_admin_role');
-            window.location.href = 'login.html';
+        btnLogout.addEventListener('click', function(e) {
+            if (typeof window.logoutAdmin === 'function') {
+                window.logoutAdmin(e);
+            } else {
+                e.preventDefault();
+                localStorage.removeItem('devioz_admin_auth');
+                localStorage.removeItem('devioz_admin_user');
+                localStorage.removeItem('devioz_admin_role');
+                sessionStorage.clear();
+                window.location.replace('login.html');
+            }
         });
     }
 
@@ -820,14 +816,10 @@ document.addEventListener('DOMContentLoaded', function() {
         const mainContainer = document.querySelector('.admin-main-col');
         if (mainContainer) mainContainer.scrollTo({ top: 0, behavior: 'smooth' });
 
-        if (viewName === 'editor') {
-            if (viewProjectsList) viewProjectsList.classList.add('d-none');
-            if (viewAdminProfile) viewAdminProfile.classList.add('d-none');
-            if (viewProjectEditor) {
-                viewProjectEditor.classList.remove('d-none');
-                viewProjectEditor.classList.add('admin-view-container');
-            }
-        } else if (viewName === 'profile') {
+        const btnProfileAvatar = document.getElementById('btnViewProfile');
+
+        if (viewName === 'profile') {
+            if (btnProfileAvatar) btnProfileAvatar.classList.add('is-active');
             if (viewProjectsList) viewProjectsList.classList.add('d-none');
             if (viewProjectEditor) viewProjectEditor.classList.add('d-none');
             if (viewAdminProfile) {
@@ -835,11 +827,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 viewAdminProfile.classList.add('admin-view-container');
             }
         } else {
-            if (viewProjectEditor) viewProjectEditor.classList.add('d-none');
-            if (viewAdminProfile) viewAdminProfile.classList.add('d-none');
-            if (viewProjectsList) {
-                viewProjectsList.classList.remove('d-none');
-                viewProjectsList.classList.add('admin-view-container');
+            if (btnProfileAvatar) btnProfileAvatar.classList.remove('is-active');
+            if (viewName === 'editor') {
+                if (viewProjectsList) viewProjectsList.classList.add('d-none');
+                if (viewAdminProfile) viewAdminProfile.classList.add('d-none');
+                if (viewProjectEditor) {
+                    viewProjectEditor.classList.remove('d-none');
+                    viewProjectEditor.classList.add('admin-view-container');
+                }
+            } else {
+                if (viewProjectEditor) viewProjectEditor.classList.add('d-none');
+                if (viewAdminProfile) viewAdminProfile.classList.add('d-none');
+                if (viewProjectsList) {
+                    viewProjectsList.classList.remove('d-none');
+                    viewProjectsList.classList.add('admin-view-container');
+                }
             }
         }
     }
@@ -1584,6 +1586,74 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     }
 
+    // ==========================================================
+    // Animación Lottie para el Botón "Ver Perfil" del Administrador
+    // ==========================================================
+    const USER_PROFILE_ANIM_DATA = {"v":"5.12.2","fr":29.9700012207031,"ip":0,"op":45.0000018328876,"w":48,"h":48,"nm":"user profile","ddd":0,"assets":[],"layers":[{"ddd":0,"ind":1,"ty":4,"nm":"user-outline-bot_s1g1_s2g2_s3g1_s4g1 Outlines","parent":2,"sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":0,"k":[21.28,38.663,0],"ix":2,"l":2},"a":{"a":0,"k":[15.007,30.709,0],"ix":1,"l":2},"s":{"a":0,"k":[100,100,100],"ix":6,"l":2}},"ao":0,"shapes":[{"ty":"gr","it":[{"ind":0,"ty":"sh","ix":1,"ks":{"a":0,"k":{"i":[[0,3.112],[-3.111,0],[0,-3.112],[3.112,0]],"o":[[0,-3.112],[3.112,0],[0,3.112],[-3.111,0]],"v":[[-5.635,0],[-0.001,-5.634],[5.635,0],[-0.001,5.634]],"c":true},"ix":2},"nm":"Path 1","mn":"ADBE Vector Shape - Group","hd":false},{"ty":"st","c":{"a":0,"k":[0,0.8980392156862745,0.6],"ix":3},"o":{"a":0,"k":100,"ix":4},"w":{"a":0,"k":1,"ix":5},"lc":2,"lj":2,"bm":0,"nm":"Stroke 1","mn":"ADBE Vector Graphic - Stroke","hd":false},{"ty":"tr","p":{"a":1,"k":[{"i":{"x":0.667,"y":1},"o":{"x":0.333,"y":0},"t":0,"s":[15.007,10.634],"to":[0,-0.274],"ti":[0,0.741]},{"i":{"x":0.667,"y":1},"o":{"x":0.333,"y":0},"t":3,"s":[15.007,8.955],"to":[0,-1.345],"ti":[0,0]},{"i":{"x":0.667,"y":1},"o":{"x":0.333,"y":0},"t":7,"s":[15.007,8.509],"to":[0,0],"ti":[0,0.741]},{"i":{"x":0.667,"y":1},"o":{"x":0.333,"y":0},"t":10,"s":[15.007,8.955],"to":[0,-1.345],"ti":[0,-0.28]},{"i":{"x":0.667,"y":1},"o":{"x":0.333,"y":0},"t":13.6,"s":[15.007,10.634],"to":[0,0],"ti":[0,0.771]},{"i":{"x":0.667,"y":1},"o":{"x":0.333,"y":0},"t":20.4,"s":[15.007,10.634],"to":[0,-0.274],"ti":[0,0.741]},{"i":{"x":0.667,"y":1},"o":{"x":0.333,"y":0},"t":24,"s":[15.007,8.955],"to":[0,-1.345],"ti":[0,0]},{"i":{"x":0.667,"y":1},"o":{"x":0.333,"y":0},"t":27,"s":[15.007,8.509],"to":[0,0],"ti":[0,0.741]},{"i":{"x":0.667,"y":1},"o":{"x":0.333,"y":0},"t":31,"s":[15.007,8.955],"to":[0,-1.345],"ti":[0,-0.28]},{"t":34.0000013848484,"s":[15.007,10.634]}],"ix":2},"a":{"a":0,"k":[0,0],"ix":1},"s":{"a":1,"k":[{"i":{"x":[0.667,0.667],"y":[1,1]},"o":{"x":[0.333,0.333],"y":[0,0]},"t":3,"s":[100,100]},{"i":{"x":[0.667,0.667],"y":[1,1]},"o":{"x":[0.333,0.333],"y":[0,0]},"t":7,"s":[100,66.631]},{"i":{"x":[0.667,0.667],"y":[1,1]},"o":{"x":[0.333,0.333],"y":[0,0]},"t":10,"s":[100,100]},{"i":{"x":[0.667,0.667],"y":[1,1]},"o":{"x":[0.333,0.333],"y":[0,0]},"t":24,"s":[100,100]},{"i":{"x":[0.667,0.667],"y":[1,1]},"o":{"x":[0.333,0.333],"y":[0,0]},"t":27,"s":[100,66.631]},{"t":31.0000012626559,"s":[100,100]}],"ix":3},"r":{"a":0,"k":0,"ix":6},"o":{"a":0,"k":100,"ix":7},"sk":{"a":0,"k":0,"ix":4},"sa":{"a":0,"k":0,"ix":5},"nm":"Transform"}],"nm":"Group 1","np":2,"cix":2,"bm":0,"ix":1,"mn":"ADBE Vector Group","hd":false},{"ty":"gr","it":[{"ind":0,"ty":"sh","ix":1,"ks":{"a":0,"k":{"i":[[0,-4.95],[0,0],[1.103,0],[0,0],[0,1.104],[0,0],[-4.95,0],[0,0]],"o":[[0,0],[0,1.104],[0,0],[-1.103,0],[0,0],[0,-4.95],[0,0],[4.95,0]],"v":[[10.007,3.245],[10.007,3.719],[8.008,5.718],[-8.008,5.718],[-10.007,3.719],[-10.007,3.245],[-1.044,-5.718],[1.044,-5.718]],"c":true},"ix":2},"nm":"Path 1","mn":"ADBE Vector Shape - Group","hd":false},{"ty":"st","c":{"a":0,"k":[0,0.8980392156862745,0.6],"ix":3},"o":{"a":0,"k":100,"ix":4},"w":{"a":0,"k":1,"ix":5},"lc":2,"lj":2,"bm":0,"nm":"Stroke 1","mn":"ADBE Vector Graphic - Stroke","hd":false},{"ty":"tr","p":{"a":0,"k":[15.007,30.45],"ix":2},"a":{"a":0,"k":[0,5.25],"ix":1},"s":{"a":1,"k":[{"i":{"x":[0.667,0.667],"y":[1,1]},"o":{"x":[0.333,0.333],"y":[0,0]},"t":0,"s":[100,100]},{"i":{"x":[0.667,0.667],"y":[1,1]},"o":{"x":[0.333,0.333],"y":[0,0]},"t":7,"s":[100,128.521]},{"i":{"x":[0.667,0.667],"y":[1,1]},"o":{"x":[0.333,0.333],"y":[0,0]},"t":13.6,"s":[100,100]},{"i":{"x":[0.667,0.667],"y":[1,1]},"o":{"x":[0.333,0.333],"y":[0,0]},"t":20.4,"s":[100,100]},{"i":{"x":[0.667,0.667],"y":[1,1]},"o":{"x":[0.333,0.333],"y":[0,0]},"t":27,"s":[100,128.521]},{"t":34.0000013848484,"s":[100,100]}],"ix":3},"r":{"a":0,"k":0,"ix":6},"o":{"a":0,"k":100,"ix":7},"sk":{"a":0,"k":0,"ix":4},"sa":{"a":0,"k":0,"ix":5},"nm":"Transform"}],"nm":"Group 2","np":2,"cix":2,"bm":0,"ix":2,"mn":"ADBE Vector Group","hd":false}],"ip":0,"op":45.0000018328876,"st":0,"ct":1,"bm":0},{"ddd":0,"ind":2,"ty":4,"nm":"user-outline-top_s1g1_s2g1_s3g1_s4g1_background Outlines","sr":1,"ks":{"o":{"a":0,"k":100,"ix":11},"r":{"a":0,"k":0,"ix":10},"p":{"a":1,"k":[{"i":{"x":0.667,"y":1},"o":{"x":0.333,"y":0},"t":3,"s":[24,24.571,0],"to":[0,-0.25,0],"ti":[0,0,0]},{"i":{"x":0.667,"y":1},"o":{"x":0.333,"y":0},"t":7,"s":[24,23.071,0],"to":[0,0,0],"ti":[0,-0.25,0]},{"i":{"x":0.667,"y":0.667},"o":{"x":0.333,"y":0.333},"t":10,"s":[24,24.571,0],"to":[0,0,0],"ti":[0,0,0]},{"i":{"x":0.667,"y":1},"o":{"x":0.333,"y":0},"t":24,"s":[24,24.571,0],"to":[0,-0.25,0],"ti":[0,0,0]},{"i":{"x":0.667,"y":1},"o":{"x":0.333,"y":0},"t":27,"s":[24,23.071,0],"to":[0,0,0],"ti":[0,-0.25,0]},{"t":31.0000012626559,"s":[24,24.571,0]}],"ix":2,"l":2},"a":{"a":0,"k":[21.28,21.936,0],"ix":1,"l":2},"s":{"a":0,"k":[100,100,100],"ix":6,"l":2}},"ao":0,"shapes":[{"ty":"gr","it":[{"ind":0,"ty":"sh","ix":1,"ks":{"a":0,"k":{"i":[[0,4.276],[0,0],[-4.276,0],[0,0],[0,-4.277],[0,0],[4.276,0],[0,0]],"o":[[0,0],[0,-4.277],[0,0],[4.276,0],[0,0],[0,4.276],[0,0],[-4.276,0]],"v":[[-16.28,9.193],[-16.28,-9.191],[-8.537,-16.936],[8.537,-16.936],[16.28,-9.191],[16.28,9.193],[8.537,16.936],[-8.537,16.936]],"c":true},"ix":2},"nm":"Path 1","mn":"ADBE Vector Shape - Group","hd":false},{"ty":"st","c":{"a":0,"k":[0,0,0],"ix":3},"o":{"a":0,"k":100,"ix":4},"w":{"a":0,"k":1,"ix":5},"lc":2,"lj":2,"bm":0,"nm":"Stroke 1","mn":"ADBE Vector Graphic - Stroke","hd":false},{"ty":"fl","c":{"a":0,"k":[1,1,1],"ix":4},"o":{"a":0,"k":100,"ix":5},"r":1,"bm":0,"nm":"Fill 1","mn":"ADBE Vector Graphic - Fill","hd":false},{"ty":"tr","p":{"a":0,"k":[21.28,21.936],"ix":2},"a":{"a":0,"k":[0,0],"ix":1},"s":{"a":0,"k":[100,100],"ix":3},"r":{"a":0,"k":0,"ix":6},"o":{"a":0,"k":100,"ix":7},"sk":{"a":0,"k":0,"ix":4},"sa":{"a":0,"k":0,"ix":5},"nm":"Transform"}],"nm":"Group 1","np":3,"cix":2,"bm":0,"ix":1,"mn":"ADBE Vector Group","hd":false}],"ip":0,"op":45.0000018328876,"st":0,"ct":1,"bm":0}],"markers":[],"props":{}};
+
+    let profileLottieInstance = null;
+
+    function initAdminProfileAnimation() {
+        const iconContainer = document.getElementById('btnProfileAnimIcon');
+        const btnProfile = document.getElementById('btnViewProfile');
+        if (!iconContainer || !btnProfile) return;
+
+        if (typeof lottie === 'undefined') {
+            console.warn('[Devioz Admin] Lottie no cargado aún; se mantiene el SVG estático.');
+            return;
+        }
+
+        try {
+            iconContainer.innerHTML = '';
+
+            profileLottieInstance = lottie.loadAnimation({
+                container: iconContainer,
+                renderer: 'svg',
+                loop: false,
+                autoplay: false,
+                animationData: USER_PROFILE_ANIM_DATA
+            });
+
+            let isHovering = false;
+
+            // Reproducción inicial suave al cargar el panel
+            setTimeout(() => {
+                if (profileLottieInstance) {
+                    profileLottieInstance.goToAndPlay(0, true);
+                }
+            }, 550);
+
+            // Efecto interactivo al pasar el cursor (hover)
+            btnProfile.addEventListener('mouseenter', () => {
+                isHovering = true;
+                if (profileLottieInstance) {
+                    profileLottieInstance.goToAndPlay(0, true);
+                }
+            });
+
+            btnProfile.addEventListener('mouseleave', () => {
+                isHovering = false;
+            });
+
+            // Si el cursor permanece sobre el botón, repite el ciclo suavemente
+            profileLottieInstance.addEventListener('complete', () => {
+                if (isHovering && profileLottieInstance) {
+                    profileLottieInstance.goToAndPlay(0, true);
+                }
+            });
+
+            // Al hacer clic, también reacciona con la animación
+            btnProfile.addEventListener('click', () => {
+                if (profileLottieInstance) {
+                    profileLottieInstance.goToAndPlay(0, true);
+                }
+            });
+
+        } catch (err) {
+            console.error('[Devioz Admin] Error al iniciar animación Lottie de perfil:', err);
+        }
+    }
+
     // Botones para navegar a Ver Perfil
     if (btnViewProfile) {
         btnViewProfile.addEventListener('click', () => {
@@ -1591,6 +1661,9 @@ document.addEventListener('DOMContentLoaded', function() {
             loadAdminProfile();
         });
     }
+
+    // Inicializar animación del icono de perfil
+    initAdminProfileAnimation();
 
     if (btnBackToProjectsFromProfile) {
         btnBackToProjectsFromProfile.addEventListener('click', () => {
