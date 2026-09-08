@@ -1,172 +1,192 @@
 # 🌐 Portafolio Web — Devioz
 
-> Plataforma web interactiva de alto impacto visual y experiencia cinemática, diseñada para exhibir proyectos de software, diseño, inteligencia artificial y soluciones digitales corporativas. Incluye arquitectura Single Page Application (SPA), animaciones interactivas avanzadas y un completo panel administrativo (Dashboard CRUD).
+> Plataforma web interactiva de alto impacto visual y experiencia cinemática, diseñada para exhibir proyectos de software, desarrollo web, inteligencia artificial, diseño e innovación digital. Implementada bajo arquitectura SPA modular en Vanilla JavaScript, WebGL Shaders, animaciones interactivas 3D y un robusto panel administrativo (CRUD) respaldado por PHP y MySQL.
 
 ---
 
-## 🚀 Tecnologías Utilizadas
+## 🚀 Tecnologías y Herramientas
 
-El proyecto está desarrollado con estándares modernos, priorizando el rendimiento, la estética prémium y la ausencia de dependencias innecesarias:
+El proyecto está construido priorizando el rendimiento, la accesibilidad, la estética visual prémium y la ausencia de dependencias externas pesadas:
 
 - **Frontend**:
-  - **HTML5 Semántico**: Estructura limpia, accesible y optimizada para SEO.
-  - **Vanilla CSS3**: Sistema de diseño con variables CSS (`:root`), efectos de _Glassmorphism_, gradientes cinemáticos y animaciones `@keyframes`.
-  - **Vanilla JavaScript (ES6+)**: Lógica reactiva modular sin frameworks pesados.
-  - **WebGL Shaders (GLSL)**: Fondo dinámico e interactivo de ondas luminosas (_Scanner Waves_).
-  - **SVG Filters**: Filtro vectorial nativo para la animación de fusión líquida (_GooeyNav_).
-  - **Bootstrap 5.3.3**: Utilidades de rejilla responsiva (_Grid System_) y componentes modales accesibles.
+  - **HTML5 Semántico**: Marcado limpio, estructurado y optimizado para accesibilidad y SEO.
+  - **Vanilla CSS3**: Sistema de diseño con variables CSS (`:root`), efectos de *Glassmorphism*, gradientes cinemáticos, filtros vectoriales y animaciones aceleradas por hardware (`@keyframes`).
+  - **Vanilla JavaScript (ES6+)**: Lógica modular reactiva sin frameworks pesados, con observadores modernos (`IntersectionObserver`, `ResizeObserver`).
+  - **WebGL Shaders (GLSL)**: Fondo dinámico de ondas luminosas interactivas (*Scanner Waves*).
+  - **Canvas 2D**: Motor de partículas tipográficas con física de dispersión y atracción elástica.
+  - **SVG Filters**: Filtro vectorial nativo para la animación de fusión líquida (*GooeyNav*).
+  - **Bootstrap 5.3.3**: Utilidades de rejilla responsiva (*Grid System*) y componentes modales accesibles.
 
 - **Backend**:
-  - **PHP 8.x**: Arquitectura RESTful ligera con respuestas JSON, manejo estricto de sesiones y procesamiento seguro de subida de imágenes (`multipart/form-data`).
-  - **PDO (PHP Data Objects)**: Conexión persistente, segura y protegida contra inyecciones SQL mediante sentencias preparadas.
+  - **PHP 8.x**: Arquitectura RESTful ligera con respuestas en formato JSON, control estricto de sesiones y procesamiento de archivos multimedia (`multipart/form-data`).
+  - **PDO (PHP Data Objects)**: Conexión segura y persistente con sentencias preparadas para protección total contra inyección SQL.
 
 - **Base de Datos**:
-  - **MySQL 8.x / MariaDB**: Motor relacional InnoDB con codificación `utf8mb4_unicode_ci` y estructura optimizada.
+  - **MySQL 8.x / MariaDB**: Motor de almacenamiento relacional InnoDB con codificación `utf8mb4_unicode_ci`.
 
 ---
 
-## ✨ Características y Avances Implementados
+## ✨ Características Principales
 
-### 1. 🖥️ Vista Principal en Arquitectura SPA (Single Page Application)
+### 1. 🖥️ Experiencia SPA (Single Page Application)
+- Desplazamiento suave (*smooth scrolling*) entre secciones (`#inicio`, `#destacados`, `#proyectos`).
+- Barra de progreso interactiva en la parte superior que mide el porcentaje de lectura en tiempo real.
+- Sincronización inteligente de navegación (*ScrollSpy*) bidireccional que resalta la pestaña activa tanto al descender como al ascender.
 
-- Navegación fluida y desplazamiento suave (_smooth scrolling_) entre secciones (`#inicio`, `#destacados`, `#proyectos`).
-- Barra de progreso superior interactiva que refleja el porcentaje de lectura de la página en tiempo real.
-- Sincronización inteligente de desplazamiento (_ScrollSpy_) bidireccional que actualiza la sección activa tanto al bajar como al subir.
+### 2. 🌀 Vitrina 3D "Infinite Spiral" (Espiral Infinita)
+- Exhibición tridimensional de proyectos destacados siguiendo una curva helicoidal ascendente (*S-ribbon*).
+- **Interacción al pasar el cursor**: La opción **"Ver Detalles →"** permanece oculta por defecto y aparece suavemente con animación al colocar el cursor sobre la tarjeta del proyecto.
+- **Navegación directa e inteligente**: Al hacer clic en una tarjeta o en "Ver Detalles", la página se desplaza suavemente hasta centrar el proyecto en la **Galería de Proyectos (`#galeria-proyectos`)**, resalta la tarjeta con un resplandor luminoso cian (`@keyframes pulseProjectCard`) y abre automáticamente el modal de detalle con la información completa.
+- **Física e Inercia**: Soporte completo para arrastre con ratón (*drag & drop*), desaceleración inercial fluida y desenfoque bokeh progresivo en profundidad Z.
 
-### 2. 🫧 Menú de Navegación Flotante con Componente GooeyNav
+### 3. 🫧 Menú Flotante con Componente GooeyNav
+- Barra de navegación flotante con efecto de fusión líquida orgánica (*Gooey*).
+- Filtro SVG nativo con `feGaussianBlur` y `feColorMatrix` sobre canal alfa, garantizando transparencia absoluta sin artefactos visuales ni sombras parásitas.
+- Cálculo dinámico de posición y tamaño mediante `getBoundingClientRect()` y adaptación responsive con `ResizeObserver`.
 
-- Adaptación de la animación **Gooey Nav** de _React Bits_ a **Vanilla JS puro**.
-- Cálculo dinámico de dimensiones y coordenadas con `getBoundingClientRect()`.
-- Generador polar de partículas orgánicas con dispersión matemática y tiempo de vida configurable.
-- **Filtro SVG Nativo 100% Transparente**: Empleo de `feGaussianBlur` y `feColorMatrix` sobre el canal alfa, garantizando una fusión líquida orgánica sin superponer bloques ni sombras oscuras sobre el contenido de la web.
-- Soporte reactivo con `ResizeObserver` para adaptarse dinámicamente a cualquier resolución de pantalla.
+### 4. ✨ Tipografía de Partículas Interactivas "Devioz" (ParticleText)
+- Renderizado de partículas tipográficas sobre `<canvas>`.
+- Gradiente tridimensional continuo de alta fidelidad en la letra **"D"** (verde petróleo a cian eléctrico) y letras **"evioz"** en blanco cristalino puro.
+- Dinámica física de dispersión radial, aceleración elástica y repulsión reactiva al movimiento del puntero.
 
-### 3. ✨ Canvas de Texto de Partículas Interactivas "Devioz" (ParticleText)
+### 5. 📂 Galería de Proyectos Dinámica
+- Carga automatizada desde la API REST de PHP con catálogo de respaldo curado.
+- Animación escalonada de revelado al deslizarse (*Scroll Reveal Stagger*).
+- **Modal Cinemático con Desenfoque de Fondo**: Al abrir los detalles de un proyecto, el fondo aplica desenfoque profundo (`backdrop-filter: blur(14px)`), centrando la atención en el contenido multimedia y las especificaciones técnicas.
 
-- Renderizado tipográfico rasterizado en tiempo real sobre `<canvas>`.
-- **Calibración Cromática Corporativa de Alta Fidelidad**: Letra **"D"** con gradiente tridimensional continuo de 7 paradas (desde verde petróleo profundo hasta cian eléctrico luminoso, sin ruido ni puntos blancos) y letras **"evioz"** en blanco puro brillante cristalino.
-- Física de dispersión radial, inercia, atracción elástica y repulsión reactiva ante el movimiento del cursor del mouse.
+### 6. 🔐 Panel de Administración (Admin Dashboard)
+- Interfaz moderna e intuitiva en `frontend/admin.html` para la gestión de contenido.
+- **Operaciones CRUD**: Creación, consulta, edición y eliminación de proyectos del portafolio.
+- Gestión de imágenes locales con previsualización en vivo o vinculación mediante URLs remotas.
+- Conmutación rápida de estado destacado y visibilidad pública con un clic.
+- Métricas y estadísticas generales del portafolio en tiempo real.
 
-### 4. 🌀 Vitrina 3D Interactiva en Espiral Infinita (Infinite Spiral 3D)
+### 7. 👤 Gestión de Perfil de Administrador
+- Modal integrado en el panel para consultar y actualizar credenciales en caliente (nombre completo, usuario/correo y contraseña).
+- Validación estricta en backend (`backend/api/perfil.php`) asegurando que solo la sesión activa pueda modificar sus datos.
+- Encriptación robusta con el algoritmo nativo `PASSWORD_BCRYPT`.
+- Botón animado de acceso a perfil en la barra superior con micro-interacciones.
 
-- Exhibición tridimensional de proyectos destacados con transformación matricial en el espacio 3D.
-- Controles táctiles y de mouse con soporte para arrastre (_drag & drop_), inercia suave y zoom cinemático con la rueda del ratón.
-
-### 5. 📂 Galería de Proyectos Dinámica y Cinemática
-
-- Carga automatizada desde la API REST de PHP.
-- Animación escalonada de revelado al deslizarse (_Scroll Reveal Stagger_).
-- **Ventana Modal con Desenfoque Cinemático de Fondo**: Al abrir el detalle de cualquier proyecto, todo el fondo del sitio web aplica un filtro de desenfoque profundo (`backdrop-filter: blur(14px)`), centrando la atención del usuario en el contenido multimedia.
-
-### 6. 🔐 Panel de Administración Completo (Admin Dashboard)
-
-- Interfaz moderna e independiente en `frontend/admin.html`.
-- **Gestión CRUD Integral**: Creación, lectura, edición y eliminación de proyectos del portafolio.
-- Subida física de imágenes con previsualización en vivo o vinculación mediante URLs externas.
-- Control rápido de visibilidad y estado destacado con un solo clic.
-- Tarjetas de estadísticas y métricas generales del portafolio en tiempo real.
-
-### 7. 🛡️ Módulo de Autenticación y Seguridad
-
-- Acceso administrativo exclusivo mediante `frontend/login.html`.
-- Sesiones seguras en PHP (`$_SESSION`) con validación de roles y mitigación de acceso directo a endpoints.
-- Hasheo robusto de contraseñas con el algoritmo nativo `PASSWORD_BCRYPT`.
-
-### 8. 🗄️ Base de Datos Optimizada
-
-- Estructura limpia y normalizada sin tablas obsoletas ni dependencias redundantes.
-- Script de migración y sincronización automática desde el backend para garantizar compatibilidad inmediata en entornos limpios.
+### 8. 🛡️ Seguridad y Blindaje de Sesión
+- **Protección contra Retroceso de Historial (Anti-Back / BFCache Guard)**: Implementación de guardias de visibilidad y redirección inmediata en `admin.html` para impedir que usuarios desautenticados visualicen pantallas protegidas usando los botones de retroceso del navegador.
+- **Cierre de Sesión Limpio y Seguro**: Destrucción integral de la sesión PHP (`session_destroy`), revocación de cookies y redirección mediante `window.location.replace` para evitar entradas residuales en el historial de navegación.
+- **Consultas Preparadas PDO**: Mitigación sistemática contra ataques de inyección SQL.
 
 ---
 
-## 📁 Estructura del Proyecto
+## 📁 Estructura del Repositorio
 
 ```plaintext
 portafolio-Devioz/
-├── .gitignore                     # Configuración de exclusión para Git
-├── README.md                      # Documentación oficial del proyecto
+├── .gitignore                     # Archivos y carpetas excluidos del control de versiones
+├── README.md                      # Documentación general del proyecto
 │
 ├── database/
-│   └── script.sql                 # Script SQL de creación e inicialización de la base de datos
+│   └── script.sql                 # Definición de esquema y tablas de la base de datos
 │
 ├── backend/
 │   ├── config/
-│   │   └── db.php                 # Conexión PDO con manejo seguro de excepciones
+│   │   └── db.php                 # Conexión PDO, configuración CORS y auto-inicialización
 │   ├── api/
 │   │   ├── auth.php               # Endpoint de compatibilidad de autenticación
-│   │   ├── check_session.php      # Verificación de sesión activa para el Admin Dashboard
-│   │   ├── login.php              # Autenticación, validación de credenciales y creación de sesión
+│   │   ├── check_session.php      # Verificación de estado de sesión activa
+│   │   ├── login.php              # Autenticación segura y destrucción de sesión (logout)
+│   │   ├── perfil.php             # Consulta y actualización de credenciales del administrador
 │   │   ├── proyectos.php          # API REST completa para operaciones CRUD de proyectos
-│   │   └── registrar.php          # Registro seguro de administradores (acceso restringido)
-│   └── crear_primer_admin.php     # Asistente web para inicializar el primer usuario administrador
+│   │   └── registrar.php          # Registro seguro de administradores
+│   └── crear_primer_admin.php     # Asistente para inicialización segura del administrador inicial
 │
 └── frontend/
-    ├── index.html                 # Página principal pública (SPA del portafolio)
-    ├── login.html                 # Interfaz de inicio de sesión administrativa
-    ├── admin.html                 # Panel de administración completo (Dashboard CRUD)
+    ├── index.html                 # Página pública principal (SPA interactiva)
+    ├── login.html                 # Pantalla de acceso al panel administrativo
+    ├── admin.html                 # Panel de control administrativo protegido
     └── assets/
         ├── css/
-        │   ├── style.css          # Hoja de estilos principal, tokens y componentes
-        │   └── infinite-spiral.css# Estilos y animaciones del componente 3D Espiral
+        │   ├── style.css          # Estilos globales, tokens de diseño y componentes
+        │   └── infinite-spiral.css# Estilos, perspectivas y animaciones del componente 3D
         ├── js/
-        │   ├── main.js            # Lógica principal, scroll, animaciones y renderizado público
-        │   ├── particles.js       # Motor de partículas de texto interactivo "Devioz"
-        │   ├── scanner.js         # Shader WebGL de ondas de fondo interactivas
-        │   ├── infinite-spiral.js # Lógica 3D matemática y física de la espiral infinita
-        │   ├── gooey-nav.js       # Lógica del menú Gooey Nav y sincronización de tabs
-        │   └── admin.js           # Gestión del dashboard administrativo y operaciones CRUD
+        │   ├── main.js            # Lógica central del frontend, scroll y modal de proyectos
+        │   ├── infinite-spiral.js # Motor 3D de la espiral infinita y navegación a galería
+        │   ├── gooey-nav.js       # Componente de navegación líquida interactiva
+        │   ├── particles.js       # Canvas de partículas tipográficas interactivas
+        │   ├── scanner.js         # Shader WebGL de fondo dinámico
+        │   └── admin.js           # Lógica del panel administrativo y gestión de perfil
         └── img/
-            ├── devioz-img.png     # Logotipo e isotipo oficial de la marca Devioz
-            └── uploads/           # Directorio físico donde se almacenan las imágenes de proyectos
+            ├── devioz-img.png     # Logotipo oficial de la marca Devioz
+            └── uploads/           # Directorio para imágenes subidas de proyectos
 ```
 
 ---
 
-## 🛠️ Instalación y Despliegue Local
+## 🛠️ Instalación y Configuración Local
 
 ### Requisitos Previos
 
-- Servidor web local: **XAMPP**, **WampServer**, **Laragon** o entorno **LAMP/LEMP**.
-- **PHP 8.0** o superior (con extensiones `pdo`, `pdo_mysql`, `gd` o `fileinfo` habilitadas).
+- Servidor web local compatible con PHP (ej. **XAMPP**, **Laragon**, **WampServer** o **Apache/Nginx**).
+- **PHP 8.0** o superior (extensiones recomendadas: `pdo`, `pdo_mysql`, `fileinfo`, `gd`).
 - **MySQL 5.7+** o **MariaDB 10.4+**.
 
 ---
 
-### Paso a Paso
+### Pasos de Instalación
 
-#### 1. Ubicar el proyecto en el servidor web
+#### 1. Clonar o copiar el repositorio
+Ubica los archivos del proyecto dentro del directorio raíz de tu servidor web:
+- **XAMPP (Windows)**: `C:\xampp\htdocs\portafolio-Devioz\`
+- **Laragon**: `C:\laragon\www\portafolio-Devioz\`
+- **Linux (Apache)**: `/var/www/html/portafolio-Devioz/`
 
-Copia o clona el repositorio dentro de la carpeta raíz de documentos de tu servidor local:
+#### 2. Iniciar los servicios del servidor
+Inicia los servicios de **Apache** y **MySQL** desde el panel de control de tu entorno local.
 
-- Para **XAMPP**: `C:\xampp\htdocs\portafolio-Devioz\`
-
-#### 2. Iniciar los servicios
-
-Abre el panel de control de tu entorno (ej. XAMPP Control Panel) e inicia los módulos de **Apache** y **MySQL**.
-
-#### 3. Importar la Base de Datos
-
-1. Accede a phpMyAdmin en tu navegador: `http://localhost/phpmyadmin/`.
-2. Crea una base de datos llamada `portafolio_devioz` o dirígete a la pestaña **Importar**.
-3. Selecciona y ejecuta el archivo:
+#### 3. Configuración de Base de Datos
+1. Accede a tu gestor de base de datos (ej. phpMyAdmin en `http://localhost/phpmyadmin/`).
+2. Importa el archivo del esquema ubicado en:
    ```plaintext
    database/script.sql
    ```
-4. El script creará la base de datos, las tablas optimizadas y los datos iniciales de demostración.
+3. El script creará la base de datos `portafolio_devioz` y las tablas necesarias (`usuarios`, `proyectos`).
 
-#### 4. Verificar la Configuración de Conexión
-
-Revisa el archivo `backend/config/db.php`. La configuración por defecto para entornos locales estándar es:
+#### 4. Variables de Conexión (`backend/config/db.php`)
+El archivo de conexión soporta variables de entorno del sistema o valores por defecto para entornos locales:
 
 ```php
-$host = 'localhost';
-$db   = 'portafolio_devioz';
-$user = 'root';
-$pass = ''; // Por defecto vacía en XAMPP
+$host   = getenv('DB_HOST') ?: '127.0.0.1';
+$dbname = getenv('DB_NAME') ?: 'portafolio_devioz';
+$user   = getenv('DB_USER') ?: 'root';
+$pass   = getenv('DB_PASS') !== false ? getenv('DB_PASS') : '';
 ```
+
+> [!NOTE]
+> Ajusta las credenciales de conexión según la configuración de tu motor MySQL local.
+
+#### 5. Configuración de la Cuenta de Administrador
+Para inicializar el primer usuario con acceso al panel de administración:
+1. Abre en tu navegador el asistente de instalación local:
+   ```plaintext
+   http://localhost/portafolio-Devioz/backend/crear_primer_admin.php
+   ```
+2. Define las credenciales deseadas (nombre, usuario/correo y contraseña segura).
+3. Una vez creado el usuario, el acceso estará disponible en:
+   ```plaintext
+   http://localhost/portafolio-Devioz/frontend/login.html
+   ```
+
+> [!IMPORTANT]
+> **Buenas prácticas de seguridad**:
+> - En entornos de producción, asegúrate de restringir o eliminar el archivo `crear_primer_admin.php`.
+> - Mantén tus contraseñas seguras y no compartas credenciales ni archivos `.env` en repositorios públicos.
 
 ---
 
-## 📄 Licencia y Créditos
+## 🧭 Visualización del Sitio
 
-Desarrollado con dedicación, innovación y excelencia visual por **Daniel Leandro** para **Devioz**.
+- **Página Pública**: `http://localhost/portafolio-Devioz/frontend/index.html`
+- **Acceso Administrativo**: `http://localhost/portafolio-Devioz/frontend/login.html`
+  - *(Atajo opcional para desarrolladores en la página principal: `Ctrl + Shift + A`)*
+
+---
+
+## 📄 Licencia y Autoría
+
+Desarrollado con altos estándares estéticos y de ingeniería de software para **Devioz**. Todos los derechos reservados.
