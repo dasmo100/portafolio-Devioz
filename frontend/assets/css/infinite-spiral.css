@@ -10,7 +10,19 @@
     padding: 60px 0 50px;
     scroll-margin-top: 90px;
     overflow: hidden;
-    background: radial-gradient(circle at 35% 50%, rgba(0, 229, 212, 0.08) 0%, rgba(94, 234, 212, 0.02) 42%, rgba(6, 6, 14, 0) 75%);
+    background: transparent;
+}
+
+/* Resplandor ambiental suave y orgánico difuminado verticalmente para eliminar cortes y líneas visibles */
+.spiral-section::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    background: radial-gradient(ellipse 70% 55% at 35% 50%, rgba(0, 229, 212, 0.08) 0%, rgba(94, 234, 212, 0.02) 45%, transparent 75%);
+    mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 20%, black 80%, transparent 100%);
 }
 
 /* Contenedor Split de 2 columnas centrado */
@@ -120,6 +132,8 @@
     -webkit-user-select: none;
     touch-action: pan-y;
     margin: 0 auto;
+    mask-image: linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%);
+    -webkit-mask-image: linear-gradient(to bottom, transparent 0%, black 8%, black 92%, transparent 100%);
 }
 
 .infinite-spiral:active,
@@ -150,7 +164,7 @@
     height: 160px;
     transform-style: preserve-3d;
     transform: translate(-50%, -50%);
-    will-change: transform, opacity, filter;
+    will-change: transform, opacity;
     border-radius: 20px;
     overflow: hidden;
     background: #08090f;

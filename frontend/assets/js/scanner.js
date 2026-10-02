@@ -170,7 +170,7 @@ export function initScanner(containerId, options = {}) {
     alpha: true,
     premultipliedAlpha: true,
     antialias: false,
-    dpr: Math.min(window.devicePixelRatio || 1, 2)
+    dpr: 1 // DPR 1 para fondos ambientales ahorra hasta 75% de cómputo en el shader sin pérdida visual
   });
 
   const gl = renderer.gl;
@@ -221,6 +221,11 @@ export function initScanner(containerId, options = {}) {
 
   const mesh = new Mesh(gl, { geometry, program });
 
+  let cachedCanvasRect = null;
+  const updateCachedRect = () => {
+    if (canvas) cachedCanvasRect = canvas.getBoundingClientRect();
+  };
+
   const setSize = () => {
     const rect = container.getBoundingClientRect();
     const w = Math.max(1, Math.floor(rect.width));
@@ -229,6 +234,7 @@ export function initScanner(containerId, options = {}) {
     const res = program.uniforms.iResolution.value;
     res[0] = gl.drawingBufferWidth;
     res[1] = gl.drawingBufferHeight;
+    updateCachedRect();
     renderer.render({ scene: mesh });
   };
 
@@ -243,14 +249,16 @@ export function initScanner(containerId, options = {}) {
   let mouseEnabled = mouseInteraction;
 
   const onMouseMove = e => {
-    const rect = canvas.getBoundingClientRect();
-    targetMouse = [(e.clientX - rect.left) / rect.width, 1.0 - (e.clientY - rect.top) / rect.height];
+    if (!cachedCanvasRect) updateCachedRect();
+    const w = cachedCanvasRect.width || 1;
+    const h = cachedCanvasRect.height || 1;
+    targetMouse = [(e.clientX - cachedCanvasRect.left) / w, 1.0 - (e.clientY - cachedCanvasRect.top) / h];
     targetMouseActive = 1;
   };
   const onMouseLeave = () => {
     targetMouseActive = 0;
   };
-  window.addEventListener('mousemove', onMouseMove);
+  window.addEventListener('mousemove', onMouseMove, { passive: true });
   document.addEventListener('mouseleave', onMouseLeave);
 
   let raf = 0;

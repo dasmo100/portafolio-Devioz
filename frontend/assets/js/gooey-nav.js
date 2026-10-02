@@ -210,7 +210,7 @@
                 });
 
                 if (matchingLi && !matchingLi.classList.contains('active')) {
-                    setActiveItem(matchingLi, true);
+                    setActiveItem(matchingLi, false);
                 }
             }, 90);
         }, { passive: true });

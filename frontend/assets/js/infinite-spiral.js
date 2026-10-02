@@ -615,8 +615,8 @@ class InfiniteSpiral {
 
             // 11. Aplicación directa acelerada por hardware (GPU)
             item.style.transform = `translate(-50%, -50%) translate3d(${x.toFixed(1)}px, ${y.toFixed(1)}px, ${z.toFixed(1)}px) rotateZ(${rotateZ.toFixed(1)}deg) scale(${scale.toFixed(3)})`;
-            item.style.opacity = opacity.toFixed(3);
-            item.style.filter = blur > 0.4 ? `blur(${blur.toFixed(1)}px)` : 'none';
+            item.style.opacity = opacity.toFixed(2);
+            item.style.filter = blur > 2.5 ? 'blur(3px)' : 'none';
 
             // 12. Orden de apilamiento en 3D
             item.style.zIndex = Math.round(z + 1000);
@@ -624,48 +624,16 @@ class InfiniteSpiral {
     }
 
     // -------------------------------------------------------------
-    // Detección de Proximidad Focal:
-    // Se detiene únicamente cuando el cursor está "bien cerca" (≤ 25px) de alguna tarjeta
-    // -------------------------------------------------------------
-    checkMouseProximity() {
-        if (!this.mousePos || this.isDragging || !this.items || this.items.length === 0) {
-            return false;
-        }
-
-        const { x, y } = this.mousePos;
-        // Umbral de proximidad estrecho: solo cuando el cursor está realmente bien cerca
-        const PROXIMITY_THRESHOLD = 25;
-
-        for (let i = 0; i < this.items.length; i++) {
-            const item = this.items[i];
-            const rect = item.getBoundingClientRect();
-            if (rect.width === 0 || rect.height === 0) continue;
-
-            const dx = Math.max(rect.left - x, 0, x - rect.right);
-            const dy = Math.max(rect.top - y, 0, y - rect.bottom);
-
-            if (dx <= PROXIMITY_THRESHOLD && dy <= PROXIMITY_THRESHOLD) {
-                const dist = Math.hypot(dx, dy);
-                if (dist <= PROXIMITY_THRESHOLD) {
-                    return true;
-                }
-            }
-        }
-
-        return false;
-    }
-
-    // -------------------------------------------------------------
-    // Bucle de Animación Continuo a Velocidad Constante
-    // Se detiene al colocar el cursor bien cerca de la espiral
+    // Bucle de Animación Continuo de Alto Rendimiento (60fps sin Forced Reflows)
+    // Se pausa automáticamente al interactuar con las tarjetas o al salir de pantalla
     // -------------------------------------------------------------
     animate() {
-        if (!this.isRunning) return;
+        if (!this.isRunning || !this.isVisible) {
+            this.isRunning = false;
+            return;
+        }
 
-        // Comprobar si el cursor está realmente bien cerca de alguna tarjeta de la espiral
-        this.isHovered = this.checkMouseProximity();
-
-        // Solo avanza la rotación automática si el cursor NO está bien cerca ni se está arrastrando
+        // Solo avanza la rotación automática si el cursor NO está sobre una tarjeta ni se está arrastrando
         if (!this.isHovered && !this.isDragging) {
             this.progress += this.options.autoSpeed;
         }
@@ -706,10 +674,11 @@ class InfiniteSpiral {
         let startY = 0;
         let lastY = 0;
 
-        // Rastrear posición del ratón para detección precisa de proximidad muy cercana
+        // Rastrear posición del ratón e interacción con tarjetas sin forzar reflows
         const onMouseMove = (e) => {
             if (e.pointerType === 'mouse' || e.type === 'mousemove') {
                 this.mousePos = { x: e.clientX, y: e.clientY };
+                this.isHovered = !!e.target.closest('.infinite-spiral__item');
             }
         };
 
@@ -818,16 +787,29 @@ class InfiniteSpiral {
     }
 
     // -------------------------------------------------------------
-    // Ciclo de Vida: Rotación Continua que no se interrumpe al hacer scroll
+    // Ciclo de Vida: Rotación Inteligente con IntersectionObserver
+    // Se pausa al salir de pantalla para liberar 100% de CPU/GPU
     // -------------------------------------------------------------
     setupLifecycle() {
         this.isVisible = true;
 
-        // Pausar únicamente si el usuario cambia de pestaña para optimizar recursos
+        if ('IntersectionObserver' in window && this.container) {
+            const io = new IntersectionObserver(([entry]) => {
+                this.isVisible = entry.isIntersecting;
+                if (this.isVisible) {
+                    this.start();
+                } else {
+                    this.stop();
+                }
+            }, { threshold: 0 });
+            io.observe(this.container);
+        }
+
+        // Pausar si el usuario cambia de pestaña
         document.addEventListener('visibilitychange', () => {
             if (document.hidden) {
                 this.stop();
-            } else {
+            } else if (this.isVisible) {
                 this.start();
             }
         });

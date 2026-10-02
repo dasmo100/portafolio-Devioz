@@ -542,13 +542,15 @@ document.addEventListener('DOMContentLoaded', function() {
 
         for (const baseEndpoint of uniqueEndpoints) {
             try {
-                // Petición continua sin filtrar por categoría: devuelve todos los proyectos registrados
-                const apiUrl = baseEndpoint;
+                // Petición continua sin filtrar por categoría: con token de administrador explícito
+                const sep = baseEndpoint.includes('?') ? '&' : '?';
+                const apiUrl = `${baseEndpoint}${sep}admin_token=devioz_admin_${encodeURIComponent(adminUser)}`;
                 const response = await fetch(apiUrl, {
                     method: 'GET',
                     credentials: 'include',
                     headers: { 
                         'Accept': 'application/json',
+                        'X-Admin-Token': `devioz_admin_${adminUser}`,
                         'Authorization': `Bearer devioz_admin_${adminUser}`
                     }
                 });
@@ -586,7 +588,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const errDetail = lastError ? (lastError.message || 'Sin respuesta del servidor') : 'Respuesta no válida del servidor';
             projectsTableBody.innerHTML = `
                 <tr>
-                    <td colspan="4" class="text-center py-4 text-secondary">
+                    <td colspan="5" class="text-center py-4 text-secondary">
                         <span class="text-danger d-block mb-1 fw-semibold">⚠️ Error al obtener los proyectos del servidor.</span>
                         <small class="d-block mb-2 text-muted">Asegúrate de que Apache y MySQL estén en ejecución en XAMPP.</small>
                         <small class="text-secondary d-block mb-3" style="font-size: 0.8rem; color: #f87171 !important;">Detalle: ${errDetail}</small>
@@ -649,6 +651,16 @@ document.addEventListener('DOMContentLoaded', function() {
         return `assets/img/uploads/${clean}`;
     }
 
+    // Normalizar ruta de video local o externa
+    function formatProjectVideoUrl(vid) {
+        if (!vid) return '';
+        if (vid.startsWith('http://') || vid.startsWith('https://') || vid.startsWith('blob:') || vid.startsWith('data:')) {
+            return vid;
+        }
+        const clean = vid.replace(/^.*[\\\/]/, '');
+        return `assets/img/uploads/videos/${clean}`;
+    }
+
     // Renderizado de la tabla de proyectos en el Panel de Administración
     function renderAdminTable(projects, searchQuery = '') {
         if (!projectsTableBody) return;
@@ -672,7 +684,7 @@ document.addEventListener('DOMContentLoaded', function() {
         if (!projects || projects.length === 0) {
             projectsTableBody.innerHTML = `
                 <tr>
-                    <td colspan="4" class="text-center py-5 text-secondary">
+                    <td colspan="5" class="text-center py-5 text-secondary">
                         <div class="mb-2" style="font-size: 1.8rem; opacity: 0.7;">📂</div>
                         <span class="text-white fw-semibold d-block mb-1">
                             ${searchQuery ? `No se encontraron proyectos para "${searchQuery}"` : 'No hay proyectos registrados en el portafolio aún.'}
@@ -709,20 +721,51 @@ document.addEventListener('DOMContentLoaded', function() {
                 .map(t => `<span class="badge me-1 mb-1" style="background: rgba(0, 229, 212, 0.08); color: #5eead4; border: 1px solid rgba(0, 229, 212, 0.2); font-weight: 500; font-size: 0.74rem; padding: 4px 10px; border-radius: 12px;">${t}</span>`)
                 .join('') || '<span class="text-secondary small">—</span>';
 
+            const hasZip = Boolean(p.archivo_zip || p.tiene_zip);
+            const adminUserToken = encodeURIComponent(localStorage.getItem('devioz_admin_user') || 'admin');
+            const downloadZipUrl = `${verifiedProjectsEndpoint || getBackendProjectsEndpoint()}?action=download_zip&id=${p.id}&admin_token=devioz_admin_${adminUserToken}`;
+
+            const zipCellHtml = hasZip ? `
+                <td class="text-center">
+                    <div class="d-inline-flex flex-column align-items-center gap-1">
+                        <a href="${downloadZipUrl}" target="_blank" class="btn btn-sm d-inline-flex align-items-center gap-1 px-2 py-1 text-decoration-none" style="background: rgba(139, 92, 246, 0.2); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.45); border-radius: 8px; font-size: 0.76rem; font-weight: 500; transition: all 0.2s;" title="Descargar archivo ZIP de este proyecto">
+                            <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path>
+                                <polyline points="7 10 12 15 17 10"></polyline>
+                                <line x1="12" y1="15" x2="12" y2="3"></line>
+                            </svg>
+                            <span>Descargar ZIP</span>
+                        </a>
+                        <small class="d-block text-truncate" style="max-width: 160px; font-size: 0.68rem; color: #a78bfa !important; font-family: monospace;" title="${p.archivo_zip || ''}">
+                            💾 ${p.archivo_zip ? p.archivo_zip : (p.zip_size ? formatBytes(p.zip_size) : 'En Base de Datos')}
+                        </small>
+                    </div>
+                </td>
+            ` : `
+                <td class="text-center">
+                    <span class="badge" style="background: rgba(255, 255, 255, 0.05); color: #64748b; font-size: 0.72rem; border-radius: 6px; padding: 4px 8px;">
+                        Sin ZIP
+                    </span>
+                </td>
+            `;
+
             row.innerHTML = `
-                <td class="text-center" style="width: 90px;">
+                <td class="text-center" style="width: 80px;">
                     <img src="${formatProjectImageUrl(p.imagen_url || p.imagen)}" alt="${p.titulo}" class="admin-thumb-img" onerror="this.src='https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=200&q=80'">
                 </td>
                 <td>
                     <div class="d-flex align-items-center gap-2">
                         <span class="fw-semibold text-white">${p.titulo}</span>
+                        ${(p.tiene_video || p.video_url) ? '<span class="badge" style="background: rgba(0, 229, 212, 0.15); color: #5eead4; border: 1px solid rgba(0, 229, 212, 0.35); font-size: 0.7rem; padding: 2px 6px; border-radius: 6px;" title="Tiene Video Corto Intro">🎥 Video</span>' : ''}
                         ${(Number(p.destacado) === 1 || p.destacado === true || p.destacado === '1') ? '<span class="badge" style="background: rgba(245, 158, 11, 0.15); color: #fbbf24; border: 1px solid rgba(245, 158, 11, 0.35); font-size: 0.7rem; padding: 2px 6px; border-radius: 6px;" title="Destacado en la Espiral 3D">⭐ Espiral 3D</span>' : ''}
+                        ${hasZip ? '<span class="badge" style="background: rgba(139, 92, 246, 0.18); color: #c084fc; border: 1px solid rgba(139, 92, 246, 0.4); font-size: 0.7rem; padding: 2px 6px; border-radius: 6px;" title="Código ZIP registrado en base de datos">📦 ZIP</span>' : ''}
                     </div>
                     <span class="small text-secondary" style="color: #94a3b8 !important;">${p.descripcion ? (p.descripcion.length > 60 ? p.descripcion.substring(0, 60) + '...' : p.descripcion) : ''}</span>
                 </td>
                 <td>
                     <div class="d-flex flex-wrap">${techBadgesHtml}</div>
                 </td>
+                ${zipCellHtml}
                 <td class="text-end">
                     <div class="d-inline-flex gap-2">
                         ${p.enlace_demo ? `
@@ -764,9 +807,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const btnBackToProjects = document.getElementById('btnBackToProjects');
     const btnResetEditor = document.getElementById('btnResetEditor');
     const btnPublishProjectTop = document.getElementById('btnPublishProjectTop');
-    const btnPublishProjectSidebar = document.getElementById('btnPublishProjectSidebar');
     const btnPublishProjectTopText = document.getElementById('btnPublishProjectTopText');
-    const btnPublishProjectSidebarText = document.getElementById('btnPublishProjectSidebarText');
 
     const editorProjectForm = document.getElementById('editorProjectForm');
     const editorProjectId = document.getElementById('editorProjectId');
@@ -777,12 +818,31 @@ document.addEventListener('DOMContentLoaded', function() {
     const editorTitle = document.getElementById('editorTitle');
     const editorTitleCount = document.getElementById('editorTitleCount');
 
+    // Fotos del Proyecto (hasta 4 fotos)
+    const editorGalleryGrid = document.getElementById('editorGalleryGrid');
+    const galleryCountBadge = document.getElementById('galleryCountBadge');
     const editorDropzone = document.getElementById('editorDropzone');
     const editorFileInput = document.getElementById('editorFileInput');
+    const MAX_GALLERY_IMAGES = 4;
+    let editorGalleryImages = []; // Cada item: { id, type: 'file'|'url', file, url, previewUrl }
+
+    // Video Corto
+    const editorVideoDropzone = document.getElementById('editorVideoDropzone');
+    const editorVideoInput = document.getElementById('editorVideoInput');
+    const editorVideoPreviewBox = document.getElementById('editorVideoPreviewBox');
+    const editorVideoPreviewEl = document.getElementById('editorVideoPreviewEl');
+    const editorVideoInfoDisplay = document.getElementById('editorVideoInfoDisplay');
+    const btnRemoveVideo = document.getElementById('btnRemoveVideo');
+    const editorEliminarVideo = document.getElementById('editorEliminarVideo');
+    let editorSelectedVideoFile = null;
+    let editorExistingVideoUrl = '';
+
+    // Elementos de compatibilidad retroactiva
     const dropzoneFileSelected = document.getElementById('dropzoneFileSelected');
     const selectedFileName = document.getElementById('selectedFileName');
     const btnRemoveSelectedFile = document.getElementById('btnRemoveSelectedFile');
     const editorImgUrl = document.getElementById('editorImgUrl');
+    const editorDemoUrl = document.getElementById('editorDemoUrl');
 
     const quickTechPills = document.getElementById('quickTechPills');
     const editorActiveTagsList = document.getElementById('editorActiveTagsList');
@@ -796,14 +856,54 @@ document.addEventListener('DOMContentLoaded', function() {
     const liveCardTitle = document.getElementById('liveCardTitle');
     const liveCardDesc = document.getElementById('liveCardDesc');
     const liveCardTechList = document.getElementById('liveCardTechList');
+    const liveCardDemoBtn = document.getElementById('liveCardDemoBtn');
+    const liveCardVideoBadge = document.getElementById('liveCardVideoBadge');
+    const liveCardImgCount = document.getElementById('liveCardImgCount');
 
-    // Checklist de Validación
-    const chkTitle = document.getElementById('chkTitle');
-    const chkDesc = document.getElementById('chkDesc');
-    const chkImage = document.getElementById('chkImage');
-    const chkTech = document.getElementById('chkTech');
-    const editorProgressBar = document.getElementById('editorProgressBar');
-    const editorProgressText = document.getElementById('editorProgressText');
+    // Elementos del Módulo de Código ZIP Privado (Solo Admin)
+    const editorZipDropzone = document.getElementById('editorZipDropzone');
+    const editorZipInput = document.getElementById('editorZipInput');
+    const editorEliminarZip = document.getElementById('editorEliminarZip');
+    const dropzoneZipSelected = document.getElementById('dropzoneZipSelected');
+    const selectedZipFileName = document.getElementById('selectedZipFileName');
+    const selectedZipFileSize = document.getElementById('selectedZipFileSize');
+    const btnRemoveSelectedZip = document.getElementById('btnRemoveSelectedZip');
+    const existingZipBox = document.getElementById('existingZipBox');
+    const existingZipSizeBadge = document.getElementById('existingZipSizeBadge');
+    const existingZipFileNameDisplay = document.getElementById('existingZipFileNameDisplay');
+    const btnDownloadCurrentZip = document.getElementById('btnDownloadCurrentZip');
+    const btnDeleteCurrentZip = document.getElementById('btnDeleteCurrentZip');
+
+    let editorSelectedZipFile = null;
+    let editorCurrentProjectZip = null;
+
+    function formatBytes(bytes) {
+        if (!bytes || bytes <= 0) return '0 B';
+        const k = 1024;
+        const sizes = ['B', 'KB', 'MB', 'GB'];
+        const i = Math.floor(Math.log(bytes) / Math.log(k));
+        return parseFloat((bytes / Math.pow(k, i)).toFixed(1)) + ' ' + sizes[i];
+    }
+
+    function handleSelectedZipFile(file) {
+        if (!file) return;
+        const name = file.name || '';
+        if (!name.toLowerCase().endsWith('.zip')) {
+            showAdminToast('Solo se permiten archivos comprimidos en formato .ZIP.', 'warning');
+            return;
+        }
+        editorSelectedZipFile = file;
+        if (editorEliminarZip) editorEliminarZip.value = '0';
+        if (selectedZipFileName) selectedZipFileName.textContent = name;
+        if (selectedZipFileSize) selectedZipFileSize.textContent = formatBytes(file.size);
+        if (dropzoneZipSelected) dropzoneZipSelected.classList.remove('d-none');
+    }
+
+    function clearSelectedZipFile() {
+        editorSelectedZipFile = null;
+        if (editorZipInput) editorZipInput.value = '';
+        if (dropzoneZipSelected) dropzoneZipSelected.classList.add('d-none');
+    }
 
     // Estado interno del Estudio
     let editorActiveTags = [];
@@ -854,18 +954,22 @@ document.addEventListener('DOMContentLoaded', function() {
         if (dropzoneFileSelected) dropzoneFileSelected.classList.add('d-none');
         if (editorFileInput) editorFileInput.value = '';
 
+        clearSelectedZipFile();
+        if (editorEliminarZip) editorEliminarZip.value = '0';
+        clearVideoFromEditor(false);
+        if (editorEliminarVideo) editorEliminarVideo.value = '0';
+
         if (mode === 'edit' && project) {
             // Modo Edición
             if (editorProjectId) editorProjectId.value = project.id;
             if (editorViewHeading) editorViewHeading.textContent = `Editar: ${project.titulo}`;
             if (editorStatusBadge) {
-                editorStatusBadge.textContent = `✏️ Editando #${project.id}`;
+                editorStatusBadge.textContent = 'Editando';
                 editorStatusBadge.style.background = 'rgba(139, 92, 246, 0.15)';
                 editorStatusBadge.style.color = '#c084fc';
                 editorStatusBadge.style.borderColor = 'rgba(139, 92, 246, 0.4)';
             }
             if (btnPublishProjectTopText) btnPublishProjectTopText.textContent = 'Guardar Cambios';
-            if (btnPublishProjectSidebarText) btnPublishProjectSidebarText.textContent = 'Actualizar Proyecto';
 
             if (editorTitle) editorTitle.value = project.titulo || '';
             if (editorDesc) editorDesc.value = project.descripcion || '';
@@ -877,13 +981,49 @@ document.addEventListener('DOMContentLoaded', function() {
             }
             renderEditorTags();
 
-            // Imagen previa
-            const imgSource = project.imagen_url || project.imagen;
-            if (imgSource) {
-                editorExistingImgUrl = formatProjectImageUrl(imgSource);
-                if (imgSource.startsWith('http')) {
-                    if (editorImgUrl) editorImgUrl.value = imgSource;
+            // Cargar Galería de Imágenes (Máximo 4)
+            editorGalleryImages = [];
+            let loadedImgs = [];
+            if (project.imagenes) {
+                if (Array.isArray(project.imagenes)) {
+                    loadedImgs = project.imagenes;
+                } else if (typeof project.imagenes === 'string') {
+                    try {
+                        const parsed = JSON.parse(project.imagenes);
+                        if (Array.isArray(parsed)) loadedImgs = parsed;
+                        else loadedImgs = [project.imagenes];
+                    } catch(e) {
+                        loadedImgs = project.imagenes.split(',').map(s => s.trim()).filter(Boolean);
+                    }
                 }
+            } else if (project.imagenes_array && Array.isArray(project.imagenes_array)) {
+                loadedImgs = project.imagenes_array;
+            } else if (project.imagen_url || project.imagen) {
+                loadedImgs = [project.imagen_url || project.imagen];
+            }
+
+            loadedImgs.slice(0, MAX_GALLERY_IMAGES).forEach((imgSrc, idx) => {
+                editorGalleryImages.push({
+                    id: 'existing_' + idx + '_' + Date.now(),
+                    type: 'url',
+                    file: null,
+                    url: imgSrc,
+                    previewUrl: formatProjectImageUrl(imgSrc)
+                });
+            });
+            renderEditorGallery();
+
+            // Cargar Video Corto si existe
+            if (project.video_url) {
+                editorExistingVideoUrl = project.video_url;
+                showVideoInEditor(formatProjectVideoUrl(project.video_url), project.video_url.replace(/^.*[\\\/]/, ''));
+            } else {
+                clearVideoFromEditor(false);
+            }
+
+            // Enlace de la página principal del proyecto (Promoción)
+            if (editorDemoUrl) {
+                editorDemoUrl.value = project.enlace_demo || project.demo_url || '';
             }
 
             // Estado de destacado (Espiral 3D)
@@ -891,22 +1031,43 @@ document.addEventListener('DOMContentLoaded', function() {
                 editorDestacado.checked = (Number(project.destacado) === 1 || project.destacado === true || project.destacado === '1');
             }
 
+            // Archivo ZIP privado del proyecto (Solo Admin)
+            editorCurrentProjectZip = project.archivo_zip || null;
+            if (project.archivo_zip || project.tiene_zip) {
+                if (existingZipBox) existingZipBox.classList.remove('d-none');
+                if (existingZipFileNameDisplay) {
+                    existingZipFileNameDisplay.textContent = project.archivo_zip || 'archivo_proyecto.zip';
+                }
+                if (existingZipSizeBadge) {
+                    existingZipSizeBadge.textContent = project.zip_size ? formatBytes(project.zip_size) : 'En Base de Datos';
+                }
+            } else {
+                if (existingZipBox) existingZipBox.classList.add('d-none');
+            }
+
         } else {
             // Modo Creación
             if (editorProjectId) editorProjectId.value = '';
-            if (editorViewHeading) editorViewHeading.textContent = 'Estudio de Creación de Proyecto';
+            if (editorDemoUrl) editorDemoUrl.value = '';
+            if (editorViewHeading) editorViewHeading.textContent = 'Nuevo Proyecto';
             if (editorStatusBadge) {
-                editorStatusBadge.textContent = '✨ Nuevo Proyecto';
+                editorStatusBadge.textContent = 'Nuevo';
                 editorStatusBadge.style.background = 'rgba(0, 229, 212, 0.12)';
                 editorStatusBadge.style.color = '#00e5d4';
                 editorStatusBadge.style.borderColor = 'rgba(0, 229, 212, 0.3)';
             }
-            if (btnPublishProjectTopText) btnPublishProjectTopText.textContent = 'Publicar Proyecto';
-            if (btnPublishProjectSidebarText) btnPublishProjectSidebarText.textContent = 'Publicar en el Portafolio';
+            if (btnPublishProjectTopText) btnPublishProjectTopText.textContent = 'Guardar Proyecto';
 
             if (editorDestacado) {
                 editorDestacado.checked = false;
             }
+
+            editorGalleryImages = [];
+            renderEditorGallery();
+            clearVideoFromEditor(false);
+
+            editorCurrentProjectZip = null;
+            if (existingZipBox) existingZipBox.classList.add('d-none');
 
             // Tags sugeridos iniciales
             editorActiveTags = ['JavaScript', 'PHP', 'HTML5'];
@@ -915,7 +1076,6 @@ document.addEventListener('DOMContentLoaded', function() {
 
         updateEditorCounters();
         updateLiveCardPreview();
-        updateQualityChecklist();
         switchAdminView('editor');
 
         if (editorTitle) setTimeout(() => editorTitle.focus(), 150);
@@ -1050,10 +1210,132 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Manejo de Dropzone & Subida de Archivos
+    // ==========================================================
+    // GESTIÓN DE GALERÍA DE IMÁGENES (MÁXIMO 4 FOTOS POR PROYECTO)
+    // ==========================================================
+    function renderEditorGallery() {
+        if (!editorGalleryGrid) return;
+        editorGalleryGrid.innerHTML = '';
+
+        if (galleryCountBadge) {
+            const count = editorGalleryImages.length;
+            galleryCountBadge.textContent = `${count} / ${MAX_GALLERY_IMAGES} fotos`;
+            if (count >= MAX_GALLERY_IMAGES) {
+                galleryCountBadge.style.background = 'rgba(239, 68, 68, 0.15)';
+                galleryCountBadge.style.color = '#f87171';
+                galleryCountBadge.style.borderColor = 'rgba(239, 68, 68, 0.35)';
+            } else {
+                galleryCountBadge.style.background = 'rgba(0, 229, 212, 0.12)';
+                galleryCountBadge.style.color = '#5eead4';
+                galleryCountBadge.style.borderColor = 'rgba(0, 229, 212, 0.3)';
+            }
+        }
+
+        // Renderizar miniaturas de imágenes actuales
+        editorGalleryImages.forEach((imgObj, idx) => {
+            const card = document.createElement('div');
+            card.className = 'editor-gallery-card';
+            const isCover = idx === 0;
+            const displayUrl = imgObj.previewUrl || formatProjectImageUrl(imgObj.url);
+
+            card.innerHTML = `
+                <img src="${displayUrl}" alt="Foto ${idx + 1}" onerror="this.src='${DEFAULT_PLACEHOLDER_IMG}'">
+                <span class="gallery-card-badge-cover ${isCover ? 'is-cover' : ''}">${isCover ? '★ Portada' : '#' + (idx + 1)}</span>
+                <div class="gallery-card-actions">
+                    ${!isCover ? `<button type="button" class="btn-gallery-action" data-action="make-cover" data-index="${idx}" title="Convertir en Portada Principal">★</button>` : ''}
+                    <button type="button" class="btn-gallery-action delete" data-action="delete" data-index="${idx}" title="Eliminar foto">✕</button>
+                </div>
+            `;
+            editorGalleryGrid.appendChild(card);
+        });
+
+        // Ranura para agregar más fotos si no ha llegado al límite de 4
+        if (editorGalleryImages.length < MAX_GALLERY_IMAGES) {
+            const addSlot = document.createElement('div');
+            addSlot.className = 'editor-gallery-add-slot';
+            addSlot.innerHTML = `
+                <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                    <line x1="12" y1="5" x2="12" y2="19"></line>
+                    <line x1="5" y1="12" x2="19" y2="12"></line>
+                </svg>
+                <span>+ Agregar Foto</span>
+                <small style="font-size: 0.68rem; opacity: 0.7;">(${editorGalleryImages.length}/${MAX_GALLERY_IMAGES})</small>
+            `;
+            addSlot.addEventListener('click', () => {
+                if (editorFileInput) editorFileInput.click();
+            });
+            editorGalleryGrid.appendChild(addSlot);
+        }
+
+        updateLiveCardPreview();
+    }
+
+    // Delegación de eventos en las tarjetas de la galería (Hacer portada / Eliminar)
+    if (editorGalleryGrid) {
+        editorGalleryGrid.addEventListener('click', function(e) {
+            const btn = e.target.closest('.btn-gallery-action');
+            if (!btn) return;
+            e.stopPropagation();
+
+            const action = btn.getAttribute('data-action');
+            const index = parseInt(btn.getAttribute('data-index'), 10);
+            if (isNaN(index)) return;
+
+            if (action === 'make-cover') {
+                // Mover la imagen seleccionada a la primera posición (índice 0)
+                const selected = editorGalleryImages.splice(index, 1)[0];
+                editorGalleryImages.unshift(selected);
+                renderEditorGallery();
+                showAdminToast('Foto asignada como portada principal.', 'info');
+            } else if (action === 'delete') {
+                editorGalleryImages.splice(index, 1);
+                renderEditorGallery();
+                showAdminToast('Foto eliminada de la galería.', 'info');
+            }
+        });
+    }
+
+    // Procesar archivos de imagen agregados (con control estricto de máximo 4)
+    function handleAddGalleryFiles(files) {
+        if (!files || files.length === 0) return;
+
+        const imageFiles = Array.from(files).filter(f => f.type.startsWith('image/'));
+        if (imageFiles.length === 0) {
+            showAdminToast('Por favor, selecciona archivos de imagen válidos (JPG, PNG, WEBP, GIF).', 'warning');
+            return;
+        }
+
+        const currentCount = editorGalleryImages.length;
+        const availableSlots = MAX_GALLERY_IMAGES - currentCount;
+
+        if (availableSlots <= 0) {
+            showAdminToast('Límite estricto: Solo se permite un máximo de 4 fotos por proyecto.', 'warning');
+            return;
+        }
+
+        if (imageFiles.length > availableSlots) {
+            showAdminToast(`Límite de 4 fotos: Solo se añadieron ${availableSlots} imagen(es).`, 'warning');
+        }
+
+        const filesToAdd = imageFiles.slice(0, availableSlots);
+        filesToAdd.forEach(file => {
+            const previewUrl = URL.createObjectURL(file);
+            editorGalleryImages.push({
+                id: 'file_' + Date.now() + '_' + Math.random().toString(36).substr(2, 9),
+                type: 'file',
+                file: file,
+                url: '',
+                previewUrl: previewUrl
+            });
+        });
+
+        renderEditorGallery();
+    }
+
+    // Eventos de Dropzone y Selección de Imágenes
     if (editorDropzone && editorFileInput) {
         editorDropzone.addEventListener('click', function(e) {
-            if (e.target.closest('#btnRemoveSelectedFile') || e.target === editorFileInput) return;
+            if (e.target === editorFileInput) return;
             editorFileInput.click();
         });
 
@@ -1069,88 +1351,160 @@ document.addEventListener('DOMContentLoaded', function() {
         editorDropzone.addEventListener('drop', function(e) {
             e.preventDefault();
             this.classList.remove('dragover');
-            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
-                try {
-                    editorFileInput.files = e.dataTransfer.files;
-                } catch (err) {}
-                handleSelectedImageFile(e.dataTransfer.files[0]);
+            if (e.dataTransfer.files && e.dataTransfer.files.length > 0) {
+                handleAddGalleryFiles(e.dataTransfer.files);
             }
         });
 
         editorFileInput.addEventListener('change', function() {
-            if (this.files && this.files[0]) {
-                handleSelectedImageFile(this.files[0]);
+            if (this.files && this.files.length > 0) {
+                handleAddGalleryFiles(this.files);
+                this.value = ''; // Permitir seleccionar los mismos archivos de nuevo si es necesario
             }
         });
     }
 
-    function handleSelectedImageFile(file) {
-        if (!file.type.startsWith('image/')) {
-            showAdminToast('Por favor, selecciona un archivo de imagen válido (JPG, PNG, WEBP, GIF).', 'warning');
+    // ==========================================================
+    // GESTIÓN DE VIDEO CORTO DEL PROYECTO
+    // ==========================================================
+    function showVideoInEditor(src, label = 'video.mp4') {
+        if (editorVideoPreviewBox) editorVideoPreviewBox.classList.remove('d-none');
+        if (editorVideoPreviewEl) {
+            editorVideoPreviewEl.src = src;
+        }
+        if (editorVideoInfoDisplay) {
+            editorVideoInfoDisplay.textContent = label;
+        }
+        if (editorEliminarVideo) editorEliminarVideo.value = '0';
+        updateLiveCardPreview();
+    }
+
+    function clearVideoFromEditor(markDeleted = true) {
+        editorSelectedVideoFile = null;
+        editorExistingVideoUrl = '';
+        if (editorVideoInput) editorVideoInput.value = '';
+        if (editorVideoPreviewEl) {
+            try { editorVideoPreviewEl.pause(); } catch(e) {}
+            editorVideoPreviewEl.src = '';
+        }
+        if (editorVideoPreviewBox) editorVideoPreviewBox.classList.add('d-none');
+        if (markDeleted && editorEliminarVideo) {
+            editorEliminarVideo.value = '1';
+        }
+        updateLiveCardPreview();
+    }
+
+    function handleSelectedVideoFile(file) {
+        if (!file) return;
+        const validTypes = ['video/mp4', 'video/webm', 'video/quicktime', 'video/ogg'];
+        const name = file.name || '';
+        const isValid = validTypes.includes(file.type) || name.match(/\.(mp4|webm|mov|ogg)$/i);
+        if (!isValid) {
+            showAdminToast('Por favor, selecciona un video en formato MP4 o WebM.', 'warning');
             return;
         }
 
-        editorSelectedFile = file;
-        if (selectedFileName) selectedFileName.textContent = `${file.name} (${Math.round(file.size / 1024)} KB)`;
-        if (dropzoneFileSelected) dropzoneFileSelected.classList.remove('d-none');
+        if (file.size > 85 * 1024 * 1024) {
+            showAdminToast('El video no debe superar 80MB.', 'warning');
+            return;
+        }
 
-        // Previsualizar inmediatamente en la tarjeta en vivo
-        const reader = new FileReader();
-        reader.onload = function(e) {
-            if (liveCardImg) liveCardImg.src = e.target.result;
-            updateQualityChecklist();
-        };
-        reader.readAsDataURL(file);
+        editorSelectedVideoFile = file;
+        editorExistingVideoUrl = '';
+        const videoBlobUrl = URL.createObjectURL(file);
+        showVideoInEditor(videoBlobUrl, `${file.name} (${formatBytes(file.size)})`);
+        showAdminToast('Video cargado para vista previa.', 'info');
     }
 
-    if (btnRemoveSelectedFile) {
-        btnRemoveSelectedFile.addEventListener('click', function(e) {
+    // Dropzone de Video
+    if (editorVideoDropzone && editorVideoInput) {
+        editorVideoDropzone.addEventListener('click', function(e) {
+            if (e.target === editorVideoInput) return;
+            editorVideoInput.click();
+        });
+
+        editorVideoDropzone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.classList.add('dragover');
+        });
+
+        editorVideoDropzone.addEventListener('dragleave', function() {
+            this.classList.remove('dragover');
+        });
+
+        editorVideoDropzone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('dragover');
+            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                handleSelectedVideoFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        editorVideoInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                handleSelectedVideoFile(this.files[0]);
+            }
+        });
+    }
+
+    // Botón para quitar el video
+    if (btnRemoveVideo) {
+        btnRemoveVideo.addEventListener('click', function(e) {
             e.stopPropagation();
-            editorSelectedFile = null;
-            if (editorFileInput) editorFileInput.value = '';
-            if (dropzoneFileSelected) dropzoneFileSelected.classList.add('d-none');
-            updateLiveCardPreview();
-            updateQualityChecklist();
+            clearVideoFromEditor(true);
+            showAdminToast('El video se quitará al guardar el proyecto.', 'info');
         });
     }
 
-    if (editorImgUrl) {
-        editorImgUrl.addEventListener('input', () => {
+    if (editorDemoUrl) {
+        editorDemoUrl.addEventListener('input', () => {
             updateLiveCardPreview();
-            updateQualityChecklist();
         });
     }
 
-    // Actualización del Simulador en Vivo de la Tarjeta
+    // ==========================================================
+    // ACTUALIZACIÓN DE LA TARJETA EN VIVO
+    // ==========================================================
     function updateLiveCardPreview() {
         // 1. Título
         const titleVal = editorTitle ? editorTitle.value.trim() : '';
         if (liveCardTitle) {
-            liveCardTitle.textContent = titleVal || 'Título de tu Nuevo Proyecto';
+            liveCardTitle.textContent = titleVal || 'Título del Proyecto';
         }
 
-
-
-        // 3. Imagen
+        // 2. Imagen de Portada (primera de la galería)
         if (liveCardImg) {
-            if (editorSelectedFile) {
-                // Ya se actualizó con el FileReader
-            } else if (editorImgUrl && editorImgUrl.value.trim()) {
-                liveCardImg.src = editorImgUrl.value.trim();
-            } else if (editorExistingImgUrl) {
-                liveCardImg.src = formatProjectImageUrl(editorExistingImgUrl);
+            if (editorGalleryImages.length > 0) {
+                const coverObj = editorGalleryImages[0];
+                liveCardImg.src = coverObj.previewUrl || formatProjectImageUrl(coverObj.url);
             } else {
                 liveCardImg.src = DEFAULT_PLACEHOLDER_IMG;
             }
         }
 
-        // 4. Descripción
-        const descVal = editorDesc ? editorDesc.value.trim() : '';
-        if (liveCardDesc) {
-            liveCardDesc.textContent = descVal || 'Redacta una descripción atractiva para verla reflejada aquí en tiempo real.';
+        // 3. Contador de fotos en miniatura en la tarjeta
+        if (liveCardImgCount) {
+            const count = editorGalleryImages.length;
+            liveCardImgCount.textContent = `${count} ${count === 1 ? 'foto' : 'fotos'}`;
         }
 
-        // 5. Tecnologías
+        // 4. Badge de Video en la tarjeta en vivo
+        if (liveCardVideoBadge) {
+            const hasVid = Boolean(editorSelectedVideoFile || editorExistingVideoUrl);
+            if (hasVid) {
+                liveCardVideoBadge.classList.remove('d-none');
+            } else {
+                liveCardVideoBadge.classList.add('d-none');
+            }
+        }
+
+        // 5. Descripción
+        const descVal = editorDesc ? editorDesc.value.trim() : '';
+        if (liveCardDesc) {
+            liveCardDesc.textContent = descVal || 'Descripción del proyecto...';
+        }
+
+        // 6. Tecnologías
         if (liveCardTechList) {
             liveCardTechList.innerHTML = '';
             if (editorActiveTags.length > 0) {
@@ -1167,41 +1521,82 @@ document.addEventListener('DOMContentLoaded', function() {
                 `;
             }
         }
+
+        // 7. Enlace de la página principal (promoción)
+        if (liveCardDemoBtn) {
+            const linkVal = editorDemoUrl ? editorDemoUrl.value.trim() : '';
+            if (linkVal) {
+                liveCardDemoBtn.classList.remove('d-none');
+                liveCardDemoBtn.href = linkVal.startsWith('http') ? linkVal : ('https://' + linkVal);
+            } else {
+                liveCardDemoBtn.classList.add('d-none');
+            }
+        }
     }
 
-    // Actualización de Checklist de Validación y Progreso (4 ítems: 25% c/u)
+    // Manejo de Dropzone & Subida de Archivo ZIP (Solo Admin)
+    if (editorZipDropzone && editorZipInput) {
+        editorZipDropzone.addEventListener('click', function(e) {
+            if (e.target.closest('#btnRemoveSelectedZip') || e.target === editorZipInput) return;
+            editorZipInput.click();
+        });
+
+        editorZipDropzone.addEventListener('dragover', function(e) {
+            e.preventDefault();
+            this.classList.add('dragover');
+        });
+
+        editorZipDropzone.addEventListener('dragleave', function() {
+            this.classList.remove('dragover');
+        });
+
+        editorZipDropzone.addEventListener('drop', function(e) {
+            e.preventDefault();
+            this.classList.remove('dragover');
+            if (e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) {
+                try {
+                    editorZipInput.files = e.dataTransfer.files;
+                } catch (err) {}
+                handleSelectedZipFile(e.dataTransfer.files[0]);
+            }
+        });
+
+        editorZipInput.addEventListener('change', function() {
+            if (this.files && this.files[0]) {
+                handleSelectedZipFile(this.files[0]);
+            }
+        });
+    }
+
+    if (btnRemoveSelectedZip) {
+        btnRemoveSelectedZip.addEventListener('click', function(e) {
+            e.stopPropagation();
+            clearSelectedZipFile();
+        });
+    }
+
+    if (btnDownloadCurrentZip) {
+        btnDownloadCurrentZip.addEventListener('click', function() {
+            const id = editorProjectId ? editorProjectId.value.trim() : '';
+            if (!id) return;
+            const adminUserToken = encodeURIComponent(localStorage.getItem('devioz_admin_user') || 'admin');
+            const downloadUrl = `${verifiedProjectsEndpoint || getBackendProjectsEndpoint()}?action=download_zip&id=${encodeURIComponent(id)}&admin_token=devioz_admin_${adminUserToken}`;
+            window.open(downloadUrl, '_blank');
+        });
+    }
+
+    if (btnDeleteCurrentZip) {
+        btnDeleteCurrentZip.addEventListener('click', function() {
+            if (confirm('¿Deseas desvincular y eliminar el archivo ZIP de este proyecto al guardar?')) {
+                if (editorEliminarZip) editorEliminarZip.value = '1';
+                if (existingZipBox) existingZipBox.classList.add('d-none');
+                showAdminToast('El archivo ZIP se eliminará cuando guardes o actualices el proyecto.', 'info');
+            }
+        });
+    }
+
     function updateQualityChecklist() {
-        let completedCount = 0;
-        const totalItems = 4;
-
-        // 1. Título descriptivo (mín. 4 caracteres)
-        const hasTitle = editorTitle && editorTitle.value.trim().length >= 4;
-        setChecklistItem(chkTitle, hasTitle);
-        if (hasTitle) completedCount++;
-
-        // 2. Descripción del proyecto (mín. 10 caracteres)
-        const hasDesc = editorDesc && editorDesc.value.trim().length >= 10;
-        setChecklistItem(chkDesc, hasDesc);
-        if (hasDesc) completedCount++;
-
-        // 3. Portada o imagen
-        const hasImage = Boolean(editorSelectedFile) || (editorImgUrl && editorImgUrl.value.trim().length > 5) || Boolean(editorExistingImgUrl);
-        setChecklistItem(chkImage, hasImage);
-        if (hasImage) completedCount++;
-
-        // 4. Stack tecnológico (al menos 1 tecnología)
-        const hasTech = editorActiveTags.length >= 1;
-        setChecklistItem(chkTech, hasTech);
-        if (hasTech) completedCount++;
-
-        const percentage = Math.round((completedCount / totalItems) * 100);
-        if (editorProgressBar) {
-            editorProgressBar.style.width = `${percentage}%`;
-            editorProgressBar.setAttribute('aria-valuenow', percentage);
-        }
-        if (editorProgressText) {
-            editorProgressText.textContent = `${percentage}% listo para publicar`;
-        }
+        // Módulo reemplazado por gestor privado de archivos ZIP
     }
 
     function setChecklistItem(element, isComplete) {
@@ -1271,19 +1666,11 @@ document.addEventListener('DOMContentLoaded', function() {
             // Estado de carga en ambos botones de publicación
             const setButtonsLoading = (loading) => {
                 const topBtn = document.getElementById('btnPublishProjectTop');
-                const sideBtn = document.getElementById('btnPublishProjectSidebar');
-
                 if (topBtn) {
                     topBtn.disabled = loading;
                     topBtn.innerHTML = loading 
                         ? '<span class="spinner-border spinner-border-sm me-2"></span>Guardando...'
                         : `<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg><span>${isEditing ? 'Guardar Cambios' : 'Publicar Proyecto'}</span>`;
-                }
-                if (sideBtn) {
-                    sideBtn.disabled = loading;
-                    sideBtn.innerHTML = loading 
-                        ? '<span class="spinner-border spinner-border-sm me-2"></span>Procesando...'
-                        : `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h11l5 5v11a2 2 0 0 1-2 2z"></path><polyline points="17 21 17 13 7 13 7 21"></polyline><polyline points="7 3 7 8 15 8"></polyline></svg><span>${isEditing ? 'Actualizar Proyecto' : 'Publicar en el Portafolio'}</span>`;
                 }
             };
 
@@ -1300,15 +1687,70 @@ document.addEventListener('DOMContentLoaded', function() {
                     formData.append('action', 'update');
                 }
 
-                // Asegurar que el archivo seleccionado se adjunte explícitamente y anule URLs viejas
-                if (editorSelectedFile) {
-                    formData.set('imagen', editorSelectedFile);
+                // Validar límite estricto de máximo 4 imágenes
+                if (editorGalleryImages.length > MAX_GALLERY_IMAGES) {
+                    showAdminToast(`Límite estricto: Solo se permiten hasta ${MAX_GALLERY_IMAGES} fotos por proyecto.`, 'warning');
+                    setButtonsLoading(false);
+                    return;
+                }
+
+                // Separar imágenes existentes retenidas y nuevos archivos a subir
+                const retainedUrls = editorGalleryImages
+                    .filter(item => item.type === 'url' && item.url)
+                    .map(item => item.url);
+                formData.set('existing_images', JSON.stringify(retainedUrls));
+
+                // Adjuntar cada nuevo archivo de imagen en project_images[]
+                const newImageFiles = editorGalleryImages
+                    .filter(item => item.type === 'file' && item.file)
+                    .map(item => item.file);
+                
+                // Limpiar posibles entradas previas de project_images
+                formData.delete('project_images[]');
+                newImageFiles.forEach(file => {
+                    formData.append('project_images[]', file);
+                });
+
+                // Asignar portada principal para retrocompatibilidad directa
+                if (editorGalleryImages.length > 0) {
+                    const cover = editorGalleryImages[0];
+                    if (cover.type === 'file' && cover.file) {
+                        formData.set('imagen', cover.file);
+                        formData.set('imagen_url', '');
+                    } else if (cover.type === 'url' && cover.url) {
+                        formData.set('imagen_url', cover.url);
+                    }
+                } else {
                     formData.set('imagen_url', '');
+                }
+
+                // Adjuntar video corto del proyecto (archivo)
+                if (editorSelectedVideoFile) {
+                    formData.set('video_file', editorSelectedVideoFile);
+                    formData.set('video_url', '');
+                }
+                if (editorEliminarVideo && editorEliminarVideo.value === '1') {
+                    formData.set('eliminar_video', '1');
                 }
 
                 // Asegurar tecnologías procesadas y estado destacado
                 formData.set('tecnologias', editorActiveTags.join(', '));
                 formData.set('destacado', editorDestacado && editorDestacado.checked ? '1' : '0');
+
+                // Asegurar enlace de la página principal (promoción del proyecto)
+                const promoLink = editorDemoUrl ? editorDemoUrl.value.trim() : '';
+                formData.set('enlace_demo', promoLink);
+                formData.set('demo_url', promoLink);
+
+                // Asegurar que el archivo ZIP se adjunte si fue seleccionado (Solo Admin)
+                if (editorSelectedZipFile) {
+                    formData.set('archivo_zip', editorSelectedZipFile);
+                } else if (editorZipInput && editorZipInput.files && editorZipInput.files[0]) {
+                    formData.set('archivo_zip', editorZipInput.files[0]);
+                }
+                if (editorEliminarZip && editorEliminarZip.value === '1') {
+                    formData.set('eliminar_zip', '1');
+                }
 
                 const endpoint = getBackendProjectsEndpoint();
                 let response;
@@ -1338,6 +1780,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const result = await response.json();
 
                 if (response.ok && (result.status === 'success' || result.code === 200 || result.code === 201)) {
+                    clearSelectedZipFile();
                     // Cerrar el dashboard y volver a la vista de lista
                     closeProjectEditor();
 
@@ -1461,9 +1904,7 @@ document.addEventListener('DOMContentLoaded', function() {
     const profileSummaryName = document.getElementById('profileSummaryName');
     const profileSummaryUser = document.getElementById('profileSummaryUser');
     const profileSummaryEmail = document.getElementById('profileSummaryEmail');
-    const profileSummaryId = document.getElementById('profileSummaryId');
     const profileSummaryRole = document.getElementById('profileSummaryRole');
-    const profileSummaryDate = document.getElementById('profileSummaryDate');
 
     function getBackendProfileEndpoint() {
         const port = window.location.port;
@@ -1562,12 +2003,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 if (profileSummaryName) profileSummaryName.textContent = displayName;
                 if (profileSummaryUser) profileSummaryUser.textContent = u.usuario || 'admin';
                 if (profileSummaryEmail) profileSummaryEmail.textContent = u.email || '—';
-                if (profileSummaryId) profileSummaryId.textContent = `#${u.id || 1}`;
                 if (profileSummaryRole) profileSummaryRole.textContent = u.rol_nombre || 'Administrador';
-                if (profileSummaryDate) {
-                    const dateStr = u.fecha_registro ? u.fecha_registro.split(' ')[0] : '—';
-                    profileSummaryDate.textContent = dateStr;
-                }
 
                 // Generar iniciales para el avatar
                 if (profileAvatarInitials) {
@@ -1819,6 +2255,335 @@ document.addEventListener('DOMContentLoaded', function() {
             }
         });
     }
+
+    // ==========================================================
+    // CONFIGURACIÓN DE CHATBOT IA & API KEY DE GEMINI (MODAL)
+    // ==========================================================
+    function initChatbotAdminConfig() {
+        const btnOpen = document.getElementById('btnOpenChatbotModal');
+        const modalEl = document.getElementById('chatbotConfigModal');
+        if (!modalEl) return;
+
+        function getModalInstance() {
+            if (typeof bootstrap !== 'undefined' && bootstrap.Modal) {
+                return bootstrap.Modal.getOrCreateInstance(modalEl);
+            }
+            return null;
+        }
+
+        const form = document.getElementById('chatbotConfigForm');
+        const keyInput = document.getElementById('geminiApiKeyInput');
+        const modelSelect = document.getElementById('geminiModelSelect');
+        const btnToggleKey = document.getElementById('btnToggleGeminiKey');
+        const btnSave = document.getElementById('btnSaveGeminiKey');
+        const btnSaveText = document.getElementById('btnSaveGeminiKeyText');
+        const btnRemove = document.getElementById('btnRemoveGeminiKey');
+        const alertBox = document.getElementById('geminiConfigAlert');
+        const statusIcon = document.getElementById('geminiStatusIcon');
+        const statusTitle = document.getElementById('geminiStatusTitle');
+        const statusDesc = document.getElementById('geminiStatusDesc');
+        const statusBadge = document.getElementById('geminiStatusBadge');
+        const indicatorDot = document.getElementById('chatbotKeyIndicatorDot');
+
+        function getChatbotConfigEndpoint() {
+            const port = window.location.port;
+            const isLiveDev = (port === '5500' || port === '5501' || port === '3000' || port === '5173' || window.location.protocol === 'file:');
+            const host = window.location.hostname || 'localhost';
+            return isLiveDev 
+                ? `http://${host}/portafolio-Devioz/backend/api/chatbot_config.php`
+                : 'backend/api/chatbot_config.php';
+        }
+
+        function showConfigAlert(msg, type = 'success') {
+            if (!alertBox) return;
+            alertBox.className = `alert alert-${type === 'success' ? 'success' : 'danger'} py-2 px-3 mb-0 small`;
+            alertBox.textContent = msg;
+            alertBox.classList.remove('d-none');
+        }
+
+        function hideConfigAlert() {
+            if (alertBox) alertBox.classList.add('d-none');
+        }
+
+        async function fetchChatbotConfigStatus() {
+            try {
+                const adminUser = encodeURIComponent(localStorage.getItem('devioz_admin_user') || 'admin');
+                const endpoint = `${getChatbotConfigEndpoint()}?admin_token=devioz_admin_${adminUser}`;
+                const res = await fetch(endpoint, {
+                    method: 'GET',
+                    credentials: 'include',
+                    headers: { 
+                        'Accept': 'application/json',
+                        'Authorization': `Bearer devioz_admin_${adminUser}`,
+                        'X-Admin-Token': `devioz_admin_${adminUser}`
+                    }
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data.status === 'success') {
+                    updateStatusUI(data);
+                }
+            } catch (err) {
+                console.error('[Devioz Admin] Error consultando estado de Gemini:', err);
+            }
+        }
+
+        function updateStatusUI(data) {
+            const isConfigured = Boolean(data.configured);
+            if (indicatorDot) {
+                if (isConfigured) {
+                    indicatorDot.classList.remove('d-none');
+                } else {
+                    indicatorDot.classList.add('d-none');
+                }
+            }
+
+            if (statusTitle && statusDesc && statusBadge) {
+                if (isConfigured) {
+                    if (statusIcon) statusIcon.textContent = '✅';
+                    statusTitle.textContent = 'Google Gemini Activo';
+                    statusDesc.textContent = `Clave: ${data.masked_key || '••••••••'} | Modelo: ${data.model || 'gemini-2.5-flash'}`;
+                    statusBadge.textContent = 'Conectado';
+                    statusBadge.style.background = 'rgba(16, 185, 129, 0.2)';
+                    statusBadge.style.color = '#34d399';
+                    statusBadge.style.border = '1px solid rgba(16, 185, 129, 0.4)';
+                    if (btnRemove) btnRemove.classList.remove('d-none');
+                } else {
+                    if (statusIcon) statusIcon.textContent = '⚡';
+                    statusTitle.textContent = 'Modo Respaldo Inteligente';
+                    statusDesc.textContent = 'El chatbot responde consultas con su base interna (sin API Key de Gemini)';
+                    statusBadge.textContent = 'Respaldo';
+                    statusBadge.style.background = 'rgba(234, 179, 8, 0.15)';
+                    statusBadge.style.color = '#facc15';
+                    statusBadge.style.border = '1px solid rgba(234, 179, 8, 0.3)';
+                    if (btnRemove) btnRemove.classList.add('d-none');
+                }
+            }
+
+            if (modelSelect && data.model) {
+                modelSelect.value = data.model;
+            }
+        }
+
+        // Listener nativo de Bootstrap cuando el modal se abre
+        modalEl.addEventListener('show.bs.modal', () => {
+            hideConfigAlert();
+            if (keyInput) keyInput.value = '';
+            fetchChatbotConfigStatus();
+        });
+
+        // Soporte adicional por clic en el botón con fallback garantizado
+        if (btnOpen) {
+            btnOpen.addEventListener('click', (e) => {
+                hideConfigAlert();
+                if (keyInput) keyInput.value = '';
+                fetchChatbotConfigStatus();
+
+                const m = getModalInstance();
+                if (m) {
+                    m.show();
+                } else {
+                    // Fallback visual si Bootstrap JS fallase
+                    modalEl.classList.add('show');
+                    modalEl.style.display = 'block';
+                    modalEl.removeAttribute('aria-hidden');
+                    let backdrop = document.getElementById('chatbotConfigBackdrop');
+                    if (!backdrop) {
+                        backdrop = document.createElement('div');
+                        backdrop.id = 'chatbotConfigBackdrop';
+                        backdrop.className = 'modal-backdrop fade show';
+                        document.body.appendChild(backdrop);
+                    }
+                }
+            });
+        }
+
+        // Soporte de cierre para botones data-bs-dismiss
+        modalEl.querySelectorAll('[data-bs-dismiss="modal"]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const m = getModalInstance();
+                if (m) m.hide();
+                modalEl.classList.remove('show');
+                modalEl.style.display = 'none';
+                modalEl.setAttribute('aria-hidden', 'true');
+                const backdrop = document.getElementById('chatbotConfigBackdrop');
+                if (backdrop) backdrop.remove();
+            });
+        });
+
+        if (btnToggleKey && keyInput) {
+            btnToggleKey.addEventListener('click', () => {
+                const isPass = keyInput.type === 'password';
+                keyInput.type = isPass ? 'text' : 'password';
+                btnToggleKey.textContent = isPass ? '🔒' : '👁️';
+            });
+        }
+
+        if (form) {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                hideConfigAlert();
+
+                const key = keyInput ? keyInput.value.trim() : '';
+                const model = modelSelect ? modelSelect.value : 'gemini-2.5-flash';
+
+                if (!key) {
+                    showConfigAlert('Por favor, ingresa una API Key de Google Gemini.', 'error');
+                    if (keyInput) keyInput.focus();
+                    return;
+                }
+
+                if (btnSave) btnSave.disabled = true;
+                if (btnSaveText) btnSaveText.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span>Verificando...';
+
+                try {
+                    const adminUser = encodeURIComponent(localStorage.getItem('devioz_admin_user') || 'admin');
+                    const endpoint = `${getChatbotConfigEndpoint()}?admin_token=devioz_admin_${adminUser}`;
+
+                    const res = await fetch(endpoint, {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'Authorization': `Bearer devioz_admin_${adminUser}`,
+                            'X-Admin-Token': `devioz_admin_${adminUser}`
+                        },
+                        body: JSON.stringify({
+                            action: 'save',
+                            api_key: key,
+                            model: model,
+                            admin_token: `devioz_admin_${adminUser}`
+                        })
+                    });
+
+                    const resData = await res.json();
+
+                    if (res.ok && resData.status === 'success') {
+                        showConfigAlert(resData.message || 'API Key guardada exitosamente.', 'success');
+                        updateStatusUI(resData);
+                        if (keyInput) keyInput.value = '';
+                        if (typeof showAdminToast === 'function') {
+                            showAdminToast('¡Chatbot potenciado con Google Gemini!', 'success');
+                        }
+                        setTimeout(() => {
+                            const m = getModalInstance();
+                            if (m) m.hide();
+                            modalEl.classList.remove('show');
+                            modalEl.style.display = 'none';
+                            const backdrop = document.getElementById('chatbotConfigBackdrop');
+                            if (backdrop) backdrop.remove();
+                        }, 1200);
+                    } else {
+                        showConfigAlert(resData.message || 'La API Key fue rechazada.', 'error');
+                    }
+                } catch (err) {
+                    console.error('[Devioz Admin] Error al guardar API Key:', err);
+                    showConfigAlert('Error de conexión al servidor al guardar la clave.', 'error');
+                } finally {
+                    if (btnSave) btnSave.disabled = false;
+                    if (btnSaveText) btnSaveText.textContent = 'Guardar API Key';
+                }
+            });
+        }
+
+        if (btnRemove) {
+            btnRemove.addEventListener('click', async () => {
+                if (!confirm('¿Deseas desvincular la API Key de Gemini? El chatbot volverá al modo de respuesta inteligente de respaldo.')) {
+                    return;
+                }
+
+                hideConfigAlert();
+                try {
+                    const adminUser = encodeURIComponent(localStorage.getItem('devioz_admin_user') || 'admin');
+                    const endpoint = `${getChatbotConfigEndpoint()}?admin_token=devioz_admin_${adminUser}`;
+
+                    const res = await fetch(endpoint, {
+                        method: 'POST',
+                        credentials: 'include',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Accept': 'application/json',
+                            'Authorization': `Bearer devioz_admin_${adminUser}`,
+                            'X-Admin-Token': `devioz_admin_${adminUser}`
+                        },
+                        body: JSON.stringify({ 
+                            action: 'remove',
+                            admin_token: `devioz_admin_${adminUser}`
+                        })
+                    });
+
+                    const resData = await res.json();
+                    if (res.ok && resData.status === 'success') {
+                        showConfigAlert(resData.message, 'success');
+                        updateStatusUI({ configured: false });
+                        if (keyInput) keyInput.value = '';
+                        if (typeof showAdminToast === 'function') {
+                            showAdminToast('API Key de Gemini removida.', 'info');
+                        }
+                    }
+                } catch (err) {
+                    showConfigAlert('Error al intentar desvincular la clave.', 'error');
+                }
+            });
+        }
+
+        // Consulta inicial silenciosa para el indicador visual
+        fetchChatbotConfigStatus();
+    }
+
+    // ==========================================================
+    // LIMPIEZA AUTOMÁTICA DE ALMACENAMIENTO (Archivos Huérfanos)
+    // ==========================================================
+    function initStorageCleanupAdmin() {
+        const btnCleanStorage = document.getElementById('btnCleanStorage');
+        if (!btnCleanStorage) return;
+
+        btnCleanStorage.addEventListener('click', async function() {
+            if (btnCleanStorage.disabled) return;
+
+            const originalHtml = btnCleanStorage.innerHTML;
+            btnCleanStorage.disabled = true;
+            btnCleanStorage.style.opacity = '0.7';
+            btnCleanStorage.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="width: 18px; height: 18px; border-width: 2px; color: #00e5d4;"></span>';
+
+            try {
+                const adminUser = localStorage.getItem('devioz_admin_user') || 'admin';
+                const adminToken = 'devioz_admin_' + adminUser;
+                const endpoint = `${getBackendProjectsEndpoint()}?action=limpiar_almacenamiento&admin_token=${encodeURIComponent(adminToken)}`;
+
+                const response = await fetch(endpoint, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: {
+                        'Accept': 'application/json',
+                        'X-Admin-Token': adminToken,
+                        'Authorization': `Bearer ${adminToken}`
+                    }
+                });
+
+                const data = await response.json();
+                if (response.ok && data.status === 'success') {
+                    showAdminToast(data.message || 'Limpieza automática ejecutada correctamente.', 'success');
+                } else {
+                    showAdminToast(data.message || 'No se pudo completar la limpieza.', 'warning');
+                }
+            } catch (err) {
+                console.error('[Devioz Admin] Error al ejecutar limpieza:', err);
+                showAdminToast('Error de conexión al limpiar almacenamiento.', 'error');
+            } finally {
+                btnCleanStorage.disabled = false;
+                btnCleanStorage.style.opacity = '1';
+                btnCleanStorage.innerHTML = originalHtml;
+            }
+        });
+    }
+
+    // Inicializar configuración del Chatbot
+    initChatbotAdminConfig();
+
+    // Inicializar botón de Limpieza de Almacenamiento
+    initStorageCleanupAdmin();
 
     // Carga inicial al cargar el DOM del admin (flujo continuo de todos los proyectos)
     if (projectsTableBody) {

@@ -35,6 +35,9 @@ CREATE TABLE IF NOT EXISTS `proyectos` (
     `tecnologias` VARCHAR(255) DEFAULT NULL,
     `demo_url` VARCHAR(255) DEFAULT NULL,
     `github_url` VARCHAR(255) DEFAULT NULL,
+    `archivo_zip` VARCHAR(255) DEFAULT NULL,
     `destacado` TINYINT(1) DEFAULT 0,
+    `video_url` VARCHAR(255) DEFAULT NULL,
+    `imagenes` TEXT DEFAULT NULL,
     `creado_en` TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

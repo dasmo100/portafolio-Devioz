@@ -123,27 +123,392 @@ window.allLoadedProjects = allLoadedProjects;
 let scrollObserver = null;
 
 // -----------------------------------------
-// MODAL DE DETALLE DE PROYECTO
+// MODAL DE DETALLE DE PROYECTO: VIDEO & FOTOS (ALTA GAMA)
 // -----------------------------------------
+let modalSlideshowInterval = null;
+let modalCurrentSlideIndex = 0;
+let modalCurrentImages = [];
+let modalHasVideo = false;
+let modalVideoUrl = null;
+let modalActiveMediaMode = 'video'; // 'video' | 'slideshow'
+let modalSlideshowPaused = false;
+let modalKeydownHandler = null;
+
+const MODAL_ICONS = {
+    video: `<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>`,
+    photo: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"></rect><circle cx="8.5" cy="8.5" r="1.5"></circle><polyline points="21 15 16 10 5 21"></polyline></svg>`,
+    soundMuted: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><line x1="23" y1="9" x2="17" y2="15"></line><line x1="17" y1="9" x2="23" y2="15"></line></svg>`,
+    soundActive: `<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon><path d="M19.07 4.93a10 10 0 0 1 0 14.14M15.54 8.46a5 5 0 0 1 0 7.07"></path></svg>`,
+    play: `<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>`,
+    pause: `<svg width="22" height="22" viewBox="0 0 24 24" fill="currentColor"><rect x="6" y="4" width="4" height="16"></rect><rect x="14" y="4" width="4" height="16"></rect></svg>`
+};
+
 function openProjectModal(data) {
     const modalEl = document.getElementById('projectDetailModal');
     if (!modalEl || typeof bootstrap === 'undefined') return;
 
     const titleEl = document.getElementById('projectDetailTitle');
     const badgeEl = document.getElementById('modalProjectCategoryBadge');
+    const mediaWrapper = document.getElementById('modalProjectMediaWrapper');
+    const videoContainer = document.getElementById('modalVideoContainer');
+    const videoEl = document.getElementById('modalProjectVideo');
+    const videoPlayOverlay = document.getElementById('videoPlayOverlay');
+    const videoPlayCircle = document.getElementById('videoPlayCircle');
     const imgEl = document.getElementById('modalProjectImg');
+    const slideshowEl = document.getElementById('modalProjectSlideshow');
     const descEl = document.getElementById('modalProjectDesc');
     const techListEl = document.getElementById('modalProjectTechList');
     const demoContainerEl = document.getElementById('modalProjectDemoContainer');
 
+    const statusBadge = document.getElementById('modalMediaStatusBadge');
+    const statusIcon = document.getElementById('modalMediaStatusIcon');
+    const statusText = document.getElementById('modalMediaStatusText');
+    const soundBtn = document.getElementById('btnToggleVideoSound');
+    const iconSound = document.getElementById('iconVideoSound');
+    const textVideoSound = document.getElementById('textVideoSound');
+
+    const segmentedSwitcher = document.getElementById('modalMediaSegmentedSwitcher');
+    const btnSwitchToVideo = document.getElementById('btnSwitchToVideo');
+    const btnSwitchToPhotos = document.getElementById('btnSwitchToPhotos');
+    const textPhotosTab = document.getElementById('textPhotosTab');
+
+    const prevBtn = document.getElementById('btnPrevSlide');
+    const nextBtn = document.getElementById('btnNextSlide');
+    const bottomBar = document.getElementById('modalMediaBottomBar');
+    const indicatorsContainer = document.getElementById('modalMediaIndicators');
+    const progressBar = document.getElementById('modalSlideshowProgressBar');
+
+    // Detener intervalos previos
+    stopAutoSlideshow();
+
     if (titleEl) titleEl.textContent = data.title || 'Detalle del Proyecto';
     if (badgeEl) badgeEl.textContent = data.category || 'Proyecto';
-    if (imgEl) {
-        imgEl.src = data.img || 'https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80';
-        imgEl.alt = data.title || 'Proyecto';
-    }
     if (descEl) descEl.textContent = data.desc || 'Proyecto en portafolio Devioz.';
 
+    // Normalizar lista de imágenes (hasta 4 máximo)
+    let imgs = [];
+    if (Array.isArray(data.images) && data.images.length > 0) {
+        imgs = data.images.slice(0, 4);
+    } else if (data.img) {
+        imgs = [data.img];
+    } else {
+        imgs = ['https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80'];
+    }
+    modalCurrentImages = imgs.map(formatProjectImageUrl);
+    modalCurrentSlideIndex = 0;
+    modalSlideshowPaused = false;
+
+    // Normalizar video corto
+    modalVideoUrl = null;
+    const rawVid = data.video || data.video_url || null;
+    if (rawVid && typeof rawVid === 'string' && rawVid.trim() !== '') {
+        const trimmedVid = rawVid.trim();
+        if (trimmedVid.startsWith('http://') || trimmedVid.startsWith('https://') || trimmedVid.startsWith('data:')) {
+            modalVideoUrl = trimmedVid;
+        } else {
+            const cleanVid = trimmedVid.replace(/^.*[\\\/]/, '');
+            modalVideoUrl = `assets/img/uploads/videos/${cleanVid}`;
+        }
+    }
+    modalHasVideo = Boolean(modalVideoUrl);
+
+    // Configurar Selector Segmentado superior
+    if (segmentedSwitcher) {
+        if (modalHasVideo && modalCurrentImages.length > 0) {
+            segmentedSwitcher.classList.remove('d-none');
+            if (textPhotosTab) {
+                textPhotosTab.textContent = `Fotos (${modalCurrentImages.length})`;
+            }
+        } else {
+            segmentedSwitcher.classList.add('d-none');
+        }
+    }
+
+    function stopAutoSlideshow() {
+        if (modalSlideshowInterval) {
+            clearInterval(modalSlideshowInterval);
+            modalSlideshowInterval = null;
+        }
+        if (progressBar) {
+            progressBar.style.transition = 'none';
+            progressBar.style.width = '0%';
+        }
+    }
+
+    function startAutoSlideshow() {
+        stopAutoSlideshow();
+        if (modalCurrentImages.length <= 1 || modalActiveMediaMode !== 'slideshow') return;
+
+        const duration = 3500;
+        if (progressBar) {
+            progressBar.style.transition = 'none';
+            progressBar.style.width = '0%';
+            void progressBar.offsetWidth; // Forzar reflow
+            progressBar.style.transition = `width ${duration}ms linear`;
+            progressBar.style.width = '100%';
+        }
+
+        modalSlideshowInterval = setInterval(() => {
+            if (!modalSlideshowPaused && modalActiveMediaMode === 'slideshow') {
+                renderSlide(modalCurrentSlideIndex + 1);
+            }
+        }, duration);
+    }
+
+    function updateIndicators() {
+        if (!indicatorsContainer) return;
+        indicatorsContainer.innerHTML = '';
+
+        if (modalActiveMediaMode === 'slideshow' && modalCurrentImages.length > 1) {
+            modalCurrentImages.forEach((_, idx) => {
+                const dot = document.createElement('button');
+                dot.type = 'button';
+                dot.className = `media-dot-btn ${modalCurrentSlideIndex === idx ? 'active' : ''}`;
+                dot.title = `Ver foto ${idx + 1}`;
+                dot.onclick = (e) => {
+                    e.stopPropagation();
+                    renderSlide(idx);
+                    startAutoSlideshow();
+                };
+                indicatorsContainer.appendChild(dot);
+            });
+            if (bottomBar) bottomBar.classList.remove('d-none');
+        } else {
+            if (bottomBar) bottomBar.classList.add('d-none');
+        }
+    }
+
+    function renderSlide(index) {
+        modalCurrentSlideIndex = (index + modalCurrentImages.length) % modalCurrentImages.length;
+        if (imgEl) {
+            imgEl.style.opacity = '0';
+            imgEl.style.transform = 'scale(0.97)';
+            setTimeout(() => {
+                imgEl.src = modalCurrentImages[modalCurrentSlideIndex];
+                imgEl.onload = () => {
+                    imgEl.style.opacity = '1';
+                    imgEl.style.transform = 'scale(1)';
+                };
+                if (imgEl.complete) {
+                    imgEl.style.opacity = '1';
+                    imgEl.style.transform = 'scale(1)';
+                }
+            }, 120);
+        }
+
+        if (statusIcon) statusIcon.innerHTML = MODAL_ICONS.photo;
+        if (statusText) {
+            const currentNum = String(modalCurrentSlideIndex + 1).padStart(2, '0');
+            const totalNum = String(modalCurrentImages.length).padStart(2, '0');
+            statusText.textContent = modalCurrentImages.length > 1 
+                ? `${currentNum} / ${totalNum}`
+                : 'Foto 01';
+        }
+
+        updateIndicators();
+
+        if (modalActiveMediaMode === 'slideshow' && modalCurrentImages.length > 1 && !modalSlideshowPaused) {
+            if (progressBar) {
+                progressBar.style.transition = 'none';
+                progressBar.style.width = '0%';
+                void progressBar.offsetWidth;
+                progressBar.style.transition = 'width 3500ms linear';
+                progressBar.style.width = '100%';
+            }
+        }
+    }
+
+    function switchToSlideshow() {
+        modalActiveMediaMode = 'slideshow';
+        stopAutoSlideshow();
+
+        if (videoContainer) videoContainer.classList.add('d-none');
+        if (videoEl) videoEl.pause();
+        if (slideshowEl) slideshowEl.classList.remove('d-none');
+
+        if (soundBtn) soundBtn.classList.add('d-none');
+        if (prevBtn) prevBtn.classList.toggle('d-none', modalCurrentImages.length <= 1);
+        if (nextBtn) nextBtn.classList.toggle('d-none', modalCurrentImages.length <= 1);
+
+        if (btnSwitchToVideo) btnSwitchToVideo.classList.remove('active');
+        if (btnSwitchToPhotos) btnSwitchToPhotos.classList.add('active');
+
+        renderSlide(modalCurrentSlideIndex);
+        if (modalCurrentImages.length > 1) {
+            startAutoSlideshow();
+        }
+    }
+
+    function updateSoundButtonUI() {
+        if (!soundBtn || !iconSound || !videoEl) return;
+        if (videoEl.muted) {
+            iconSound.innerHTML = MODAL_ICONS.soundMuted;
+            if (textVideoSound) textVideoSound.textContent = 'Silencio';
+            soundBtn.title = 'Activar audio';
+        } else {
+            iconSound.innerHTML = MODAL_ICONS.soundActive;
+            if (textVideoSound) textVideoSound.textContent = 'Sonido';
+            soundBtn.title = 'Silenciar audio';
+        }
+    }
+
+    function switchToVideo() {
+        if (!modalHasVideo || !videoEl) {
+            switchToSlideshow();
+            return;
+        }
+
+        modalActiveMediaMode = 'video';
+        stopAutoSlideshow();
+
+        if (slideshowEl) slideshowEl.classList.add('d-none');
+        if (videoContainer) videoContainer.classList.remove('d-none');
+
+        if (prevBtn) prevBtn.classList.add('d-none');
+        if (nextBtn) nextBtn.classList.add('d-none');
+        if (bottomBar) bottomBar.classList.add('d-none');
+        if (progressBar) progressBar.style.width = '0%';
+
+        if (soundBtn) soundBtn.classList.remove('d-none');
+        if (btnSwitchToVideo) btnSwitchToVideo.classList.add('active');
+        if (btnSwitchToPhotos) btnSwitchToPhotos.classList.remove('active');
+
+        if (statusIcon) statusIcon.innerHTML = MODAL_ICONS.video;
+        if (statusText) statusText.textContent = 'Video Demostrativo';
+
+        videoEl.muted = true;
+        updateSoundButtonUI();
+        videoEl.currentTime = 0;
+
+        const playPromise = videoEl.play();
+        if (playPromise !== undefined) {
+            playPromise.then(() => {
+                if (videoPlayOverlay) videoPlayOverlay.classList.remove('paused');
+            }).catch(e => {
+                console.log('Autoplay muted deferred:', e);
+                if (videoPlayOverlay) videoPlayOverlay.classList.add('paused');
+            });
+        }
+    }
+
+    // Toggle de audio de video
+    if (soundBtn && videoEl) {
+        soundBtn.onclick = (e) => {
+            e.stopPropagation();
+            videoEl.muted = !videoEl.muted;
+            updateSoundButtonUI();
+        };
+    }
+
+    // Clic en contenedor de video para pausar/reproducir
+    if (videoContainer && videoEl) {
+        videoContainer.onclick = () => {
+            if (videoEl.paused) {
+                videoEl.play();
+                if (videoPlayOverlay) videoPlayOverlay.classList.remove('paused');
+            } else {
+                videoEl.pause();
+                if (videoPlayOverlay) videoPlayOverlay.classList.add('paused');
+            }
+        };
+        videoEl.onplay = () => {
+            if (videoPlayCircle) videoPlayCircle.innerHTML = MODAL_ICONS.pause;
+            if (videoPlayOverlay) videoPlayOverlay.classList.remove('paused');
+        };
+        videoEl.onpause = () => {
+            if (videoPlayCircle) videoPlayCircle.innerHTML = MODAL_ICONS.play;
+            if (videoPlayOverlay) videoPlayOverlay.classList.add('paused');
+        };
+    }
+
+    // Conexión del selector segmentado
+    if (btnSwitchToVideo) {
+        btnSwitchToVideo.onclick = (e) => {
+            e.stopPropagation();
+            switchToVideo();
+        };
+    }
+    if (btnSwitchToPhotos) {
+        btnSwitchToPhotos.onclick = (e) => {
+            e.stopPropagation();
+            switchToSlideshow();
+        };
+    }
+
+    // Flechas de navegación lateral
+    if (prevBtn) {
+        prevBtn.onclick = (e) => {
+            e.stopPropagation();
+            renderSlide(modalCurrentSlideIndex - 1);
+            startAutoSlideshow();
+        };
+    }
+    if (nextBtn) {
+        nextBtn.onclick = (e) => {
+            e.stopPropagation();
+            renderSlide(modalCurrentSlideIndex + 1);
+            startAutoSlideshow();
+        };
+    }
+
+    // Pausar rotación al pasar el mouse por encima
+    if (mediaWrapper) {
+        mediaWrapper.onmouseenter = () => {
+            modalSlideshowPaused = true;
+            if (progressBar && modalActiveMediaMode === 'slideshow') {
+                const computed = window.getComputedStyle(progressBar).width;
+                progressBar.style.transition = 'none';
+                progressBar.style.width = computed;
+            }
+        };
+        mediaWrapper.onmouseleave = () => {
+            modalSlideshowPaused = false;
+            if (modalActiveMediaMode === 'slideshow' && modalCurrentImages.length > 1) {
+                startAutoSlideshow();
+            }
+        };
+    }
+
+    // Soporte para teclas (Flecha Izq / Der / Barra Espaciadora)
+    if (modalKeydownHandler) {
+        window.removeEventListener('keydown', modalKeydownHandler);
+    }
+    modalKeydownHandler = (e) => {
+        if (!modalEl.classList.contains('show')) return;
+        if (e.key === 'ArrowLeft') {
+            e.preventDefault();
+            if (modalActiveMediaMode === 'slideshow') {
+                renderSlide(modalCurrentSlideIndex - 1);
+                startAutoSlideshow();
+            }
+        } else if (e.key === 'ArrowRight') {
+            e.preventDefault();
+            if (modalActiveMediaMode === 'slideshow') {
+                renderSlide(modalCurrentSlideIndex + 1);
+                startAutoSlideshow();
+            }
+        } else if (e.key === ' ' && modalActiveMediaMode === 'video' && videoEl) {
+            e.preventDefault();
+            if (videoEl.paused) videoEl.play(); else videoEl.pause();
+        }
+    };
+    window.addEventListener('keydown', modalKeydownHandler);
+
+    // Inicialización según si tiene video o galería de fotos
+    if (modalHasVideo && videoEl) {
+        videoEl.src = modalVideoUrl;
+        videoEl.onended = () => {
+            // Al terminar el video corto, avanzar fluidamente a las fotos
+            if (modalCurrentImages.length > 0) {
+                switchToSlideshow();
+            }
+        };
+        switchToVideo();
+    } else {
+        switchToSlideshow();
+    }
+
+    // Tecnologías
     if (techListEl) {
         techListEl.innerHTML = '';
         if (Array.isArray(data.tech) && data.tech.length > 0) {
@@ -156,17 +521,21 @@ function openProjectModal(data) {
         }
     }
 
+    // Botón Visitar Proyecto
     if (demoContainerEl) {
-        const hasExternalDemo = data.demo && 
-                                typeof data.demo === 'string' && 
-                                data.demo.startsWith('http') && 
-                                !data.demo.includes('devioz.com');
+        let cleanDemo = '';
+        if (data.demo && typeof data.demo === 'string' && data.demo.trim() !== '') {
+            cleanDemo = data.demo.trim();
+            if (!cleanDemo.startsWith('http://') && !cleanDemo.startsWith('https://')) {
+                cleanDemo = 'https://' + cleanDemo;
+            }
+        }
 
-        if (hasExternalDemo) {
+        if (cleanDemo) {
             demoContainerEl.innerHTML = `
-                <a href="${data.demo}" target="_blank" rel="noopener noreferrer" class="btn btn-sm btn-main d-inline-flex align-items-center gap-1" style="font-size: 0.84rem; padding: 6px 14px;">
-                    <span>Visitar Demo / Sitio</span>
-                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <a href="${cleanDemo}" target="_blank" rel="noopener noreferrer" class="btn btn-main d-inline-flex align-items-center gap-2 px-3 py-2" style="font-size: 0.88rem; font-weight: 600; border-radius: 12px; box-shadow: 0 4px 18px rgba(0, 229, 212, 0.35); text-decoration: none;">
+                    <span>Visitar Web</span>
+                    <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
                         <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
                         <polyline points="15 3 21 3 21 9"></polyline>
                         <line x1="10" y1="14" x2="21" y2="3"></line>
@@ -174,9 +543,7 @@ function openProjectModal(data) {
                 </a>
             `;
         } else {
-            demoContainerEl.innerHTML = `
-                <span class="text-secondary small" style="color: #94a3b8 !important;">Proyecto de muestra del portafolio</span>
-            `;
+            demoContainerEl.innerHTML = '';
         }
     }
 
@@ -221,11 +588,17 @@ function openProjectModalById(projectId, fallbackTitle = '') {
     }
 
     if (project) {
+        const galleryImgs = (project.imagenes && Array.isArray(project.imagenes) && project.imagenes.length > 0)
+            ? project.imagenes.map(formatProjectImageUrl)
+            : [formatProjectImageUrl(project.imagen_url || project.imagen)];
+
         openProjectModal({
             id: project.id,
             title: project.titulo,
             category: (project.categoria_icono ? project.categoria_icono + ' ' : '') + (project.categoria_nombre || 'Proyecto Destacado'),
             img: formatProjectImageUrl(project.imagen_url || project.imagen),
+            images: galleryImgs,
+            video: project.video_url || null,
             desc: project.descripcion,
             tech: project.tecnologias_array || (project.tecnologias ? project.tecnologias.split(',').map(s => s.trim()) : []),
             demo: project.enlace_demo || project.demo_url
@@ -274,11 +647,30 @@ function renderPublicProjectsGrid(projects) {
         col.setAttribute('data-index', idx);
         col.id = `project-item-${p.id}`;
 
+        const rawLink = p.enlace_demo || p.demo_url || '';
+        let promoLink = '';
+        if (rawLink && typeof rawLink === 'string' && rawLink.trim() !== '') {
+            let cl = rawLink.trim();
+            if (!cl.startsWith('http://') && !cl.startsWith('https://')) {
+                cl = 'https://' + cl;
+            }
+            promoLink = cl;
+        }
+
         col.innerHTML = `
             <div class="project-card">
                 <div class="project-card-glow"></div>
-                <div class="card-img-wrapper">
+                <div class="card-img-wrapper position-relative">
                     <img src="${imgUrl}" alt="${p.titulo}" loading="lazy" onerror="this.src='https://images.unsplash.com/photo-1551288049-bebda4e38f71?auto=format&fit=crop&w=800&q=80'">
+                    ${promoLink ? `
+                    <a href="${promoLink}" target="_blank" rel="noopener noreferrer" class="card-promo-badge" title="Visitar página web del proyecto">
+                        <span>🌐 Sitio Web</span>
+                        <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+                            <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                            <polyline points="15 3 21 3 21 9"></polyline>
+                            <line x1="10" y1="14" x2="21" y2="3"></line>
+                        </svg>
+                    </a>` : ''}
                 </div>
                 <div class="project-card-body">
                     <h3 class="project-card-title">${p.titulo}</h3>
@@ -288,13 +680,24 @@ function renderPublicProjectsGrid(projects) {
                     <div class="tech-badges-list">
                         ${techs.map(t => `<span class="tech-badge">${t}</span>`).join('')}
                     </div>
-                    <button type="button" class="btn-card-action" data-id="${p.id || idx}">
-                        <span>Ver Proyecto</span>
-                        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                            <line x1="5" y1="12" x2="19" y2="12"></line>
-                            <polyline points="12 5 19 12 12 19"></polyline>
-                        </svg>
-                    </button>
+                    <div class="card-action-group">
+                        <button type="button" class="btn-card-action ${promoLink ? '' : 'w-100'}" data-id="${p.id || idx}">
+                            <span>${promoLink ? 'Ver Detalle' : 'Ver Proyecto'}</span>
+                            <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                                <line x1="5" y1="12" x2="19" y2="12"></line>
+                                <polyline points="12 5 19 12 12 19"></polyline>
+                            </svg>
+                        </button>
+                        ${promoLink ? `
+                        <a href="${promoLink}" target="_blank" rel="noopener noreferrer" class="btn-card-demo" title="Ir a la página principal donde se promociona este proyecto">
+                            <span>Visitar</span>
+                            <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                                <path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"></path>
+                                <polyline points="15 3 21 3 21 9"></polyline>
+                                <line x1="10" y1="14" x2="21" y2="3"></line>
+                            </svg>
+                        </a>` : ''}
+                    </div>
                 </div>
             </div>
         `;
@@ -446,30 +849,38 @@ function setupScrollAnimations() {
         }
     }
 
-    // 3. Efecto de Resplandor Dinámico y Parallax 3D al interactuar con el mouse
+    // 3. Efecto de Resplandor Dinámico y Parallax 3D al interactuar con el mouse (optimizado sin reflows)
     const cards = document.querySelectorAll('.project-card');
     cards.forEach(card => {
         card.style.setProperty('--mouse-x', '50%');
         card.style.setProperty('--mouse-y', '50%');
 
-        card.addEventListener('mousemove', (e) => {
-            const rect = card.getBoundingClientRect();
-            const x = e.clientX - rect.left;
-            const y = e.clientY - rect.top;
+        let cardRect = null;
+        card.addEventListener('mouseenter', () => {
+            cardRect = card.getBoundingClientRect();
+        });
 
-            const percentX = Math.round((x / rect.width) * 100);
-            const percentY = Math.round((y / rect.height) * 100);
+        card.addEventListener('mousemove', (e) => {
+            if (!cardRect) cardRect = card.getBoundingClientRect();
+            const w = cardRect.width || 1;
+            const h = cardRect.height || 1;
+            const x = e.clientX - cardRect.left;
+            const y = e.clientY - cardRect.top;
+
+            const percentX = Math.round((x / w) * 100);
+            const percentY = Math.round((y / h) * 100);
 
             card.style.setProperty('--mouse-x', `${percentX}%`);
             card.style.setProperty('--mouse-y', `${percentY}%`);
 
             // Sutil inclinación 3D (tilt parallax)
-            const tiltX = ((y / rect.height) - 0.5) * -7;
-            const tiltY = ((x / rect.width) - 0.5) * 7;
-            card.style.transform = `perspective(1000px) rotateX(${tiltX.toFixed(2)}deg) rotateY(${tiltY.toFixed(2)}deg) translateY(-6px) scale(1.015)`;
+            const tiltX = ((y / h) - 0.5) * -5;
+            const tiltY = ((x / w) - 0.5) * 5;
+            card.style.transform = `perspective(1000px) rotateX(${tiltX.toFixed(2)}deg) rotateY(${tiltY.toFixed(2)}deg) translateY(-5px) scale(1.015)`;
         });
 
         card.addEventListener('mouseleave', () => {
+            cardRect = null;
             card.style.setProperty('--mouse-x', '50%');
             card.style.setProperty('--mouse-y', '50%');
             card.style.transform = '';
@@ -483,7 +894,6 @@ function setupScrollAnimations() {
 function initNavbarScrollEffect() {
     const navbar = document.querySelector('.custom-navbar');
     const headerWrapper = document.querySelector('.header-nav-container');
-    const spiralSection = document.getElementById('spiral-showcase');
     const progressBar = document.getElementById('scrollProgressBar');
 
     const handleScroll = () => {
@@ -496,43 +906,36 @@ function initNavbarScrollEffect() {
             progressBar.style.width = `${pct}%`;
         }
 
-        // Si el usuario regresa al tope de la página, resetear elementos inferiores para que vuelvan a animarse al bajar
-        if (scrollTop < 80) {
-            document.querySelectorAll('.scroll-reveal').forEach(el => {
-                const rect = el.getBoundingClientRect();
-                if (rect.top > window.innerHeight * 0.4) {
-                    el.classList.remove('is-visible');
-                }
-            });
-            document.querySelectorAll('.project-item').forEach(el => {
-                const rect = el.getBoundingClientRect();
-                if (rect.top > window.innerHeight * 0.4) {
-                    clearTimeout(el._revealTimer);
-                    el.classList.remove('revealed');
-                }
-            });
-        }
-
         // Compactación y transición de la barra de navegación al bajar
-        if (navbar) {
-            let triggerOffset = 100;
-            if (spiralSection) {
-                triggerOffset = Math.max(60, spiralSection.offsetTop - 300);
+        const isScrolled = scrollTop >= 60;
+        if (headerWrapper) {
+            if (isScrolled) {
+                headerWrapper.classList.add('header-scrolled');
+            } else {
+                headerWrapper.classList.remove('header-scrolled');
             }
-
-            const isScrolled = scrollTop >= triggerOffset;
-
+        }
+        if (navbar) {
             if (isScrolled) {
                 navbar.classList.add('navbar-scrolled');
-                if (headerWrapper) headerWrapper.classList.add('header-scrolled');
             } else {
                 navbar.classList.remove('navbar-scrolled');
-                if (headerWrapper) headerWrapper.classList.remove('header-scrolled');
             }
         }
     };
 
-    window.addEventListener('scroll', handleScroll, { passive: true });
+    let scrollTicking = false;
+    const onScroll = () => {
+        if (!scrollTicking) {
+            requestAnimationFrame(() => {
+                handleScroll();
+                scrollTicking = false;
+            });
+            scrollTicking = true;
+        }
+    };
+
+    window.addEventListener('scroll', onScroll, { passive: true });
     // Verificación inicial al cargar la página
     handleScroll();
 }
@@ -634,14 +1037,21 @@ function initNavigationEvents() {
             const techEls = card.querySelectorAll('.tech-badges-list .tech-badge');
             const tech = Array.from(techEls).map(el => el.textContent.trim());
 
-            const demo = (matched && matched.enlace_demo && !matched.enlace_demo.includes('devioz.com'))
-                ? matched.enlace_demo
+            const demo = (matched && (matched.enlace_demo || matched.demo_url))
+                ? (matched.enlace_demo || matched.demo_url)
                 : null;
 
+            const galleryImgs = (matched && matched.imagenes && Array.isArray(matched.imagenes) && matched.imagenes.length > 0)
+                ? matched.imagenes.map(formatProjectImageUrl)
+                : (img ? [img] : []);
+
             openProjectModal({
+                id: matched ? matched.id : projectId,
                 title,
                 category,
                 img,
+                images: galleryImgs,
+                video: (matched && matched.video_url) ? matched.video_url : null,
                 desc,
                 tech,
                 demo
@@ -669,6 +1079,24 @@ function initModalBlurEvents() {
 
     modalEl.addEventListener('hidden.bs.modal', () => {
         document.body.classList.remove('project-modal-active');
+        if (modalSlideshowInterval) {
+            clearInterval(modalSlideshowInterval);
+            modalSlideshowInterval = null;
+        }
+        if (modalKeydownHandler) {
+            window.removeEventListener('keydown', modalKeydownHandler);
+            modalKeydownHandler = null;
+        }
+        const progressBar = document.getElementById('modalSlideshowProgressBar');
+        if (progressBar) {
+            progressBar.style.transition = 'none';
+            progressBar.style.width = '0%';
+        }
+        const videoEl = document.getElementById('modalProjectVideo');
+        if (videoEl) {
+            videoEl.pause();
+            videoEl.src = '';
+        }
     });
 }
 

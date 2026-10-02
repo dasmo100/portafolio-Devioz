@@ -240,7 +240,7 @@
         width = rect.width;
         height = rect.height;
 
-        dpr = Math.min(window.devicePixelRatio || 1, 2);
+        dpr = Math.min(window.devicePixelRatio || 1, 1.5);
         canvas.width = Math.round(width * dpr);
         canvas.height = Math.round(height * dpr);
 
@@ -250,11 +250,18 @@
         createParticles();
     }
 
-    // Bucle de animación y física
+    let isVisible = true;
+
+    // Bucle de animación y física de alto rendimiento (60fps garantizados sin forced reflows)
     function animate(currentTime) {
+        if (!isVisible) {
+            animationFrameId = null;
+            return;
+        }
+
         animationFrameId = requestAnimationFrame(animate);
 
-        // Si el contenedor está oculto (Hero inactivo), pausar procesamiento
+        // Si el contenedor está oculto, pausar procesamiento
         if (!container || container.offsetParent === null) {
             return;
         }
@@ -262,22 +269,22 @@
         ctx.clearRect(0, 0, width, height);
 
         const repelRadiusSq = CONFIG.repelRadius * CONFIG.repelRadius;
-        let currentIsBrand = null;
 
+        // Fase 1: Halo de luz suave para partículas de marca (sin usar shadowBlur de software que congela el CPU)
+        ctx.fillStyle = 'rgba(0, 229, 212, 0.16)';
+        ctx.beginPath();
         for (let i = 0; i < particles.length; i++) {
             const p = particles[i];
-
-            // Conmutación optimizada por lote: halo verde esmeralda para 'P' y 'D', y halo blanco para las demás
-            if (p.isBrand !== currentIsBrand) {
-                currentIsBrand = p.isBrand;
-                if (currentIsBrand) {
-                    ctx.shadowBlur = CONFIG.shadowBlur;
-                    ctx.shadowColor = CONFIG.shadowColor;
-                } else {
-                    ctx.shadowBlur = 10;
-                    ctx.shadowColor = 'rgba(255, 255, 255, 0.75)';
-                }
+            if (p.isBrand) {
+                ctx.moveTo(p.x + p.size * 1.8, p.y);
+                ctx.arc(p.x, p.y, p.size * 1.8, 0, Math.PI * 2);
             }
+        }
+        ctx.fill();
+
+        // Fase 2: Renderizado central y física
+        for (let i = 0; i < particles.length; i++) {
+            const p = particles[i];
 
             let alpha = 1;
 
@@ -338,7 +345,7 @@
                 p.y += p.vy;
             }
 
-            // Renderizado de la partícula con transparencia suave
+            // Renderizado de partícula acelerado por GPU
             ctx.globalAlpha = alpha;
             ctx.beginPath();
             ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
@@ -358,13 +365,21 @@
         ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        // Seguimiento del cursor global para no interferir con clicks de botones
+        // Cache de coordenadas del canvas para no disparar getBoundingClientRect() en cada pixel de mousemove
+        let cachedCanvasRect = null;
+        const updateCachedRect = () => {
+            if (canvas) cachedCanvasRect = canvas.getBoundingClientRect();
+        };
+        window.addEventListener('resize', updateCachedRect, { passive: true });
+        window.addEventListener('scroll', updateCachedRect, { passive: true });
+
+        // Seguimiento del cursor global optimizado
         window.addEventListener('mousemove', function(e) {
             if (!canvas || !container || container.offsetParent === null) return;
-            const rect = canvas.getBoundingClientRect();
-            const mx = e.clientX - rect.left;
-            const my = e.clientY - rect.top;
-            if (mx >= 0 && mx <= rect.width && my >= 0 && my <= rect.height) {
+            if (!cachedCanvasRect) updateCachedRect();
+            const mx = e.clientX - cachedCanvasRect.left;
+            const my = e.clientY - cachedCanvasRect.top;
+            if (mx >= 0 && mx <= cachedCanvasRect.width && my >= 0 && my <= cachedCanvasRect.height) {
                 mouse.x = mx;
                 mouse.y = my;
                 mouse.hover = true;
@@ -380,10 +395,10 @@
         window.addEventListener('touchmove', function(e) {
             if (!canvas || !container || container.offsetParent === null) return;
             if (e.touches.length > 0) {
-                const rect = canvas.getBoundingClientRect();
-                const tx = e.touches[0].clientX - rect.left;
-                const ty = e.touches[0].clientY - rect.top;
-                if (tx >= 0 && tx <= rect.width && ty >= 0 && ty <= rect.height) {
+                if (!cachedCanvasRect) updateCachedRect();
+                const tx = e.touches[0].clientX - cachedCanvasRect.left;
+                const ty = e.touches[0].clientY - cachedCanvasRect.top;
+                if (tx >= 0 && tx <= cachedCanvasRect.width && ty >= 0 && ty <= cachedCanvasRect.height) {
                     mouse.x = tx;
                     mouse.y = ty;
                     mouse.hover = true;
@@ -403,13 +418,31 @@
             resizeTimer = setTimeout(resize, 120);
         }, { passive: true });
 
+        // IntersectionObserver para detener inmediatamente el bucle cuando el Hero sale de pantalla
+        if ('IntersectionObserver' in window) {
+            const io = new IntersectionObserver(([entry]) => {
+                isVisible = entry.isIntersecting;
+                if (isVisible) {
+                    if (!animationFrameId) animationFrameId = requestAnimationFrame(animate);
+                } else {
+                    if (animationFrameId) {
+                        cancelAnimationFrame(animationFrameId);
+                        animationFrameId = null;
+                    }
+                }
+            }, { threshold: 0 });
+            io.observe(container);
+        }
+
         // Ajuste inicial
         resize();
+        updateCachedRect();
 
         // En caso de que las fuentes del sistema/navegador terminen de cargar
         if (document.fonts && document.fonts.ready) {
             document.fonts.ready.then(function() {
                 resize();
+                updateCachedRect();
             });
         }
 

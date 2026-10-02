@@ -795,6 +795,76 @@ body.no-scroll,
     transform: translateY(-2px);
 }
 
+/* Grupo de botones de acción en tarjetas de proyectos */
+.card-action-group {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: auto;
+    width: 100%;
+}
+
+.card-action-group .btn-card-action {
+    margin-top: 0;
+    flex: 1;
+}
+
+/* Botón llamativo para visitar la página principal o web promocional del proyecto */
+.btn-card-demo {
+    background: linear-gradient(135deg, rgba(0, 229, 212, 0.16) 0%, rgba(139, 92, 246, 0.16) 100%);
+    border: 1px solid rgba(0, 229, 212, 0.45);
+    color: #5eead4 !important;
+    border-radius: 12px;
+    padding: 10px 14px;
+    font-weight: 600;
+    font-size: 0.84rem;
+    text-decoration: none !important;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+    transition: all 0.25s ease;
+    white-space: nowrap;
+}
+
+.btn-card-demo:hover {
+    background: linear-gradient(135deg, #00e5d4 0%, #8b5cf6 100%);
+    color: #06060e !important;
+    border-color: #5eead4;
+    box-shadow: 0 4px 18px rgba(0, 229, 212, 0.4);
+    transform: translateY(-2px);
+}
+
+/* Badge flotante en la esquina superior de la imagen para proyectos con enlace web */
+.card-promo-badge {
+    position: absolute;
+    top: 12px;
+    right: 12px;
+    z-index: 4;
+    background: rgba(15, 23, 42, 0.88);
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+    border: 1px solid rgba(0, 229, 212, 0.45);
+    color: #5eead4 !important;
+    font-size: 0.72rem;
+    font-weight: 600;
+    padding: 4px 10px;
+    border-radius: 20px;
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    text-decoration: none !important;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.4);
+    transition: all 0.2s ease;
+}
+
+.card-promo-badge:hover {
+    background: #00e5d4;
+    color: #06060e !important;
+    box-shadow: 0 4px 14px rgba(0, 229, 212, 0.5);
+    transform: scale(1.05);
+}
+
 /* =========================================
    FOOTER MINIMALISTA
    ========================================= */
@@ -1601,17 +1671,45 @@ body.no-scroll,
     transition: all 0.3s ease;
 }
 
-/* Checklist de Publicación */
-#editorChecklist li {
-    transition: color 0.2s ease;
+/* Panel y Subida de Archivo ZIP (Exclusivo Administrador) */
+.zip-admin-panel {
+    border: 1px solid rgba(139, 92, 246, 0.25) !important;
+    background: rgba(14, 15, 30, 0.78) !important;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.35);
 }
 
-#editorChecklist li.completed {
-    color: #e2e8f0 !important;
+.dropzone-zip-box {
+    border: 2px dashed rgba(167, 139, 250, 0.35);
+    border-radius: 14px;
+    padding: 22px 14px;
+    text-align: center;
+    background: rgba(139, 92, 246, 0.035);
+    transition: all 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+    cursor: pointer;
 }
 
-#editorChecklist li.completed .chk-bullet {
-    color: #00e5d4 !important;
+.dropzone-zip-box:hover,
+.dropzone-zip-box.dragover {
+    border-color: #a78bfa;
+    background: rgba(139, 92, 246, 0.08);
+    box-shadow: 0 0 22px rgba(139, 92, 246, 0.22);
+}
+
+.zip-icon-wrapper {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 48px;
+    height: 48px;
+    border-radius: 12px;
+    background: rgba(139, 92, 246, 0.12);
+    border: 1px solid rgba(139, 92, 246, 0.3);
+    transition: transform 0.25s ease, box-shadow 0.25s ease;
+}
+
+.dropzone-zip-box:hover .zip-icon-wrapper {
+    transform: translateY(-2px) scale(1.05);
+    box-shadow: 0 0 16px rgba(139, 92, 246, 0.35);
 }
 
 /* =========================================
@@ -1846,4 +1944,434 @@ body.project-modal-active #scanner-bg {
     opacity: 0.8;
     transform: translateY(-50%) scale(1.15) !important;
 }
+
+/* =========================================
+   ESTILOS PARA VIDEO CORTO Y GALERÍA (HASTA 4 IMÁGENES)
+   ========================================= */
+
+/* =========================================
+   REPRODUCTOR MULTIMEDIA DE PROYECTO (DISEÑO PROFESIONAL & ELEGANTE)
+   ========================================= */
+
+.modal-media-wrapper {
+    position: relative;
+    width: 100%;
+    height: 420px;
+    max-height: 420px;
+    border-radius: 16px;
+    overflow: hidden;
+    background: #030712;
+    border: 1px solid rgba(255, 255, 255, 0.08);
+    box-shadow: 0 20px 40px -15px rgba(0, 0, 0, 0.9), 0 0 1px 1px rgba(255, 255, 255, 0.05);
+    user-select: none;
+}
+
+@media (max-width: 576px) {
+    .modal-media-wrapper {
+        height: 280px;
+        max-height: 280px;
+    }
+}
+
+/* Video Container & Reproductor */
+.modal-video-container {
+    width: 100%;
+    height: 100%;
+    background: #000;
+    position: relative;
+    cursor: pointer;
+}
+
+.modal-video-container video {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    background: #000;
+    display: block;
+}
+
+/* Overlay sutil para Play / Pause en Video */
+.video-play-overlay {
+    position: absolute;
+    inset: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(0, 0, 0, 0.2);
+    opacity: 0;
+    transition: opacity 0.25s ease;
+    z-index: 5;
+    pointer-events: none;
+}
+
+.video-play-overlay.paused,
+.modal-video-container:hover .video-play-overlay {
+    opacity: 1;
+}
+
+.video-play-btn-circle {
+    width: 54px;
+    height: 54px;
+    border-radius: 50%;
+    background: rgba(11, 15, 25, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(0, 229, 212, 0.45);
+    color: #00e5d4;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5), 0 0 16px rgba(0, 229, 212, 0.25);
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.modal-video-container:hover .video-play-btn-circle {
+    transform: scale(1.08);
+    border-color: #00e5d4;
+    color: #fff;
+    background: rgba(0, 229, 212, 0.25);
+}
+
+/* Contenedor de Diapositivas */
+#modalProjectSlideshow {
+    width: 100%;
+    height: 100%;
+    position: relative;
+    overflow: hidden;
+    background: #030712;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+#modalProjectImg {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    display: block;
+    background: #030712;
+    transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), transform 0.4s ease;
+}
+
+/* Badge de tipo de medio superior */
+.media-type-badge {
+    background: rgba(11, 15, 25, 0.72);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #e2e8f0;
+    font-size: 0.74rem;
+    font-weight: 500;
+    letter-spacing: 0.03em;
+    padding: 6px 14px;
+    border-radius: 30px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    transition: all 0.25s ease;
+}
+
+.media-type-badge svg {
+    color: #00e5d4;
+}
+
+/* Botón píldora superior (Audio) */
+.btn-media-pill {
+    background: rgba(11, 15, 25, 0.72);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    color: #e2e8f0;
+    padding: 6px 13px;
+    border-radius: 30px;
+    cursor: pointer;
+    font-size: 0.75rem;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.22s ease;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.btn-media-pill:hover {
+    background: rgba(0, 229, 212, 0.15);
+    border-color: rgba(0, 229, 212, 0.4);
+    color: #00e5d4;
+    transform: translateY(-1px);
+}
+
+/* Selector Segmentado Video vs Fotos */
+.media-segmented-switcher {
+    background: rgba(11, 15, 25, 0.75);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 3px;
+    border-radius: 30px;
+    display: inline-flex;
+    align-items: center;
+    gap: 2px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.segmented-btn {
+    background: transparent;
+    border: none;
+    color: #94a3b8;
+    padding: 4px 12px;
+    border-radius: 20px;
+    font-size: 0.72rem;
+    font-weight: 600;
+    letter-spacing: 0.02em;
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    transition: all 0.2s ease;
+}
+
+.segmented-btn:hover {
+    color: #e2e8f0;
+}
+
+.segmented-btn.active {
+    background: rgba(0, 229, 212, 0.18);
+    color: #5eead4;
+    box-shadow: 0 2px 8px rgba(0, 229, 212, 0.25);
+    border: 1px solid rgba(0, 229, 212, 0.35);
+}
+
+/* Flechas Laterales de Navegación */
+.modal-side-arrow {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    background: rgba(11, 15, 25, 0.65);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.14);
+    color: #f1f5f9;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    z-index: 12;
+    transition: all 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+    opacity: 0.85;
+    box-shadow: 0 4px 14px rgba(0, 0, 0, 0.5);
+}
+
+.modal-media-wrapper:hover .modal-side-arrow {
+    opacity: 1;
+}
+
+.modal-side-arrow.prev-arrow {
+    left: 14px;
+}
+
+.modal-side-arrow.next-arrow {
+    right: 14px;
+}
+
+.modal-side-arrow:hover {
+    background: rgba(0, 229, 212, 0.22);
+    border-color: #00e5d4;
+    color: #00e5d4;
+    transform: translateY(-50%) scale(1.1);
+    box-shadow: 0 0 16px rgba(0, 229, 212, 0.4);
+}
+
+.modal-side-arrow:active {
+    transform: translateY(-50%) scale(0.95);
+}
+
+/* Barra Inferior & Dots de Navegación */
+.modal-media-bottom-bar {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    right: 0;
+    padding: 14px 20px;
+    background: linear-gradient(to top, rgba(3, 7, 18, 0.85) 0%, rgba(3, 7, 18, 0.4) 60%, transparent 100%);
+    z-index: 10;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    pointer-events: none;
+}
+
+.media-dots-track {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    background: rgba(11, 15, 25, 0.7);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    padding: 6px 14px;
+    border-radius: 30px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+    pointer-events: auto;
+}
+
+.media-dot-btn {
+    width: 8px;
+    height: 8px;
+    border-radius: 50%;
+    background: rgba(255, 255, 255, 0.35);
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    padding: 0;
+}
+
+.media-dot-btn:hover {
+    background: rgba(255, 255, 255, 0.85);
+    transform: scale(1.2);
+}
+
+.media-dot-btn.active {
+    width: 24px;
+    border-radius: 12px;
+    background: #00e5d4;
+    box-shadow: 0 0 10px rgba(0, 229, 212, 0.7);
+}
+
+/* Barra de progreso sutil para autoplay de diapositivas */
+.slideshow-progress-line {
+    position: absolute;
+    bottom: 0;
+    left: 0;
+    height: 3px;
+    width: 0%;
+    background: linear-gradient(90deg, #00e5d4, #3b82f6);
+    z-index: 15;
+    transition: width 0.1s linear;
+    pointer-events: none;
+}
+
+/* =========================================
+   ESTILOS PARA PANEL ADMIN (MÁXIMO 4 IMÁGENES & VIDEO)
+   ========================================= */
+
+.editor-gallery-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+}
+
+@media (max-width: 768px) {
+    .editor-gallery-grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+.editor-gallery-card {
+    position: relative;
+    border-radius: 12px;
+    overflow: hidden;
+    aspect-ratio: 16 / 10;
+    background: rgba(15, 23, 42, 0.6);
+    border: 1px solid rgba(255, 255, 255, 0.12);
+    transition: all 0.22s ease;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+}
+
+.editor-gallery-card:hover {
+    border-color: rgba(0, 229, 212, 0.5);
+    transform: translateY(-2px);
+    box-shadow: 0 6px 18px rgba(0, 229, 212, 0.15);
+}
+
+.editor-gallery-card img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    display: block;
+}
+
+.editor-gallery-card .gallery-badge {
+    position: absolute;
+    top: 6px;
+    left: 6px;
+    background: rgba(0, 0, 0, 0.8);
+    backdrop-filter: blur(4px);
+    font-size: 0.68rem;
+    padding: 2px 7px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    color: #e2e8f0;
+    font-weight: 500;
+}
+
+.editor-gallery-card .gallery-badge.is-primary {
+    background: rgba(0, 229, 212, 0.25);
+    border-color: #00e5d4;
+    color: #5eead4;
+    font-weight: 700;
+}
+
+.editor-gallery-card .btn-remove-gallery-img {
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    background: rgba(239, 68, 68, 0.85);
+    border: none;
+    color: #fff;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 0.75rem;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    z-index: 2;
+}
+
+.editor-gallery-card .btn-remove-gallery-img:hover {
+    background: #dc2626;
+    transform: scale(1.15);
+}
+
+.editor-gallery-add-slot {
+    border: 2px dashed rgba(255, 255, 255, 0.18);
+    border-radius: 12px;
+    aspect-ratio: 16 / 10;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.22s ease;
+    background: rgba(255, 255, 255, 0.02);
+    color: #94a3b8;
+    text-align: center;
+    padding: 8px;
+}
+
+.editor-gallery-add-slot:hover {
+    border-color: #00e5d4;
+    background: rgba(0, 229, 212, 0.06);
+    color: #00e5d4;
+}
+
+.editor-video-box {
+    background: rgba(15, 23, 42, 0.7);
+    border: 1px solid rgba(0, 229, 212, 0.3);
+    border-radius: 14px;
+    overflow: hidden;
+    padding: 14px;
+}
+
+.editor-video-player {
+    width: 100%;
+    max-height: 200px;
+    border-radius: 8px;
+    background: #000;
+    object-fit: contain;
+}
+
 
