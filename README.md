@@ -24,8 +24,7 @@ El proyecto está construido priorizando el rendimiento, la accesibilidad, la es
   - **Integración con IA (cURL)**: Conectores optimizados para consumo de APIs de modelos LLM con prompts de sistema estructurados y contexto dinámico del portafolio.
 
 - **Inteligencia Artificial (IA)**:
-  - **Groq API (LLaMA 3.3 70B Versatile / Mixtral)**: Inferencia conversacional de ultra baja latencia para el chatbot virtual.
-  - **Google Gemini API**: Motor alternativo de procesamiento de lenguaje natural y consultas inteligentes.
+  - **Groq Cloud API (LLaMA 3.3 70B Versatile / Mixtral)**: Inferencia conversacional de ultra baja latencia mediante unidades LPU (*Language Processing Units*) para el asistente virtual inteligente.
 
 - **Base de Datos**:
   - **MySQL 8.x / MariaDB**: Motor de almacenamiento relacional InnoDB con codificación `utf8mb4_unicode_ci`.
@@ -63,7 +62,7 @@ El proyecto está construido priorizando el rendimiento, la accesibilidad, la es
 
 ### 6. 🤖 Asistente Virtual Inteligente con IA (Devioz AI Chatbot)
 - **Widget Flotante Interactivo**: Botón de apertura con avatar animado, pulso luminoso y burbuja de bienvenida inicial con cierre automático o manual.
-- **Conexión con Groq Cloud & Google Gemini**: Respuestas fluidas y contextualizadas en tiempo real sobre tecnologías, experiencia, proyectos y formas de contacto de Devioz.
+- **Conexión con Groq Cloud (LLaMA 3.3)**: Respuestas fluidas y contextualizadas en tiempo real sobre tecnologías, experiencia, proyectos y formas de contacto de Devioz.
 - **Sugerencias Rápidas (*Quick Pills*)**: Preguntas frecuentes listas para enviar con un solo clic (ej. "¿Qué servicios ofreces?", "¿Qué proyectos tienes?", "¿Cómo cotizar?").
 - **Experiencia Enriquecida**: Indicador de escritura animado, renderizado de respuestas con formato enriquecido (Markdown), y botón de reinicio de conversación para limpiar el historial de chat.
 
@@ -73,7 +72,7 @@ El proyecto está construido priorizando el rendimiento, la accesibilidad, la es
 - Gestión de imágenes locales con previsualización en vivo o vinculación mediante URLs remotas.
 - Conmutación rápida de estado destacado y visibilidad pública con un clic.
 - Métricas y estadísticas generales del portafolio en tiempo real.
-- **Gestor de Configuración de IA**: Modal integrado para conectar y verificar la API Key de Groq/Gemini, consultar modelos disponibles y supervisar el estado de la conexión con indicador visual en tiempo real.
+- **Gestor de Configuración de IA**: Modal integrado para conectar y verificar la API Key de Groq, consultar modelos disponibles y supervisar el estado de la conexión con indicador visual en tiempo real.
 
 ### 8. 👤 Gestión de Perfil de Administrador
 - Modal integrado en el panel para consultar y actualizar credenciales en caliente (nombre completo, usuario/correo y contraseña).
@@ -102,9 +101,7 @@ portafolio-Devioz/
 │   ├── config/
 │   │   ├── db.php                 # Conexión PDO, configuración CORS y auto-inicialización
 │   │   ├── groq.php               # Lógica de conexión con Groq API
-│   │   ├── groq_config.json       # Configuración y almacenamiento de credenciales de Groq
-│   │   ├── gemini.php             # Lógica de conexión con Google Gemini API
-│   │   └── gemini_config.json     # Configuración y clave de Google Gemini
+│   │   └── groq_config.json       # Configuración y almacenamiento de credenciales de Groq
 │   ├── api/
 │   │   ├── chatbot.php            # Endpoint principal para interactuar con el asistente IA
 │   │   ├── chatbot_config.php     # Consulta, validación y almacenamiento de API Keys de IA
@@ -210,12 +207,12 @@ Para inicializar el primer usuario con acceso al panel de administración:
    http://localhost/portafolio-Devioz/frontend/login.html
    ```
 
-#### 6. Configuración del Asistente Virtual con IA (Groq / Gemini)
+#### 6. Configuración del Asistente Virtual con IA (Groq Cloud)
 Para que el asistente conversacional responda consultas de tus visitantes:
 1. Inicia sesión en el panel administrativo (`frontend/login.html`).
 2. En la barra superior, haz clic en el botón con el ícono del **Chatbot IA** (o en la sección de Ajustes).
-3. Ingresa tu API Key de **Groq Cloud** (o Google Gemini) y haz clic en **Guardar / Probar Conexión**.
-4. Una vez guardada, el indicador cambiará a color verde y el chatbot en `frontend/index.html` responderá al instante.
+3. Ingresa tu API Key de **Groq Cloud** y haz clic en **Guardar / Probar Conexión**.
+4. Una vez guardada, el indicador cambiará a color verde y el chatbot en `frontend/index.html` responderá al instante con ultra baja latencia.
 
 > [!IMPORTANT]
 > **Buenas prácticas de seguridad**:
