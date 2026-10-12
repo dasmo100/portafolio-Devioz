@@ -2257,7 +2257,7 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // ==========================================================
-    // CONFIGURACIÓN DE CHATBOT IA & API KEY DE GEMINI (MODAL)
+    // CONFIGURACIÓN DE CHATBOT IA & API KEY DE GROQ (MODAL)
     // ==========================================================
     function initChatbotAdminConfig() {
         const btnOpen = document.getElementById('btnOpenChatbotModal');
@@ -2324,7 +2324,7 @@ document.addEventListener('DOMContentLoaded', function() {
                     updateStatusUI(data);
                 }
             } catch (err) {
-                console.error('[Devioz Admin] Error consultando estado de Gemini:', err);
+                console.error('[Devioz Admin] Error consultando estado de Groq:', err);
             }
         }
 
@@ -2340,18 +2340,18 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (statusTitle && statusDesc && statusBadge) {
                 if (isConfigured) {
-                    if (statusIcon) statusIcon.textContent = '✅';
-                    statusTitle.textContent = 'Google Gemini Activo';
-                    statusDesc.textContent = `Clave: ${data.masked_key || '••••••••'} | Modelo: ${data.model || 'gemini-2.5-flash'}`;
+                    if (statusIcon) statusIcon.textContent = '⚡';
+                    statusTitle.textContent = 'Groq AI Activo';
+                    statusDesc.textContent = `Clave: ${data.masked_key || '••••••••'} | Modelo: ${data.model || 'llama-3.3-70b-versatile'}`;
                     statusBadge.textContent = 'Conectado';
                     statusBadge.style.background = 'rgba(16, 185, 129, 0.2)';
                     statusBadge.style.color = '#34d399';
                     statusBadge.style.border = '1px solid rgba(16, 185, 129, 0.4)';
                     if (btnRemove) btnRemove.classList.remove('d-none');
                 } else {
-                    if (statusIcon) statusIcon.textContent = '⚡';
+                    if (statusIcon) statusIcon.textContent = '🤖';
                     statusTitle.textContent = 'Modo Respaldo Inteligente';
-                    statusDesc.textContent = 'El chatbot responde consultas con su base interna (sin API Key de Gemini)';
+                    statusDesc.textContent = 'El chatbot responde consultas con su base interna (sin API Key de Groq)';
                     statusBadge.textContent = 'Respaldo';
                     statusBadge.style.background = 'rgba(234, 179, 8, 0.15)';
                     statusBadge.style.color = '#facc15';
@@ -2362,6 +2362,61 @@ document.addEventListener('DOMContentLoaded', function() {
 
             if (modelSelect && data.model) {
                 modelSelect.value = data.model;
+            }
+        }
+
+        const modelsCountBadge = document.getElementById('groqModelsCountBadge');
+
+        async function fetchAvailableGroqModels(keyToUse) {
+            if (!keyToUse || keyToUse.length < 15) return;
+            try {
+                const adminUser = encodeURIComponent(localStorage.getItem('devioz_admin_user') || 'admin');
+                const endpoint = `${getChatbotConfigEndpoint()}?admin_token=devioz_admin_${adminUser}`;
+                const res = await fetch(endpoint, {
+                    method: 'POST',
+                    credentials: 'include',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        action: 'get_models', 
+                        api_key: keyToUse, 
+                        admin_token: `devioz_admin_${adminUser}` 
+                    })
+                });
+                if (!res.ok) return;
+                const data = await res.json();
+                if (data.status === 'success' && Array.isArray(data.models) && data.models.length > 0) {
+                    populateGroqModels(data.models);
+                }
+            } catch (err) {
+                console.warn('[Devioz Admin] No se pudieron precargar modelos dinámicos de Groq:', err);
+            }
+        }
+
+        function populateGroqModels(modelsList) {
+            if (!modelSelect || !Array.isArray(modelsList) || modelsList.length === 0) return;
+            const currentSelected = modelSelect.value;
+            modelSelect.innerHTML = '';
+            modelsList.forEach(m => {
+                const opt = document.createElement('option');
+                opt.value = m;
+                let label = m;
+                if (m === 'llama-3.1-8b-instant') label = 'Llama 3.1 8B Instant (Recomendado - Ultra rápido)';
+                else if (m === 'llama-3.3-70b-specdec') label = 'Llama 3.3 70B SpecDec (Alta inteligencia)';
+                else if (m === 'llama3-70b-8192') label = 'Llama 3 70B (8192 contexto)';
+                else if (m === 'llama3-8b-8192') label = 'Llama 3 8B (8192 contexto)';
+                else if (m === 'mixtral-8x7b-32768') label = 'Mixtral 8x7B (Contexto 32k)';
+                else if (m === 'gemma2-9b-it') label = 'Gemma 2 9B (Google)';
+                else if (m.includes('qwen')) label = `${m} (Qwen)`;
+                opt.textContent = label;
+                modelSelect.appendChild(opt);
+            });
+            if (modelsList.includes(currentSelected)) {
+                modelSelect.value = currentSelected;
+            } else if (modelsList.includes('llama-3.1-8b-instant')) {
+                modelSelect.value = 'llama-3.1-8b-instant';
+            }
+            if (modelsCountBadge) {
+                modelsCountBadge.textContent = `${modelsList.length} modelos detectados`;
             }
         }
 
@@ -2398,6 +2453,20 @@ document.addEventListener('DOMContentLoaded', function() {
             });
         }
 
+        // Detección automática de modelos en cuanto el usuario escribe o pega su clave
+        if (keyInput) {
+            let keyDebounce = null;
+            keyInput.addEventListener('input', () => {
+                clearTimeout(keyDebounce);
+                const val = keyInput.value.trim();
+                if (val.length >= 20) {
+                    keyDebounce = setTimeout(() => {
+                        fetchAvailableGroqModels(val);
+                    }, 400);
+                }
+            });
+        }
+
         // Soporte de cierre para botones data-bs-dismiss
         modalEl.querySelectorAll('[data-bs-dismiss="modal"]').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -2407,7 +2476,8 @@ document.addEventListener('DOMContentLoaded', function() {
                 modalEl.style.display = 'none';
                 modalEl.setAttribute('aria-hidden', 'true');
                 const backdrop = document.getElementById('chatbotConfigBackdrop');
-                if (backdrop) backdrop.remove();
+                if (!backdrop) return;
+                backdrop.remove();
             });
         });
 
@@ -2425,10 +2495,10 @@ document.addEventListener('DOMContentLoaded', function() {
                 hideConfigAlert();
 
                 const key = keyInput ? keyInput.value.trim() : '';
-                const model = modelSelect ? modelSelect.value : 'gemini-2.5-flash';
+                const model = modelSelect ? modelSelect.value : 'llama-3.1-8b-instant';
 
                 if (!key) {
-                    showConfigAlert('Por favor, ingresa una API Key de Google Gemini.', 'error');
+                    showConfigAlert('Por favor, ingresa una API Key de Groq.', 'error');
                     if (keyInput) keyInput.focus();
                     return;
                 }
@@ -2464,7 +2534,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         updateStatusUI(resData);
                         if (keyInput) keyInput.value = '';
                         if (typeof showAdminToast === 'function') {
-                            showAdminToast('¡Chatbot potenciado con Google Gemini!', 'success');
+                            showAdminToast('¡Chatbot potenciado con Groq AI!', 'success');
                         }
                         setTimeout(() => {
                             const m = getModalInstance();
@@ -2489,7 +2559,7 @@ document.addEventListener('DOMContentLoaded', function() {
 
         if (btnRemove) {
             btnRemove.addEventListener('click', async () => {
-                if (!confirm('¿Deseas desvincular la API Key de Gemini? El chatbot volverá al modo de respuesta inteligente de respaldo.')) {
+                if (!confirm('¿Deseas desvincular la API Key de Groq? El chatbot volverá al modo de respuesta inteligente de respaldo.')) {
                     return;
                 }
 
@@ -2519,7 +2589,7 @@ document.addEventListener('DOMContentLoaded', function() {
                         updateStatusUI({ configured: false });
                         if (keyInput) keyInput.value = '';
                         if (typeof showAdminToast === 'function') {
-                            showAdminToast('API Key de Gemini removida.', 'info');
+                            showAdminToast('API Key de Groq removida.', 'info');
                         }
                     }
                 } catch (err) {
@@ -2545,7 +2615,7 @@ document.addEventListener('DOMContentLoaded', function() {
             const originalHtml = btnCleanStorage.innerHTML;
             btnCleanStorage.disabled = true;
             btnCleanStorage.style.opacity = '0.7';
-            btnCleanStorage.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="width: 18px; height: 18px; border-width: 2px; color: #00e5d4;"></span>';
+            btnCleanStorage.innerHTML = '<span class="spinner-border spinner-border-sm" role="status" aria-hidden="true" style="width: 15px; height: 15px; border-width: 2px; color: #00e5d4;"></span> <span class="d-none d-sm-inline" style="color: #5eead4; font-weight: 600; font-size: 0.82rem;">Optimizando...</span>';
 
             try {
                 const adminUser = localStorage.getItem('devioz_admin_user') || 'admin';

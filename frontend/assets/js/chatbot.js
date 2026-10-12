@@ -4,7 +4,7 @@
  * ==========================================================
  * Gestiona la ventana flotante interactiva para los usuarios
  * y visitantes del portafolio. Las consultas se envían al backend
- * donde se utiliza la API Key de Gemini configurada por el
+ * donde se utiliza la API Key de Groq configurada por el
  * administrador desde el panel de administración.
  */
 
@@ -181,7 +181,9 @@ document.addEventListener('DOMContentLoaded', () => {
             conversationHistory = [];
             messagesBox.innerHTML = `
                 <div class="chat-msg bot-msg">
-                    <div class="chat-msg-avatar">🤖</div>
+                    <div class="chat-msg-avatar">
+                        <img src="assets/img/bot.png" alt="Devioz Bot" class="chat-msg-avatar-img">
+                    </div>
                     <div class="chat-msg-bubble">
                         <p class="mb-2">¡Conversación reiniciada! 🔄 ¿En qué puedo asistirte ahora?</p>
                         <p class="mb-0">Puedes hacerme cualquier pregunta o seleccionar una sugerencia:</p>
@@ -214,7 +216,9 @@ document.addEventListener('DOMContentLoaded', () => {
         const msgEl = document.createElement('div');
         msgEl.className = `chat-msg ${isBot ? 'bot-msg' : 'user-msg'}`;
 
-        const avatar = isBot ? '🤖' : '👤';
+        const avatar = isBot 
+            ? '<img src="assets/img/bot.png" alt="Devioz Bot" class="chat-msg-avatar-img">' 
+            : '👤';
         const formattedHtml = formatChatText(text);
 
         msgEl.innerHTML = `

@@ -33,6 +33,7 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 }
 
 require_once __DIR__ . '/../config/db.php';
+@include_once __DIR__ . '/../config/groq.php';
 @include_once __DIR__ . '/../config/gemini.php';
 
 // Leer datos de la solicitud
@@ -45,10 +46,10 @@ if (!is_array($data)) {
 
 $action = trim($data['action'] ?? ($_GET['action'] ?? ''));
 
-// Acción: Obtener estado de la configuración de Gemini (sin exponer la clave completa)
+// Acción: Obtener estado de la configuración de Groq (sin exponer la clave completa)
 if ($action === 'get_status') {
-    $currentKey = defined('DEVIOZ_GEMINI_API_KEY') ? DEVIOZ_GEMINI_API_KEY : (getenv('GEMINI_API_KEY') ?: '');
-    $currentModel = defined('DEVIOZ_GEMINI_MODEL') ? DEVIOZ_GEMINI_MODEL : 'gemini-2.5-flash';
+    $currentKey = defined('DEVIOZ_GROQ_API_KEY') ? DEVIOZ_GROQ_API_KEY : (getenv('GROQ_API_KEY') ?: (defined('DEVIOZ_GEMINI_API_KEY') ? DEVIOZ_GEMINI_API_KEY : ''));
+    $currentModel = defined('DEVIOZ_GROQ_MODEL') ? DEVIOZ_GROQ_MODEL : 'llama-3.3-70b-versatile';
     $hasKey = !empty($currentKey);
     $masked = '';
     if ($hasKey) {
@@ -57,6 +58,7 @@ if ($action === 'get_status') {
     }
     echo json_encode([
         'status' => 'success',
+        'provider' => 'groq',
         'configured' => $hasKey,
         'masked_key' => $masked,
         'model' => $currentModel
@@ -64,62 +66,81 @@ if ($action === 'get_status') {
     exit();
 }
 
-// Acción: Probar si una API Key es válida directamente con Google Gemini
+// Acción: Obtener lista de modelos disponibles directamente de la cuenta de Groq
+if ($action === 'get_models') {
+    $testKey = trim($data['api_key'] ?? ($data['groq_api_key'] ?? (defined('DEVIOZ_GROQ_API_KEY') ? DEVIOZ_GROQ_API_KEY : '')));
+    if (empty($testKey)) {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'API Key requerida.']);
+        exit();
+    }
+    $models = obtenerModelosDisponiblesGroq($testKey);
+    if ($models === null) {
+        http_response_code(400);
+        echo json_encode(['status' => 'error', 'message' => 'No se pudieron consultar los modelos de Groq con esta clave.']);
+        exit();
+    }
+    echo json_encode(['status' => 'success', 'models' => $models], JSON_UNESCAPED_UNICODE);
+    exit();
+}
+
+// Acción: Probar si una API Key es válida directamente con los servidores de Groq
 if ($action === 'test_key') {
-    $testKey = trim($data['api_key'] ?? ($data['gemini_api_key'] ?? ''));
-    $testModel = trim($data['model'] ?? 'gemini-2.5-flash');
+    $testKey = trim($data['api_key'] ?? ($data['groq_api_key'] ?? ($data['gemini_api_key'] ?? '')));
+    $testModel = trim($data['model'] ?? 'llama-3.1-8b-instant');
 
     if (empty($testKey)) {
         http_response_code(400);
-        echo json_encode(['status' => 'error', 'message' => 'Por favor, proporciona una API Key para verificar.']);
+        echo json_encode(['status' => 'error', 'message' => 'Por favor, proporciona una API Key de Groq para verificar.']);
         exit();
     }
 
-    $pingResult = probarGeminiKeyDirecto($testKey, $testModel);
+    $pingResult = probarGroqKeyDirecto($testKey, $testModel);
     if ($pingResult === true) {
         echo json_encode([
             'status' => 'success',
-            'message' => '¡API Key válida y lista para operar con Gemini!'
+            'model' => $testModel,
+            'message' => "¡API Key válida y lista para operar con Groq ({$testModel})!"
         ]);
     } else {
         http_response_code(400);
         echo json_encode([
             'status' => 'error',
-            'message' => 'La API Key fue rechazada por Google: ' . $pingResult
+            'message' => 'La API Key fue rechazada por Groq: ' . $pingResult
         ]);
     }
     exit();
 }
 
-// Acción: Guardar API Key en el servidor (archivo backend/config/gemini_config.json protegido en .gitignore)
+// Acción: Guardar API Key en el servidor (archivo backend/config/groq_config.json protegido en .gitignore)
 if ($action === 'save_key') {
-    $saveKey = trim($data['api_key'] ?? ($data['gemini_api_key'] ?? ''));
-    $saveModel = trim($data['model'] ?? 'gemini-2.5-flash');
-    $jsonConfigPath = __DIR__ . '/../config/gemini_config.json';
+    $saveKey = trim($data['api_key'] ?? ($data['groq_api_key'] ?? ($data['gemini_api_key'] ?? '')));
+    $saveModel = trim($data['model'] ?? 'llama-3.1-8b-instant');
+    $jsonConfigPath = __DIR__ . '/../config/groq_config.json';
 
     if (empty($saveKey)) {
         // Desvincular clave
         $configToSave = [
             'api_key' => '',
-            'model' => 'gemini-2.5-flash',
+            'model' => 'llama-3.1-8b-instant',
             'updated_at' => date('Y-m-d H:i:s')
         ];
         @file_put_contents($jsonConfigPath, json_encode($configToSave, JSON_PRETTY_PRINT | JSON_UNESCAPED_UNICODE));
         echo json_encode([
             'status' => 'success',
             'configured' => false,
-            'message' => 'API Key de Gemini removida del servidor.'
+            'message' => 'API Key de Groq removida del servidor.'
         ]);
         exit();
     }
 
-    // Verificar antes de guardar en archivo
-    $pingResult = probarGeminiKeyDirecto($saveKey, $saveModel);
+    // Verificar y auto-ajustar modelo si el seleccionado no existe en la cuenta
+    $pingResult = probarGroqKeyDirecto($saveKey, $saveModel);
     if ($pingResult !== true) {
         http_response_code(400);
         echo json_encode([
             'status' => 'error',
-            'message' => 'No se guardó porque la API Key no es válida: ' . $pingResult
+            'message' => 'No se guardó porque la API Key no es válida en Groq: ' . $pingResult
         ]);
         exit();
     }
@@ -136,10 +157,11 @@ if ($action === 'save_key') {
 
     echo json_encode([
         'status' => 'success',
+        'provider' => 'groq',
         'configured' => true,
         'masked_key' => $masked,
         'model' => $saveModel,
-        'message' => '¡API Key verificada y guardada con éxito en el servidor!'
+        'message' => "¡API Key verificada y guardada con éxito en el servidor (Modelo: {$saveModel})!"
     ]);
     exit();
 }
@@ -182,7 +204,7 @@ try {
 }
 
 if (empty($proyectosTexto)) {
-    $proyectosTexto = "- Plataforma E-Commerce SaaS (PHP, Vue, PostgreSQL)\n- Neural Assistant & RAG Copilot (Python, FastAPI, Gemini AI)\n- Dashboard Ejecutivo BI & KPIs (Power BI, DAX, SQL Server)\n- Branding & Sistema Visual Devioz (Figma, Motion Graphics)";
+    $proyectosTexto = "- Plataforma E-Commerce SaaS (PHP, Vue, PostgreSQL)\n- Neural Assistant & AI Copilot (Python, FastAPI, Groq AI)\n- Dashboard Ejecutivo BI & KPIs (Power BI, DAX, SQL Server)\n- Branding & Sistema Visual Devioz (Figma, Motion Graphics)";
 }
 
 // 2. Construir el System Prompt oficial de Devioz
@@ -191,7 +213,7 @@ Tu misión es atender con cortesía, entusiasmo y profesionalismo a clientes pot
 
 Información clave sobre Devioz:
 - Eslogan: 'Soluciones Digitales a tu Medida'.
-- Especialidades: Desarrollo de aplicaciones web y móviles modernas, plataformas SaaS, integración de modelos de lenguaje e inteligencia artificial (como Gemini), analítica de datos y dashboards ejecutivos (Power BI, Python), automatización de procesos y diseño de interfaces premium (UI/UX).
+- Especialidades: Desarrollo de aplicaciones web y móviles modernas, plataformas SaaS, integración de modelos de lenguaje e inteligencia artificial (con Groq y modelos avanzados de código abierto), analítica de datos y dashboards ejecutivos (Power BI, Python), automatización de procesos y diseño de interfaces premium (UI/UX).
 - Proyectos activos en el portafolio:
 {$proyectosTexto}
 - Medios de contacto:
@@ -205,27 +227,27 @@ Pautas de respuesta:
 3. Si el usuario desea contratar un servicio o solicitar una cotización, anímalo amablemente a contactar al equipo de Devioz por correo o a través de la sección de contacto.
 4. Mantén siempre un tono cordial, tecnológico, profesional y seguro. Puedes usar algún emoji sutil para dar calidez.";
 
-// 3. Verificar si hay API Key de Gemini disponible (desde cliente o backend)
-$clientKey = trim($data['api_key'] ?? ($data['gemini_api_key'] ?? ''));
-$clientModel = trim($data['model'] ?? ($data['gemini_model'] ?? ''));
+// 3. Verificar si hay API Key de Groq disponible (desde cliente o backend)
+$clientKey = trim($data['api_key'] ?? ($data['groq_api_key'] ?? ($data['gemini_api_key'] ?? '')));
+$clientModel = trim($data['model'] ?? ($data['groq_model'] ?? ($data['gemini_model'] ?? '')));
 
-$geminiApiKey = !empty($clientKey) 
+$groqApiKey = !empty($clientKey) 
     ? $clientKey 
-    : (defined('DEVIOZ_GEMINI_API_KEY') && !empty(DEVIOZ_GEMINI_API_KEY) ? DEVIOZ_GEMINI_API_KEY : (getenv('GEMINI_API_KEY') ?: ''));
+    : (defined('DEVIOZ_GROQ_API_KEY') && !empty(DEVIOZ_GROQ_API_KEY) ? DEVIOZ_GROQ_API_KEY : (getenv('GROQ_API_KEY') ?: (defined('DEVIOZ_GEMINI_API_KEY') ? DEVIOZ_GEMINI_API_KEY : '')));
 
-$geminiModel = !empty($clientModel) 
+$groqModel = !empty($clientModel) 
     ? $clientModel 
-    : (defined('DEVIOZ_GEMINI_MODEL') ? DEVIOZ_GEMINI_MODEL : 'gemini-2.5-flash');
+    : (defined('DEVIOZ_GROQ_MODEL') ? DEVIOZ_GROQ_MODEL : 'llama-3.3-70b-versatile');
 
 $respuestaGenerada = null;
 $modoRespuesta = 'contextual';
 
-if (!empty($geminiApiKey)) {
-    // Intentar consultar la API oficial de Google Gemini
-    $respuestaGemini = consultarGeminiAPI($geminiApiKey, $geminiModel, $systemInstruction, $history, $userMessage);
-    if (!empty($respuestaGemini)) {
-        $respuestaGenerada = $respuestaGemini;
-        $modoRespuesta = 'gemini';
+if (!empty($groqApiKey)) {
+    // Intentar consultar la API oficial de Groq
+    $respuestaGroq = consultarGroqAPI($groqApiKey, $groqModel, $systemInstruction, $history, $userMessage);
+    if (!empty($respuestaGroq)) {
+        $respuestaGenerada = $respuestaGroq;
+        $modoRespuesta = 'groq';
     }
 }
 
@@ -247,25 +269,135 @@ exit();
 // =========================================================================
 
 /**
- * Valida rápidamente si una API Key es aceptada por los servidores de Google Gemini
+ * Obtiene la lista de modelos de texto/chat activos directamente desde Groq
  */
-function probarGeminiKeyDirecto($apiKey, $model = 'gemini-2.5-flash') {
-    $url = "https://generativelanguage.googleapis.com/v1beta/models/{$model}:generateContent?key=" . urlencode($apiKey);
+function obtenerModelosDisponiblesGroq($apiKey) {
+    $url = "https://api.groq.com/openai/v1/models";
+    $ch = curl_init($url);
+    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Authorization: Bearer ' . $apiKey,
+        'Content-Type: application/json'
+    ]);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+    curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+
+    $response = curl_exec($ch);
+    $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+    $curlErr = curl_error($ch);
+    curl_close($ch);
+
+    if ($curlErr || $httpCode !== 200 || empty($response)) {
+        return null;
+    }
+
+    $decoded = json_decode($response, true);
+    if (!isset($decoded['data']) || !is_array($decoded['data'])) {
+        return null;
+    }
+
+    $chatModels = [];
+    foreach ($decoded['data'] as $m) {
+        $id = $m['id'] ?? '';
+        // Filtrar modelos no destinados a chat/completions (como whisper de audio)
+        if (!empty($id) && stripos($id, 'whisper') === false) {
+            $chatModels[] = $id;
+        }
+    }
+
+    return $chatModels;
+}
+
+/**
+ * Valida rápidamente si una API Key es aceptada por los servidores de Groq
+ * y auto-ajusta el modelo en caso de que el seleccionado no exista en la cuenta.
+ */
+function probarGroqKeyDirecto($apiKey, &$model = 'llama-3.1-8b-instant') {
+    // 1. Consultar modelos disponibles para validar la clave y descubrir los modelos vigentes
+    $availableModels = obtenerModelosDisponiblesGroq($apiKey);
+
+    if ($availableModels === null) {
+        // En caso de que falle la consulta de modelos, capturar el mensaje de error de Groq
+        $ch = curl_init("https://api.groq.com/openai/v1/models");
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Authorization: Bearer ' . $apiKey,
+            'Content-Type: application/json'
+        ]);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 10);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
+        $resp = curl_exec($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curlErr = curl_error($ch);
+        curl_close($ch);
+
+        if ($curlErr) {
+            return true; // Problema local temporal de conexión cURL
+        }
+
+        $decoded = json_decode($resp, true);
+        return $decoded['error']['message'] ?? "Código HTTP {$httpCode}";
+    }
+
+    // 2. Si el modelo solicitado no existe en la cuenta (ej. descontinuado o sin acceso),
+    // seleccionar automáticamente el mejor modelo activo de la cuenta:
+    if (!empty($availableModels)) {
+        if (empty($model) || !in_array($model, $availableModels, true)) {
+            $selected = null;
+            $preferences = [
+                'llama-3.1-8b-instant',
+                'llama-3.3-70b-specdec',
+                'llama-3.1-70b-versatile',
+                'llama3-70b-8192',
+                'llama3-8b-8192',
+                'mixtral-8x7b-32768',
+                'gemma2-9b-it',
+                'qwen-2.5-32b'
+            ];
+
+            foreach ($preferences as $pref) {
+                if (in_array($pref, $availableModels, true)) {
+                    $selected = $pref;
+                    break;
+                }
+            }
+
+            if (!$selected) {
+                foreach ($availableModels as $am) {
+                    if (stripos($am, 'llama') !== false) {
+                        $selected = $am;
+                        break;
+                    }
+                }
+            }
+
+            if (!$selected) {
+                $selected = $availableModels[0];
+            }
+
+            $model = $selected;
+        }
+    }
+
+    // 3. Probar un ping ligero con el modelo confirmado
+    $url = "https://api.groq.com/openai/v1/chat/completions";
     $payload = [
-        'contents' => [
-            [
-                'role' => 'user',
-                'parts' => [['text' => 'ping']]
-            ]
-        ]
+        'model' => $model,
+        'messages' => [
+            ['role' => 'user', 'content' => 'ping']
+        ],
+        'max_tokens' => 5
     ];
 
     $ch = curl_init($url);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_POST, true);
     curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Content-Type: application/json']);
-    curl_setopt($ch, CURLOPT_TIMEOUT, 8);
+    curl_setopt($ch, CURLOPT_HTTPHEADER, [
+        'Authorization: Bearer ' . $apiKey,
+        'Content-Type: application/json'
+    ]);
+    curl_setopt($ch, CURLOPT_TIMEOUT, 10);
     curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
 
     $response = curl_exec($ch);
@@ -274,7 +406,6 @@ function probarGeminiKeyDirecto($apiKey, $model = 'gemini-2.5-flash') {
     curl_close($ch);
 
     if ($curlErr) {
-        // En caso de que cURL local tenga un tema de DNS o firewall momentáneo, no bloqueamos
         return true;
     }
 
@@ -288,63 +419,76 @@ function probarGeminiKeyDirecto($apiKey, $model = 'gemini-2.5-flash') {
 }
 
 /**
- * Consulta la API REST de Google Gemini
+ * Consulta la API de Groq (OpenAI-compatible) con fallback inteligente de modelos
  */
-function consultarGeminiAPI($apiKey, $model, $systemPrompt, $history, $message) {
-    $modelsToTry = [$model, 'gemini-1.5-flash'];
-    $modelsToTry = array_unique($modelsToTry);
+function consultarGroqAPI($apiKey, $model, $systemPrompt, $history, $message) {
+    $messages = [];
 
-    // Formatear el historial para Gemini
-    $contents = [];
+    $messages[] = [
+        'role' => 'system',
+        'content' => $systemPrompt
+    ];
 
-    // Agregar turnos previos si existen
     if (!empty($history) && is_array($history)) {
-        $recentHistory = array_slice($history, -6); // Últimos 6 mensajes para contexto
+        $recentHistory = array_slice($history, -8);
         foreach ($recentHistory as $turn) {
-            $role = ($turn['role'] ?? '') === 'user' ? 'user' : 'model';
+            $rawRole = strtolower($turn['role'] ?? '');
+            $role = in_array($rawRole, ['user', 'humano']) ? 'user' : 'assistant';
             $text = trim($turn['text'] ?? ($turn['content'] ?? ''));
             if (!empty($text)) {
-                $contents[] = [
+                $messages[] = [
                     'role' => $role,
-                    'parts' => [['text' => $text]]
+                    'content' => $text
                 ];
             }
         }
     }
 
-    // Mensaje actual del usuario
-    $contents[] = [
+    $messages[] = [
         'role' => 'user',
-        'parts' => [['text' => $message]]
+        'content' => $message
     ];
 
-    $payload = [
-        'systemInstruction' => [
-            'parts' => [
-                ['text' => $systemPrompt]
-            ]
-        ],
-        'contents' => $contents,
-        'generationConfig' => [
-            'temperature' => 0.7,
-            'topP' => 0.9,
-            'maxOutputTokens' => 800
-        ]
-    ];
+    // Consultar dinámicamente modelos que realmente existan para este usuario
+    $availableModels = obtenerModelosDisponiblesGroq($apiKey) ?: [];
 
-    $jsonPayload = json_encode($payload);
+    $modelsToTry = [];
+    if (!empty($model)) {
+        $modelsToTry[] = $model;
+    }
+
+    if (!empty($availableModels)) {
+        foreach ($availableModels as $am) {
+            $modelsToTry[] = $am;
+        }
+    } else {
+        $modelsToTry = array_merge($modelsToTry, [
+            'llama-3.1-8b-instant',
+            'llama3-70b-8192',
+            'llama3-8b-8192',
+            'mixtral-8x7b-32768',
+            'gemma2-9b-it'
+        ]);
+    }
+    $modelsToTry = array_values(array_unique($modelsToTry));
 
     foreach ($modelsToTry as $currentModel) {
-        $url = "https://generativelanguage.googleapis.com/v1beta/models/{$currentModel}:generateContent?key=" . urlencode($apiKey);
+        $payload = [
+            'model' => $currentModel,
+            'messages' => $messages,
+            'temperature' => 0.6,
+            'max_tokens' => 900
+        ];
 
-        $ch = curl_init($url);
+        $ch = curl_init("https://api.groq.com/openai/v1/chat/completions");
         curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
         curl_setopt($ch, CURLOPT_POST, true);
-        curl_setopt($ch, CURLOPT_POSTFIELDS, $jsonPayload);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($payload));
         curl_setopt($ch, CURLOPT_HTTPHEADER, [
+            'Authorization: Bearer ' . $apiKey,
             'Content-Type: application/json'
         ]);
-        curl_setopt($ch, CURLOPT_TIMEOUT, 12);
+        curl_setopt($ch, CURLOPT_TIMEOUT, 15);
         curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, true);
 
         $response = curl_exec($ch);
@@ -353,16 +497,25 @@ function consultarGeminiAPI($apiKey, $model, $systemPrompt, $history, $message) 
         curl_close($ch);
 
         if ($curlError || $httpCode !== 200 || empty($response)) {
-            continue; // Probar siguiente modelo
+            continue; // Probar siguiente modelo de Groq
         }
 
         $resData = json_decode($response, true);
-        if (isset($resData['candidates'][0]['content']['parts'][0]['text'])) {
-            return trim($resData['candidates'][0]['content']['parts'][0]['text']);
+        if (isset($resData['choices'][0]['message']['content'])) {
+            return trim($resData['choices'][0]['message']['content']);
         }
     }
 
     return null;
+}
+
+// Wrappers retrocompatibles para gemini
+function probarGeminiKeyDirecto($apiKey, $model = 'llama-3.3-70b-versatile') {
+    return probarGroqKeyDirecto($apiKey, $model);
+}
+
+function consultarGeminiAPI($apiKey, $model, $systemPrompt, $history, $message) {
+    return consultarGroqAPI($apiKey, $model, $systemPrompt, $history, $message);
 }
 
 /**

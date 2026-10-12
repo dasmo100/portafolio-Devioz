@@ -57,6 +57,13 @@
     font-size: 1rem;
 }
 
+.bubble-bot-img {
+    width: 22px;
+    height: 22px;
+    object-fit: contain;
+    filter: drop-shadow(0 0 5px rgba(0, 229, 212, 0.5));
+}
+
 .bubble-text {
     font-size: 0.81rem;
     color: #cbd5e1;
@@ -68,25 +75,26 @@
    ---------------------------------------------------------- */
 .chatbot-toggle-btn {
     position: relative;
-    width: 60px;
-    height: 60px;
+    width: 64px;
+    height: 64px;
     border-radius: 50%;
-    border: 1px solid rgba(0, 229, 212, 0.5);
-    background: linear-gradient(135deg, #00b4a7 0%, #005f58 50%, #4c1d95 100%);
+    border: none !important;
+    background: transparent !important;
     color: #ffffff;
     display: flex;
     align-items: center;
     justify-content: center;
     cursor: pointer;
-    box-shadow: 0 8px 25px rgba(0, 229, 212, 0.4), 0 0 30px rgba(0, 180, 167, 0.3);
-    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), box-shadow 0.3s ease;
+    box-shadow: none !important;
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1);
     outline: none !important;
+    padding: 0;
 }
 
 .chatbot-toggle-btn:hover {
-    transform: scale(1.08) translateY(-2px);
-    box-shadow: 0 12px 35px rgba(0, 229, 212, 0.55), 0 0 40px rgba(139, 92, 246, 0.4);
-    border-color: #5eead4;
+    transform: scale(1.12) translateY(-3px);
+    box-shadow: none !important;
+    border: none !important;
 }
 
 .chatbot-toggle-btn:active {
@@ -101,6 +109,37 @@
     transition: transform 0.3s ease;
 }
 
+.chatbot-launcher-img {
+    width: 60px;
+    height: 60px;
+    object-fit: contain;
+    filter: drop-shadow(0 4px 14px rgba(0, 229, 212, 0.45)) drop-shadow(0 2px 8px rgba(0, 0, 0, 0.6));
+    transition: transform 0.3s cubic-bezier(0.16, 1, 0.3, 1), filter 0.3s ease;
+    pointer-events: none;
+}
+
+.chatbot-toggle-btn:hover .chatbot-launcher-img {
+    transform: scale(1.08) rotate(-4deg);
+    filter: drop-shadow(0 8px 24px rgba(0, 229, 212, 0.75)) drop-shadow(0 2px 10px rgba(0, 0, 0, 0.8));
+}
+
+.chatbot-toggle-btn.is-active {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: rgba(15, 23, 42, 0.94) !important;
+    border: 1px solid rgba(0, 229, 212, 0.4) !important;
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.6), 0 0 20px rgba(0, 229, 212, 0.25) !important;
+    margin: 8px;
+}
+
+.chatbot-toggle-btn.is-active:hover {
+    background: rgba(239, 68, 68, 0.25) !important;
+    border-color: rgba(239, 68, 68, 0.6) !important;
+    color: #fca5a5;
+    transform: scale(1.08);
+}
+
 .chatbot-toggle-btn.is-active .chatbot-icon-open {
     display: none !important;
 }
@@ -110,18 +149,9 @@
     transform: rotate(90deg);
 }
 
-/* Anillo pulsante */
+.chatbot-toggle-glow,
 .chatbot-pulse-ring {
-    position: absolute;
-    top: -4px;
-    left: -4px;
-    right: -4px;
-    bottom: -4px;
-    border-radius: 50%;
-    border: 2px solid #00e5d4;
-    opacity: 0;
-    pointer-events: none;
-    animation: chatbotPulse 2.8s infinite;
+    display: none !important;
 }
 
 .chatbot-toggle-btn.is-active .chatbot-pulse-ring {
@@ -172,14 +202,20 @@
     position: relative;
     width: 40px;
     height: 40px;
-    border-radius: 12px;
-    background: linear-gradient(135deg, rgba(0, 229, 212, 0.25) 0%, rgba(139, 92, 246, 0.3) 100%);
-    border: 1px solid rgba(0, 229, 212, 0.5);
+    background: transparent;
+    border: none;
     display: flex;
     align-items: center;
     justify-content: center;
     font-size: 1.25rem;
-    box-shadow: 0 0 15px rgba(0, 229, 212, 0.25);
+    box-shadow: none;
+}
+
+.chatbot-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 6px rgba(0, 229, 212, 0.35));
 }
 
 .chatbot-status-dot {
@@ -532,6 +568,19 @@
     justify-content: center;
     font-size: 0.95rem;
     flex-shrink: 0;
+    overflow: hidden;
+}
+
+.chat-msg.bot-msg .chat-msg-avatar {
+    background: transparent;
+    border: none;
+}
+
+.chat-msg-avatar-img {
+    width: 100%;
+    height: 100%;
+    object-fit: contain;
+    padding: 1px;
 }
 
 .chat-msg.user-msg .chat-msg-avatar {

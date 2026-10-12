@@ -10,7 +10,7 @@
     <link rel="stylesheet" href="assets/css/style.css">
     <!-- Infinite Spiral 3D Component CSS -->
     <link rel="stylesheet" href="assets/css/infinite-spiral.css">
-    <!-- Chatbot AI Gemini CSS -->
+    <!-- Chatbot AI CSS -->
     <link rel="stylesheet" href="assets/css/chatbot.css">
 </head>
 <body>
@@ -435,14 +435,14 @@
     <div id="scanner-bg" class="scanner-container"></div>
 
     <!-- =========================================
-         CHATBOT INTELIGENTE DEVIOZ (AI GEMINI)
+         CHATBOT INTELIGENTE DEVIOZ (GROQ AI)
          ========================================= -->
     <div id="deviozChatbotRoot" class="devioz-chatbot-wrapper">
         <!-- Notificación emergente / Tooltip de bienvenida -->
         <div id="chatbotWelcomeBubble" class="chatbot-bubble">
             <span class="chatbot-bubble-close" id="chatbotBubbleClose" title="Cerrar">✕</span>
             <div class="d-flex align-items-center gap-2 mb-1">
-                <span class="bubble-sparkle">✨</span>
+                <img src="assets/img/bot.png" alt="Devioz Bot" class="bubble-bot-img">
                 <span class="fw-bold text-white small">¿Necesitas ayuda?</span>
             </div>
             <p class="bubble-text mb-0">¡Hola! Soy el asistente inteligente de Devioz. Pregúntame sobre nuestros proyectos o servicios.</p>
@@ -450,15 +450,9 @@
 
         <!-- Botón Lanzador Flotante -->
         <button id="chatbotToggleBtn" class="chatbot-toggle-btn" aria-label="Abrir asistente de chat Devioz" title="Chatear con el Asistente Devioz">
-            <div class="chatbot-toggle-glow"></div>
             <!-- Icono Chat (cuando está cerrado) -->
             <div class="chatbot-icon-open">
-                <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
-                    <path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"></path>
-                    <path d="M8 10h.01"></path>
-                    <path d="M12 10h.01"></path>
-                    <path d="M16 10h.01"></path>
-                </svg>
+                <img src="assets/img/bot.png" alt="Devioz Bot" class="chatbot-launcher-img">
             </div>
             <!-- Icono Cerrar (cuando está abierto) -->
             <div class="chatbot-icon-close d-none">
@@ -467,7 +461,6 @@
                     <line x1="6" y1="6" x2="18" y2="18"></line>
                 </svg>
             </div>
-            <span class="chatbot-pulse-ring"></span>
         </button>
 
         <!-- Ventana de Chat Flotante -->
@@ -476,7 +469,7 @@
             <div class="chatbot-header">
                 <div class="d-flex align-items-center gap-2">
                     <div class="chatbot-avatar">
-                        <span>🤖</span>
+                        <img src="assets/img/bot.png" alt="Devioz Bot Logo" class="chatbot-avatar-img">
                         <span class="chatbot-status-dot"></span>
                     </div>
                     <div>
@@ -509,7 +502,9 @@
             <div id="chatbotMessages" class="chatbot-messages">
                 <!-- Mensaje de bienvenida inicial -->
                 <div class="chat-msg bot-msg">
-                    <div class="chat-msg-avatar">🤖</div>
+                    <div class="chat-msg-avatar">
+                        <img src="assets/img/bot.png" alt="Devioz Bot" class="chat-msg-avatar-img">
+                    </div>
                     <div class="chat-msg-bubble">
                         <p class="mb-2">¡Hola! 👋 Bienvenido a <strong>Devioz</strong>. Soy tu asistente virtual impulsado por IA.</p>
                         <p class="mb-0">¿En qué puedo ayudarte hoy? Puedes preguntarme sobre nuestros proyectos, cotizaciones, tecnologías o servicios a medida.</p>
@@ -535,7 +530,9 @@
 
             <!-- Indicador de tipeo (escribiendo...) -->
             <div id="chatbotTypingIndicator" class="chatbot-typing d-none">
-                <div class="chat-msg-avatar">🤖</div>
+                <div class="chat-msg-avatar">
+                    <img src="assets/img/bot.png" alt="Devioz Bot" class="chat-msg-avatar-img">
+                </div>
                 <div class="typing-bubble">
                     <span class="typing-dot"></span>
                     <span class="typing-dot"></span>
@@ -555,7 +552,7 @@
                     </button>
                 </div>
                 <div class="chatbot-footer-hint">
-                    <span>Responde en segundos · Potenciado por Gemini AI</span>
+                    <span>Responde en segundos · Potenciado por Groq AI</span>
                 </div>
             </form>
         </div>

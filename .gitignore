@@ -8,6 +8,7 @@
 !.env.example
 *.local
 backend/config/gemini_config.json
+backend/config/groq_config.json
 
 # Editores e IDEs
 .vscode/
